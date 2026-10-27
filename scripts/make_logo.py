@@ -16,8 +16,15 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path as MPath
 from matplotlib.textpath import TextPath
 
-INK, INK_DARK = "#16191D", "#E8EAED"
-ACCENT, ACCENT_DARK = "#5B4A9E", "#AE9FEA"  # the letters "ai" (as the sister projects colour their "ai")
+# the letters are metal too, top to bottom like polished lettering: (material, factor on its linear
+# colour at the stops 0, 0.35, 0.5, 0.8, 1; darkening in linear keeps the hue). Light background:
+# dark steel and deep brass; dark background: bright stainless and brass. The letters "ai" are brass,
+# as the sister projects colour their "ai".
+LETTER_STOPS = (0.0, 0.35, 0.5, 0.8, 1.0)
+INK = ("steel_plain", (0.22, 0.40, 0.08, 0.13, 0.24))
+ACCENT = ("brass", (0.58, 0.90, 0.30, 0.42, 0.62))
+INK_DARK = ("stainless_a2", (1.15, 1.45, 0.72, 0.90, 1.12))
+ACCENT_DARK = ("brass", (0.95, 1.12, 0.62, 0.78, 0.95))
 # the dots are drawn in the metals of the material library (quincaillerie.materials): a zinc-plated
 # nut, a brass washer, a nickel-plated coin cell; the + mark is laser-etched (darker nickel)
 METALS = {"nut": "zinc_clear", "washer": "brass", "cell": "nickel_can"}
@@ -38,6 +45,19 @@ def _metal_gradient(gid, color):
     stops = [(0.0, 0.92), (0.3, 1.12), (0.42, 0.80), (0.7, 0.58), (1.0, 0.74)]
     s = "".join(f'<stop offset="{o}" stop-color="{_hex(base * k)}"/>' for o, k in stops)
     return f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">{s}</linearGradient>'
+
+
+def _letter_gradient(gid, spec, y_top, y_bottom):
+    from quincaillerie.materials import MATERIALS
+
+    base = np.array(_srgb(MATERIALS[spec[0]]["color"]))
+    st = "".join(
+        f'<stop offset="{o}" stop-color="{_hex(base * k)}"/>' for o, k in zip(LETTER_STOPS, spec[1], strict=True)
+    )
+    return (
+        f'<linearGradient id="{gid}" gradientUnits="userSpaceOnUse" x1="0" y1="{y_top:.1f}" x2="0" '
+        f'y2="{y_bottom:.1f}">{st}</linearGradient>'
+    )
 
 
 WORD = "Qu\u0131nca\u0131ller\u0131e"  # dotless i: the dots are drawn as nuts
@@ -89,7 +109,7 @@ def _circle(cx, cy, r):
     return f"M{cx + r:.2f},{cy:.2f} {arc} {cx - r:.2f},{cy:.2f} {arc} {cx + r:.2f},{cy:.2f} Z"
 
 
-def logo(ink: str, accent: str, suffix: str = "") -> str:
+def logo(ink: tuple, accent: tuple, suffix: str = "") -> str:
     from matplotlib.font_manager import findfont, get_font
 
     from quincaillerie.materials import MATERIALS
@@ -119,9 +139,13 @@ def logo(ink: str, accent: str, suffix: str = "") -> str:
     def letters(keep) -> str:
         return "".join(_d(g, dx + p * s, dy, s, height) for k, (p, g) in enumerate(glyphs) if keep(k))
 
+    y_top, y_bottom = height - (dy + 76 * s), height - dy
+    letter_defs = _letter_gradient(f"ink{suffix}", ink, y_top, y_bottom) + _letter_gradient(
+        f"accent{suffix}", accent, y_top, y_bottom
+    )
     parts = [
-        f'<path fill="{ink}" d="{letters(lambda k: k not in AI)}"/>',
-        f'<path fill="{accent}" d="{letters(lambda k: k in AI)}"/>',
+        f'<path fill="url(#ink{suffix})" d="{letters(lambda k: k not in AI)}"/>',
+        f'<path fill="url(#accent{suffix})" d="{letters(lambda k: k in AI)}"/>',
     ]
     nut, washer, cell = xs
     ids = {k: f"metal_{k}{suffix}" for k in METALS}
@@ -137,7 +161,7 @@ def logo(ink: str, accent: str, suffix: str = "") -> str:
         f'<path fill="none" stroke="{mark}" stroke-width="3.0" stroke-linecap="round" '
         f'd="M{cell - 5.5:.2f},{cy:.2f} H{cell + 5.5:.2f} M{cell:.2f},{cy - 5.5:.2f} V{cy + 5.5:.2f}"/>'
     )
-    parts.insert(0, f"<defs>{defs}</defs>")
+    parts.insert(0, f"<defs>{letter_defs}{defs}</defs>")
     w = int(np.ceil(width))
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {int(height)}" width="{w}" '
