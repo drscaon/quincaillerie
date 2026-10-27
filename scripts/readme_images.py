@@ -187,6 +187,48 @@ def showcase_scene(assets, path):
     return save(st)
 
 
+def variation_scene(tmp, path, seed=4):
+    """Ten drawn instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks."""
+    from quincaillerie import resolve
+
+    a = generate(
+        resolve("screw", "M10", 35, ["nut", "washer"]),
+        str(tmp),
+        "var_m10",
+        count=10,
+        seed=seed,
+        defect_rate=0.3,
+        scene=False,
+    )
+    c = generate(resolve("cell", "AA"), str(tmp), "var_aa", count=8, seed=2, defect_rate=0.4, scene=False)
+    n = generate(resolve("cell", "9V"), str(tmp), "var_9v", count=3, seed=3, defect_rate=0.6, scene=False)
+    st = new_scene(path)
+    A = Path(a.out_dir) / "assets"
+    for i in range(10):
+        y = -0.09 + 0.02 * i
+        q = qmul(quat_axis_angle((0, 0, 1), 0.08 * (i - 5)), quat_axis_angle((0, 1, 0), np.pi / 2))
+        add_ref(st, f"s{i}", A / f"ISO4017_M10x35_{i:03d}.usdc", (-0.075, y, 0.0085), q)
+        add_ref(st, f"n{i}", A / f"ISO4032_M10_{i:03d}.usdc", (-0.025, y, 0), quat_axis_angle((0, 0, 1), 0.4 * i))
+        add_ref(st, f"w{i}", A / f"ISO7089_M10_{i:03d}.usda", (0.003, y, 0), (1, 0, 0, 0))
+    for i in range(8):
+        add_ref(
+            st,
+            f"c{i}",
+            Path(c.out_dir) / "assets" / f"Cell_AA_{i:03d}.usda",
+            (0.05, -0.085 + 0.019 * i, 0.00725),
+            quat_axis_angle((0, 0, 1), 0.03 * i + (np.pi if i % 2 else 0)),
+        )
+    for i in range(3):
+        add_ref(
+            st,
+            f"b{i}",
+            Path(n.out_dir) / "assets" / f"Cell_9V_{i:03d}.usda",
+            (0.115, -0.06 + 0.045 * i, 0.00875),
+            quat_axis_angle((0, 0, 1), np.pi * (i % 2)),
+        )
+    return save(st)
+
+
 def blender(scene, out, size, cam, lens, fstop, samples):
     subprocess.run(
         [sys.executable, str(HERE / "render_blender.py"), str(scene), str(out), *map(str, size), str(samples)]
@@ -228,7 +270,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--samples", type=int, default=128)
     ap.add_argument("--out", default="docs/images")
-    ap.add_argument("--only", default="logo,fasteners,cells,social")
+    ap.add_argument("--only", default="logo,fasteners,cells,variation,social")
     args = ap.parse_args(argv)
     out = Path(args.out)
     only = args.only.split(",")
@@ -236,7 +278,7 @@ def main(argv=None):
         subprocess.run([sys.executable, str(HERE / "make_logo.py"), str(out)], check=True)
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        generate(catalog_parts(), str(tmp), "catalog", scene=False)
+        generate(catalog_parts(), str(tmp), "catalog", scene=False, vary=())
         assets = tmp / "catalog" / "assets"
         if "fasteners" in only:
             sc = fasteners_scene(assets, tmp / "catalog" / "fasteners.usda")
@@ -254,6 +296,13 @@ def main(argv=None):
             blender(
                 sc, out / "cells.jpg.png", (1600, 900), (0.02, -0.36, 0.24, 0.015, -0.025, 0.012), 45, 0, args.samples
             )
+        if "variation" in only:
+            sc = variation_scene(tmp, tmp / "variation.usda")
+            os.environ["EXPOSURE"] = "-1.5"
+            blender(
+                sc, out / "variation.jpg.png", (1600, 900), (0.02, -0.25, 0.20, 0.02, -0.004, 0.0), 42, 0, args.samples
+            )
+            os.environ.pop("EXPOSURE")
         if "social" in only:
             sc = showcase_scene(assets, tmp / "catalog" / "showcase.usda")
             blender(
@@ -263,7 +312,7 @@ def main(argv=None):
             (out / "showcase.png").unlink()
         from PIL import Image
 
-        for name in ("fasteners", "cells"):
+        for name in ("fasteners", "cells", "variation"):
             png = out / f"{name}.jpg.png"
             if png.exists():
                 Image.open(png).convert("RGB").save(out / f"{name}.jpg", quality=90)

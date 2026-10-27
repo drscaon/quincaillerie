@@ -22,6 +22,15 @@ clip is a `UsdPhysics` joint with a drive. A nut screws onto its screw, one
 pitch per turn; a cell pushed into its holder compresses the spring with the
 force it was designed for, and a 9 V battery put in backwards does not fit.
 
+**No two parts are the same.** A real box of M8 screws is not one screw a
+hundred times: some threads fit tighter than others, a few are damaged, some
+are rusty or oily, springs get tired. Quincaillerie draws every instance from
+those distributions: tolerances, defects, wear and physics, each with its
+own random stream, and writes what it drew into the file and into a CSV, as
+ground truth. The variation is not paint: a crushed thread really stops a
+nut, a tired spring really presses less, a rusty screw really has more
+friction.
+
 The assets are checked in **MuJoCo** and in **Blender**: dropped on a floor,
 assembled, screwed, inserted, without coming apart. A Blender add-on sets the
 rigid bodies and constraints up by itself when a file is imported, so that
@@ -43,6 +52,37 @@ finishes of the material library. The nuts sit on the thread at the height
 their rotation gives them; the loose parts in front were dropped in MuJoCo
 and rest where they fell. Imported from the OpenUSD files into Blender and
 rendered with Cycles.*
+
+## Every instance is different
+
+![Ten instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](docs/images/variation.jpg)
+
+*`quincaillerie generate screw M10 --with nut,washer --count 10` and the same
+for AA and 9 V cells: each part is a distinct file. Rust, grime, oil and
+scratches; scuffed and faded labels; a dished washer, oval and crushed nuts,
+crushed and bent screws (not all visible from here); and, invisible in a
+picture, a different thread fit, alloy density, friction and spring for each.*
+
+| Aspect | Fasteners | Cells | Holders |
+|---|---|---|---|
+| **tolerance** | thread clearance 1.6–8 % of the pitch per side (tight to loose fit; 0.02–0.10 mm at M8), across flats, head and nut height, length | diameter and length under nominal, within the IEC bands | side play of the cradle (0–0.6 mm) |
+| **defect** (`--defect-rate`, 15 %) | crushed thread (crests pushed sideways over 40–140°: jams a nut), bent shank (0.8–3°), burr at the tip; oval or crushed nut; dished washer | dented can, corroded terminal (crust) | |
+| **wear** | new, used, oily, rusty, dirty: rust, oil, grime and scratches baked into the instance's own textures; friction follows (rust ×1.8 at most, oil ×0.6) | scuffed and faded label, grime | grey or black ABS |
+| **physics** | density of the alloy (brass and stainless are solid alloys, the rest plated steel), friction | mass ±3 %, friction | spring stiffness ±8 %, tired springs (preload down to 70 %), clip torque ±10 %, friction |
+
+Each aspect has its own random stream: `--no-vary wear` keeps the same
+tolerances and defects with clean parts; the same seed gives the same parts.
+Everything drawn is in `parts.csv` and in each file as
+`quincaillerie:variation:*` attributes; the clean finishes stay available in
+the `finish` variant set of a worn part. `--nominal` gives the reference part.
+
+![The same nut driven onto a sound M12 screw and onto one with crushed threads](docs/images/jam.gif)
+
+*The defects are physical. The same nut, the same light torque (a hand on a
+nut driver), simulated in MuJoCo from the files: it runs down the sound
+screw (left) and stops at the crushed thread of the other (right).
+`quincaillerie sim-test --defects` checks this for every crushed screw of a
+batch.*
 
 ## The physics, in motion
 
@@ -68,9 +108,11 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
   CR2032 and LR44 under a hinged leaf-spring clip. The spring stiffness and
   wire come from the contact force and preload (k = G d⁴ / 8 D³ n); the clip
   torsion from the force at its lever arm.
+- **Variation**: `--count N` distinct instances of each part, with drawn
+  tolerances, defects, wear and physics (see above), and their ground truth.
 - **Related elements** on request (`--with`): a screw with its nut and
-  washer, a cell with its holder, and a scene with the assemblies and *N*
-  copies of each part resting on a floor.
+  washer, a cell with its holder, and a scene with every instance resting on
+  a floor, plus the assemblies (made of instances without defects).
 - **OpenUSD**: one file per part, one rigid body per moving part with *one*
   visual mesh (so every DCC imports one object per body), mass, centre of
   mass and principal inertia, convex collision shapes, physics materials,
@@ -98,11 +140,13 @@ as a Python module (`pip install bpy`, Python 3.13) or a Blender executable.
 
 ```bash
 quincaillerie list                                          # sizes, formats, finishes
-quincaillerie generate screw M8 --length 30 --with nut,washer --count 10
-quincaillerie generate cell 18650 --with holder
+quincaillerie generate screw M8 --length 30 --with nut,washer --count 100
+quincaillerie generate cell 18650 --with holder --count 20 --defect-rate 0.3
+quincaillerie generate screw M8 --count 50 --no-vary wear   # clean parts, varied fits and defects
+quincaillerie generate nut M10 --nominal                    # the reference part
 quincaillerie generate holder 9V --with cell --no-physics   # visuals only
-quincaillerie generate all                                  # the whole catalogue (41 assets)
-quincaillerie sim-test output/ISO4017_M8x30 --screwing      # MuJoCo checks
+quincaillerie generate all --nominal                        # the whole catalogue (41 assets)
+quincaillerie sim-test output/ISO4017_M8x30 --defects       # MuJoCo checks (+ crushed threads jam)
 quincaillerie blender-test output/catalog                   # the same in Blender
 quincaillerie blender-addon                                 # quincaillerie_physics.zip
 ```
@@ -113,7 +157,8 @@ quincaillerie blender-addon                                 # quincaillerie_phys
 from quincaillerie import generate, resolve
 
 parts = resolve("screw", "M6", length=25, with_=["nut", "washer"])
-generate(parts, "output", count=10)  # -> output/ISO4017_M6x25/
+generate(parts, "output", count=100, defect_rate=0.2)  # -> output/ISO4017_M6x25/
+generate(parts, "output", vary=("tolerance", "physics"))  # clean, undamaged, varied fits
 ```
 
 ### Options of `quincaillerie generate`
@@ -123,11 +168,15 @@ generate(parts, "output", count=10)  # -> output/ISO4017_M6x25/
 | `KIND KEY` | | `screw`, `nut`, `washer` and a size (`M3`…`M12`); `cell`, `holder` and a format (`AA`, `18650`, `9V`, `CR2032`…); or `all` |
 | `--length L` | per size (M8: 30) | screw length in mm, from 2 pitches to 200 mm |
 | `--with KINDS` | | related elements: `nut,washer` (screw), `screw,washer` (nut), `holder` (cell), `cell` (holder) |
-| `--count N` | 1 | copies of each part in the scene, at rest on the floor |
+| `--count N` | 1 | distinct instances of each part, each with its own drawn variation, all in the scene |
+| `--defect-rate R` | 0.15 | share of instances with a defect |
+| `--no-vary ASPECTS` | | aspects that stay nominal: `tolerance`, `defect`, `wear`, `physics` |
+| `--nominal` | | no variation: the reference part (`--count` copies in the scene) |
+| `--detail` | `normal` | visual mesh resolution, `low`, `normal` or `high` (1.4, 3.4 and 7.5 MB for an M8 × 30 screw) |
 | `--finish F` | `zinc_clear` | default finish of the fasteners (all six are in every file's variant set) |
 | `--no-physics` | | no rigid bodies, colliders, joints or physics scene |
 | `--no-scene` | | assets and materials only |
-| `--seed S`, `--out DIR` | 1, `output` | |
+| `--seed S`, `--out DIR` | 1, `output` | the same seed and options give the same parts |
 
 ### Catalogue
 
@@ -156,10 +205,11 @@ holders (spring compressed, clip lifted), rendered in Blender.*
 
 | File | Content |
 |---|---|
-| `assets/*.usdc`, `assets/*.usda` | one asset per part (Blender: File > Import > USD) |
-| `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures |
-| `scene.usda` | every part `--count` times on a floor collider, plus the assemblies |
-| `parts.csv`, `summary.json` | names, kinds, masses, collision pieces |
+| `assets/*.usdc`, `assets/*.usda` | one file per instance, `ISO4017_M8x30_007.usdc` (Blender: File > Import > USD) |
+| `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
+| `scene.usda` | every instance on a floor collider, plus the assemblies |
+| `parts.csv` | one row per instance: mass, collision pieces and **every drawn value** (`variation:clearance_mm`, `variation:defect`, `variation:rust`, `variation:spring_factor`…): the ground truth |
+| `summary.json` | counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |
 
 ### OpenUSD layout
@@ -219,15 +269,20 @@ referenced and a floor at z = 0, saved under `sim_test/scenes/`:
 |---|---|---|
 | drop | each part, tilted, dropped from 4–5 cm | rests on the floor: lowest point within 0.35 mm of it, vertical speed below 1 mm/s (round cells may keep rolling) |
 | nut_on_screw | a nut on its screw, both dropped | the nut stays on its thread: shift below half a pitch, off-axis below 0.3 mm |
-| holder | an empty holder on the floor | the base settles (0.15 mm) and the plate or clip stays put relative to it (0.05 mm) |
-| seated | a cell in its holder, on the floor | relative to the holder, the cell moves less than 0.6 mm (its side play), the contact less than 0.3 mm |
-| insertion (MuJoCo) | a cell carried into its holder and released, then the same reversed | seated, spring at its design compression, contact force within 10 %; reversed: wrong polarity, or refused by the keying (9 V) |
+| holder | an empty holder on the floor | the base settles (0.3 mm) and the plate or clip stays put in the base's frame (0.05 mm) |
+| seated | a cell in its holder, on the floor | relative to the holder, the cell stays within the holder's side play (+0.6 mm), the contact moves less than 0.3 mm |
+| insertion (MuJoCo) | a cell carried into its holder and released, then the same reversed | seated, spring at the compression *this* holder should get from *this* cell (its drawn preload and the cell's drawn length), force within 10 % (coin clips: 15 %, the contact point is estimated); reversed: wrong polarity, or refused by the keying (9 V) |
 | screwing (MuJoCo, `--screwing`) | a nut driven 1 turn/s on a fixed screw, then back | advance per turn within 5 % of the pitch |
+| jam (MuJoCo, `--defects`) | a sound nut driven with a light torque towards the crushed thread of a screw, and the same on a sound screw | it stops at the damage: it travels at least a quarter pitch less than on the sound screw |
+
+With varied instances, nut-on-screw pairs and assemblies are made of
+instances without defects; the defective ones are dropped like the others,
+and the crushed threads are checked by the jam test.
 
 ### Results
 
-`quincaillerie generate all` then the checks of the whole catalogue (41
-assets), MuJoCo 3.17 and Blender 5.2 (`bpy`), one CPU core:
+`quincaillerie generate all --nominal` then the checks of the whole
+catalogue (41 assets), MuJoCo 3.17 and Blender 5.2 (`bpy`), one CPU core:
 
 | Check | MuJoCo | Blender (add-on) | Blender, rigid bodies added by hand |
 |---|---|---|---|
@@ -237,6 +292,20 @@ assets), MuJoCo 3.17 and Blender 5.2 (`bpy`), one CPU core:
 | cell seated in its holder (10) | 10/10 | 10/10 | 0/10 |
 | insertion (10 formats, both ways) | 20/20 | | |
 | screwing (M3–M12) | 7/7: 0.501, 0.70, 0.80, 0.99–1.005, 1.25, 1.50, 1.75 mm per turn | | |
+
+A varied batch, `quincaillerie generate all --count 5 --defect-rate 0.2
+--seed 11` (205 instances, 33 of them with a defect: 9 crushed threads, 11
+dished washers, 2 bent screws, 2 burrs, 1 oval nut, 2 dented cans, 6 corroded
+terminals), then `sim-test --defects` and `blender-test`:
+
+| Check | MuJoCo | Blender (add-on) |
+|---|---|---|
+| drop (155 parts) | 155/155 | 155/155 |
+| nut on screw (2 pairs per size) | 14/14 | 14/14 |
+| empty holder (50) | 50/50 | 50/50 |
+| cell seated in its holder (50) | 50/50 | 50/50 |
+| insertion (50 pairs, both ways) | 100/100, each against its own drawn spring and cell | |
+| jam (crushed screws) | 3/3: the nut stops after 0.5–1.2 mm, where it runs 1.5–2.4 mm on a sound screw | |
 
 Insertion: every cradle spring compressed to its design within 0.03 mm, with
 its design force within 1 % (AA: 4.98/5.0 mm, 3.48 N for 3.5 N); the 9 V
@@ -250,6 +319,11 @@ minutes in MuJoCo and two in Blender; screwing, 1–2 minutes per size.
 - **Nominal, not measured.** Fastener dimensions come from public tables,
   not from the standards; cell masses and spring forces are typical. Screws
   are fully threaded (no plain shank) and have no chamfer under the head.
+- **Plausible variation, not measured distributions.** The ranges (fits,
+  defect sizes, wear, spring scatter) are realistic orders of magnitude, not
+  statistics of a production line. Dents and corrosion crusts are visual
+  only; crushed threads, bends, burrs, oval nuts and dished washers change
+  the collision too.
 - **Collision in pieces.** A thread is ≈ 1000 convex pieces: exact enough to
   screw, heavy for large scenes (a scene of 100 screws is 100 000 shapes).
   Loose parts that only need to fall could use a simplified collider; not
@@ -302,7 +376,7 @@ General > Social preview), `physics_gifs.py` (the animations).
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every push to `main`, every pull request | `ruff check` and `ruff format --check`; `pytest` on Python 3.10–3.13 (Linux) and 3.12 (macOS, Windows); a command-line smoke test; **the MuJoCo checks of the whole catalogue** and an M8 screwing; **the Blender checks of the whole catalogue** through the add-on (and, for comparison, by hand); reports kept as run artifacts; build the wheel and sdist, `twine check`, install the wheel in a clean environment. |
+| `ci.yml` | every push to `main`, every pull request | `ruff check` and `ruff format --check`; `pytest` on Python 3.10–3.13 (Linux) and 3.12 (macOS, Windows); a command-line smoke test; **the MuJoCo checks of the whole catalogue** and an M8 screwing, then **varied batches** (screws and nuts with crushed threads that must jam, cells and holders with drawn tolerances and springs); **the Blender checks** of the catalogue and of varied batches through the add-on (and, for comparison, by hand); reports kept as run artifacts; build the wheel and sdist, `twine check`, install the wheel in a clean environment. |
 | `release.yml` | a pushed tag `v*` | checks the tag matches the version in `pyproject.toml`, tests, builds, then creates the GitHub release with the packages and the Blender add-on attached and the notes taken from `CHANGELOG.md`. Versions with `a`, `b` or `rc` are marked as pre-releases. |
 | Dependabot | monthly | pull requests to update the GitHub Actions and the Python dependencies. |
 

@@ -437,12 +437,22 @@ def lib_material(stage, root_path, name):
     return UsdShade.Material(p)
 
 
-def finish_variants(stage, root, mesh_paths, finishes, default):
-    """Variant set 'finish' rebinding the listed visual meshes to one library material per finish."""
+def finish_variants(stage, root, mesh_paths, finishes, default, extra=None):
+    """Variant set 'finish' rebinding the listed visual meshes to one library material per finish.
+
+    extra: {variant name: material path in the asset} (e.g. "as_generated": the instance's worn look)."""
     vs = root.GetVariantSets().AddVariantSet("finish")
     rp = str(root.GetPath())
     for f in finishes:
         lib_material(stage, rp, f)
+    for name, mpath in (extra or {}).items():
+        vs.AddVariant(name)
+        vs.SetVariantSelection(name)
+        with vs.GetVariantEditContext():
+            for mp in mesh_paths:
+                UsdShade.MaterialBindingAPI.Apply(stage.OverridePrim(mp)).Bind(
+                    UsdShade.Material(stage.GetPrimAtPath(mpath))
+                )
     for f in finishes:
         vs.AddVariant(f)
         vs.SetVariantSelection(f)
