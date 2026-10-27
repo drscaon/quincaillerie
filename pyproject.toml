@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quincaillerie"
+version = "0.1.0b1"
+description = "Standard hardware assets generator for Physical AI: metric screws, nuts and washers with modelled threads, battery cells and their holders with working springs and clips, exported to OpenUSD with UsdPhysics and checked in MuJoCo and Blender."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Daniel Régis Sarmento Caon" }]
+keywords = ["screw", "nut", "battery", "fastener", "simulation", "openusd", "mujoco", "blender", "procedural", "robotics", "physical-ai", "synthetic-data"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "usd-core>=24.0",
+    "pillow>=10.1",
+]
+
+[project.optional-dependencies]
+sim = ["mujoco>=3.2"]
+materialx = ["materialx>=1.39"]
+dev = ["pytest>=7", "ruff>=0.5", "mujoco>=3.2", "materialx>=1.39"]
+
+[project.urls]
+Homepage = "https://github.com/drscaon/quincaillerie"
+Issues = "https://github.com/drscaon/quincaillerie/issues"
+
+[project.scripts]
+quincaillerie = "quincaillerie.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# E741: I is the inertia tensor, as in the formulas
+ignore = ["E741"]

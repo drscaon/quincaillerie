@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tools
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated outputs (regenerate with `quincaillerie generate` and `quincaillerie sim-test`)
+output/
+*.usdc
+*.usda
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# MuJoCo warnings log
+MUJOCO_LOG.TXT
+ci-output/
