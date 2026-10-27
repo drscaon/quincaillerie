@@ -6,6 +6,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b2] - 2026-10-27 (beta)
+
+Second beta: varied instances.
+
 ### Added
 - Variation: `--count N` now writes N distinct instances of each part, each
   drawn from four independent aspects: tolerance (thread fit, dimensions,
