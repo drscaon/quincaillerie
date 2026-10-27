@@ -6,6 +6,30 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Variation: `--count N` now writes N distinct instances of each part, each
+  drawn from four independent aspects: tolerance (thread fit, dimensions,
+  holder play), defect (crushed thread, bent shank, burr, oval or crushed
+  nut, dished washer, dented can, corroded terminal; `--defect-rate`), wear
+  (rust, oil, grime, scratches, scuffed labels, baked into per-instance
+  textures, with the matching friction) and physics (alloy density,
+  friction, spring stiffness and fatigue, clip torque, cell mass).
+  `--no-vary`, `--nominal`; the same seed gives the same parts.
+- Ground truth: every drawn value in `parts.csv` and as
+  `quincaillerie:variation:*` attributes; worn parts keep the clean finishes
+  in their variant set.
+- `quincaillerie sim-test --defects`: a sound nut driven with a light torque
+  must stop at the crushed thread of a screw. Insertion checks use what each
+  holder and cell were drawn with.
+- `--detail low|normal|high` for the visual meshes.
+- README: variation section, a render of varied instances and an animation
+  of a nut stopping on a crushed thread.
+
+### Changed
+- `--count` used to place copies of one file; `--nominal` keeps that.
+- Default visual mesh of threaded parts lighter (`normal`, 3.4 MB for an
+  M8 × 30 screw instead of 7.5 MB, `high` as before).
+
 ## [0.1.0b1] - 2026-10-27 (beta)
 
 First beta.

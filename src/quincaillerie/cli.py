@@ -9,6 +9,7 @@ import time
 from . import __version__
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
 from .materials import FINISHES
+from .variation import ASPECTS
 
 
 def cmd_list(args):
@@ -56,8 +57,16 @@ def cmd_generate(args):
         seed=args.seed,
         scene=not args.no_scene,
         physics=not args.no_physics,
+        vary=() if args.nominal else tuple(a for a in ASPECTS if a not in (args.no_vary or "").split(",")),
+        defect_rate=args.defect_rate,
+        detail=args.detail,
     )
     print(f"{len(res.parts)} assets in {res.out_dir}/assets ({time.time() - t0:.1f}s)")
+    if len(res.parts) > 12:  # a summary, not every line
+        from collections import Counter
+
+        print("  defects:", dict(Counter(p.get("variation:defect", "none") for p in res.parts)))
+        res.parts = res.parts[:6]
     for p in res.parts:
         extra = f", {p['colliders']} collision pieces" if "colliders" in p else ""
         print(
@@ -73,7 +82,9 @@ def cmd_generate(args):
 def cmd_sim_test(args):
     from .sim.checks import sim_test
 
-    rows = sim_test(args.dir, insertions=not args.no_insertion, screw=args.screwing, only=args.only)
+    rows = sim_test(
+        args.dir, insertions=not args.no_insertion, screw=args.screwing, only=args.only, defects=args.defects
+    )
     return 0 if all(r["ok"] for r in rows) else 1
 
 
@@ -111,7 +122,15 @@ def build_parser():
     g.add_argument(
         "--with", dest="with_", metavar="KINDS", help="related elements, comma-separated: nut,washer / holder / cell"
     )
-    g.add_argument("--count", type=int, default=1, help="copies of each part in the scene (default 1)")
+    g.add_argument("--count", type=int, default=1, help="distinct instances of each part (default 1)")
+    g.add_argument(
+        "--nominal", action="store_true", help="no variation: the nominal part (--count copies in the scene)"
+    )
+    g.add_argument(
+        "--no-vary", metavar="ASPECTS", help="aspects that stay nominal, comma-separated: " + ",".join(ASPECTS)
+    )
+    g.add_argument("--defect-rate", type=float, default=0.15, help="share of instances with a defect (default 0.15)")
+    g.add_argument("--detail", choices=["low", "normal", "high"], default="normal", help="visual mesh resolution")
     g.add_argument("--finish", default="zinc_clear", choices=FINISHES, help="default finish of fasteners")
     g.add_argument("--seed", type=int, default=1)
     g.add_argument("--out", default="output")
@@ -122,6 +141,7 @@ def build_parser():
     s.add_argument("dir")
     s.add_argument("--no-insertion", action="store_true", help="skip the cell insertion tests")
     s.add_argument("--screwing", action="store_true", help="also screw each nut on its screw (slow)")
+    s.add_argument("--defects", action="store_true", help="check that crushed threads jam a nut (slow)")
     s.add_argument("--only", help="run the tests whose name contains this text")
     s.set_defaults(func=cmd_sim_test)
     b = sub.add_parser("blender-test", help="the same gravity checks in Blender")

@@ -6,7 +6,9 @@
 * screwing.gif: a nut driven onto a screw by a torque, simulated in MuJoCo from the USD files: it
   advances one pitch per turn on the modelled thread;
 * insertion.gif: cells pushed into their holders and released, simulated in MuJoCo from the USD
-  files: the spring plate and the clip move, the coil compresses.
+  files: the spring plate and the clip move, the coil compresses;
+* jam.gif: the same nut driven with the same light torque on a sound screw and on one with crushed
+  threads (a drawn defect): it runs down the first and stops at the damage on the second.
 
 All are rendered in Blender (Cycles) from the same OpenUSD assets. Development tool: needs MuJoCo,
 Pillow and Blender as a Python module (`pip install bpy`, Python 3.13):
@@ -211,6 +213,79 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
     return path
 
 
+def jam_animation(work: Path, path: Path, out_json: Path, size="M12", length=40, turns=4.0, rate=1.6):
+    """Two M12 screws, one sound, one with crushed threads; the same nut driven on each with the same
+    light torque (MuJoCo). It runs down the sound one and stops at the damage."""
+    import mujoco
+
+    from quincaillerie.fasteners import _zone, write_nut, write_screw
+    from quincaillerie.materials import write_materials
+    from quincaillerie.sim.checks import OPTIONS, TAU
+    from quincaillerie.sim.mujoco_model import convert, scene
+    from quincaillerie.variation import FastenerVariation
+
+    d = work / "jam"
+    write_materials(str(d / "materials"))
+    sound = FastenerVariation()
+    crushed = FastenerVariation(defect="crushed_thread", defect_size=0.5, defect_z=0.45, defect_angle_deg=150)
+    files = {}
+    for name, v in (("sound", sound), ("crushed", crushed)):
+        files[name] = d / "assets" / f"screw_{name}.usdc"
+        write_screw(str(files[name]), size, length, "zinc_clear", v, f"screw_{name}")
+    nut = d / "assets" / "nut.usdc"
+    write_nut(str(nut), size, "zinc_clear")
+    t = METRIC[size]
+    P, k, L = t["P"] * MM, t["k"] * MM, length * MM
+    z0, z1, t0, t1 = _zone(crushed, L, P)
+    zn = int(np.ceil((z1 + 1.0 * P) / P)) * P
+    xs = {"sound": -0.018, "crushed": 0.018}
+    st = new_scene(path)
+    for name, x in xs.items():
+        add_ref(st, f"screw_{name}", files[name], (x, 0, k), quat_axis_angle((0, 0, 1), -(t0 + t1) / 2 - np.pi / 2))
+        add_ref(st, f"nut_{name}", nut, (x, 0, k + zn))
+    save(st)
+    frames = None
+    dt = 1e-4
+    for name, x in xs.items():
+        yaw = -(t0 + t1) / 2 - np.pi / 2  # the damage faces the camera
+        qs = quat_axis_angle((0, 0, 1), yaw)
+        sim = scene(
+            None,
+            [
+                ("bolt", str(files[name]), (0, 0, 0), qs, {"kinematic": True}),
+                ("nut", str(nut), (0, 0, zn), (1, 0, 0, 0), {}),
+            ],
+        )
+        xml = convert(
+            sim,
+            options=OPTIONS.format(dt=dt).replace('"/>', '" gravity="0 0 0"/>'),
+            default='<default><geom solref="0.0005 1" solimp="0.95 0.99 0.0001" margin="0" condim="4"/></default>',
+        )
+        m = mujoco.MjModel.from_xml_string(xml)
+        dd = mujoco.MjData(m)
+        bid = m.body("nut").id
+        va = m.jnt_dofadr[m.body_jntadr[bid]]
+        tau_max = TAU * (t["d"] / 8.0) ** 3
+        kd = m.body_inertia[bid][2] / (dt * 5)
+
+        def control(m, d, tt, bid=bid, va=va, tau_max=tau_max, kd=kd):
+            tau = float(np.clip(-kd * (d.qvel[va + 5] + 2 * np.pi * rate), -tau_max, tau_max))
+            d.xfrc_applied[bid] = [0, 0, 0, 0, 0, tau]
+
+        fr = _frames_from_mujoco(m, dd, dt, turns / rate, {f"/World/nut_{name}": bid}, int(1 / (FPS * dt)), control)
+        for f in fr:
+            for p in f:
+                pos, q = f[p]
+                f[p] = ((np.asarray(pos) + (x, 0, k)).tolist(), q)
+        if frames is None:
+            frames = fr
+        else:
+            for a, b in zip(frames, fr, strict=False):
+                a.update(b)
+    out_json.write_text(json.dumps(frames))
+    return path
+
+
 # ------------------------------------------------------------------ Blender + GIF
 def blender(mode, scene, frames_dir, frames, size, cam, lens, samples, poses=None):
     args = [
@@ -243,7 +318,7 @@ def make_gif(frames_dir: Path, out: Path, hold=24, width=None):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="docs/images")
-    ap.add_argument("--only", default="drop,screwing,insertion")
+    ap.add_argument("--only", default="drop,screwing,insertion,jam")
     ap.add_argument("--samples", type=int, default=24)
     ap.add_argument("--size", default="720,405")
     ap.add_argument("--keep", help="keep the work folder here")
@@ -255,7 +330,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(args.keep) if args.keep else Path(tmp)
         tmp.mkdir(parents=True, exist_ok=True)
-        generate(catalog_parts(), str(tmp), "catalog", scene=False)
+        generate(catalog_parts(), str(tmp), "catalog", scene=False, vary=())
         assets = tmp / "catalog" / "assets"
         work = tmp / "catalog"
         if "drop" in only:
@@ -285,6 +360,11 @@ def main(argv=None):
                 work / "insertion.json",
             )
             make_gif(fd, out / "insertion.gif")
+        if "jam" in only:
+            sc = jam_animation(work, work / "jam.usda", work / "jam.json")
+            fd = tmp / "frames_jam"
+            blender("poses", sc, fd, 0, size, (0.0, -0.13, 0.075, 0.0, 0.0, 0.026), 55, args.samples, work / "jam.json")
+            make_gif(fd, out / "jam.gif")
 
 
 if __name__ == "__main__":

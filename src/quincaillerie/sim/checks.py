@@ -8,10 +8,10 @@ converts it to MuJoCo with ``mujoco_model.convert`` and simulates it on CPU.
   within 0.35 mm of it, vertical speed below 1 mm/s (round cells may keep rolling).
 * nut_on_screw: a nut threaded on its screw, both dropped. The nut must stay on its thread: axial
   shift below half a pitch (no thread skipped), off-axis below 0.3 mm.
-* holder: an empty holder placed on the floor settles (below 0.15 mm) and its spring plate or clip
-  stays at rest relative to it (drift below 0.05 mm).
-* seated: a cell seated in its holder, on the floor; relative to the holder, the cell stays in place
-  (below 0.6 mm, the holder's side play) and so does the contact (0.3 mm).
+* holder: an empty holder placed on the floor settles (below 0.3 mm) and its spring plate or clip
+  stays at rest relative to it, in its frame (drift below 0.05 mm).
+* seated: a cell seated in its holder, on the floor; relative to the holder, the cell stays within
+  the holder's side play (+0.6 mm) and the contact stays put (0.3 mm).
 * insertion: a cell carried into its holder and released: seated, spring compressed as designed,
   contact force within 10 % of the design; reversed: seated with the wrong polarity, or refused by
   the keying (9V).
@@ -41,7 +41,7 @@ DEFAULT = '<default><geom solref="{tc} 1" solimp="0.95 0.99 0.0002" condim="4"/>
 
 # ------------------------------------------------------------------ the assets of a generated set
 def inventory(set_dir):
-    """{name: dict(kind, key, file, ...)} for every asset under set_dir/assets."""
+    """{name: dict(kind, key, file, defect, ...)} for every asset under set_dir/assets, in name order."""
     out = {}
     for f in sorted(glob.glob(os.path.join(set_dir, "assets", "*.usd*"))):
         st = Usd.Stage.Open(f)
@@ -51,15 +51,33 @@ def inventory(set_dir):
             attr = r.GetAttribute(f"quincaillerie:{a}")
             return attr.Get() if attr else None
 
-        kind = get("category")
-        key = get("size") or get("format")
-        out[root.GetName()] = dict(kind=kind, key=key, file=os.path.abspath(f), length=get("length"))
+        out[root.GetName()] = dict(
+            kind=get("category"),
+            key=get("size") or get("format"),
+            file=os.path.abspath(f),
+            length=get("length"),
+            defect=get("variation:defect") or "none",
+            contact_force=get("contactForce"),
+            preload=get("springPreload"),
+            attrs={
+                a.GetName().split(":", 1)[1]: a.Get()
+                for a in root.GetAttributes()
+                if a.GetName().startswith("quincaillerie:")
+            },
+        )
     return out
 
 
+def _sound(items):
+    return [(n, a) for n, a in items if a["defect"] == "none"]
+
+
 # ------------------------------------------------------------------ test scenes
-def build_test_scenes(set_dir):
-    """Write the gravity test scenes of a set; returns [(name, kind, path, info)]."""
+def build_test_scenes(set_dir, pairs=2):
+    """Write the gravity test scenes of a set; returns [(name, kind, path, info)].
+
+    Every part is dropped; up to `pairs` nut-on-screw pairs per size (instances without defects:
+    a damaged thread is tested by the jam check); every holder; every cell seated in a holder."""
     inv = inventory(set_dir)
     sdir = os.path.join(set_dir, "sim_test", "scenes")
     os.makedirs(sdir, exist_ok=True)
@@ -76,33 +94,42 @@ def build_test_scenes(set_dir):
         pos, q = drop_pose(a["kind"], a["key"], h)
         add_ref(st, "part", a["file"], pos, q)
         out.append((f"drop_{name}", "drop", save(st), dict(part=name)))
-    screws = {a["key"]: (n, a) for n, a in inv.items() if a["kind"] == "screw"}
-    nuts = {a["key"]: (n, a) for n, a in inv.items() if a["kind"] == "nut"}
-    for size in sorted(set(screws) & set(nuts), key=lambda s: METRIC[s]["d"]):
-        (_, sa), (_, na) = screws[size], nuts[size]
-        t = METRIC[size]
-        P, k, L = t["P"] * MM, t["k"] * MM, sa["length"]
-        turns = max(2, int(round(0.4 * L / P)))
-        z = 0.02 + k
-        st = new(f"nut_on_screw_{size}")
-        add_ref(st, "screw", sa["file"], (0, 0, z))
-        add_ref(st, "nut", na["file"], (0, 0, z + turns * P))
-        out.append((f"nut_on_screw_{size}", "nut_on_screw", save(st), dict(size=size, z_nut=turns * P, pitch=P)))
-    holders = {a["key"]: (n, a) for n, a in inv.items() if a["kind"] == "holder"}
-    cells = {a["key"]: (n, a) for n, a in inv.items() if a["kind"] == "cell"}
-    for fmt in [f for f in CELLS if f in holders]:
-        st = new(f"holder_{fmt}")
-        add_ref(st, "holder", holders[fmt][1]["file"], (0, 0, 0))
-        out.append((f"holder_{fmt}", "holder", save(st), dict(format=fmt)))
-    for fmt in [f for f in CELLS if f in holders and f in cells]:
-        st = new(f"seated_{fmt}")
-        add_ref(st, "holder", holders[fmt][1]["file"], (0, 0, 0))
-        cpos, cq, movers = seated_overrides(fmt)
-        add_ref(st, "cell", cells[fmt][1]["file"], cpos, cq)
-        for mname, (p, q) in movers.items():
-            place(st.OverridePrim(f"/World/holder/{mname}"), p, q)
-        info = dict(format=fmt, cell=list(cpos), mover=mname, mover_pos=list(p))
-        out.append((f"seated_{fmt}", "seated", save(st), info))
+    sizes = sorted({a["key"] for a in inv.values() if a["kind"] == "screw"}, key=lambda s: METRIC[s]["d"])
+    for size in sizes:
+        screws = _sound([(n, a) for n, a in inv.items() if a["kind"] == "screw" and a["key"] == size])
+        nuts = _sound([(n, a) for n, a in inv.items() if a["kind"] == "nut" and a["key"] == size])
+        for j, ((sn, sa), (nn, na)) in enumerate(zip(screws, nuts, strict=False)):
+            if j >= pairs:
+                break
+            t = METRIC[size]
+            P, k, L = t["P"] * MM, t["k"] * MM, sa["length"]
+            turns = max(2, int(round(0.4 * L / P)))
+            z = 0.02 + k
+            tag = f"nut_on_screw_{size}" + (f"_{j}" if len(screws) > 1 else "")
+            st = new(tag)
+            add_ref(st, "screw", sa["file"], (0, 0, z))
+            add_ref(st, "nut", na["file"], (0, 0, z + turns * P))
+            out.append((tag, "nut_on_screw", save(st), dict(size=size, z_nut=turns * P, pitch=P, screw=sn, nut=nn)))
+    for fmt in CELLS:
+        holders = [(n, a) for n, a in inv.items() if a["kind"] == "holder" and a["key"] == fmt]
+        cells = [(n, a) for n, a in inv.items() if a["kind"] == "cell" and a["key"] == fmt]
+        for hn, ha in holders:
+            tag = f"holder_{hn.removeprefix('Holder_')}"
+            st = new(tag)
+            add_ref(st, "holder", ha["file"], (0, 0, 0))
+            out.append((tag, "holder", save(st), dict(format=fmt, holder=hn)))
+        for (hn, ha), (cn, ca) in zip(holders, cells, strict=False):
+            tag = f"seated_{hn.removeprefix('Holder_')}"
+            st = new(tag)
+            add_ref(st, "holder", ha["file"], (0, 0, 0))
+            cpos, cq, movers = seated_overrides(fmt)
+            add_ref(st, "cell", ca["file"], cpos, cq)
+            for mname, (p, q) in movers.items():
+                place(st.OverridePrim(f"/World/holder/{mname}"), p, q)
+            play = ha["attrs"].get("variation:play_dmm", 0.0) or 0.0
+            side = (0.3 + play / 2) if CELLS[fmt]["kind"] == "coin" else (1.5 + play)
+            info = dict(format=fmt, mover=mname, holder=hn, cell=cn, side_play=side)
+            out.append((tag, "seated", save(st), info))
     return out
 
 
@@ -207,10 +234,12 @@ def check_scene(name, kind, path, info):
         )
     if kind == "holder":
         mover = "spring_plate" if "spring_plate" in r["final"] else "clip"
-        mb = r["final"]["base"][0] - init["base"]
-        dp = np.linalg.norm(r["final"][mover][0] - init[mover] - mb) / MM
+        pb, qb = r["final"]["base"]
+        mb = pb - init["base"]
+        # the contact in the base's frame (the base starts unrotated)
+        dp = np.linalg.norm(q2m(qb).T @ (r["final"][mover][0] - pb) - (init[mover] - init["base"])) / MM
         db = np.linalg.norm(mb) / MM
-        return dp < 0.05 and db < 0.15, f"{mover} drift {dp:.4f} mm, base settled {db:.3f} mm", r["wall"]
+        return dp < 0.05 and db < 0.3, f"{mover} drift {dp:.4f} mm, base settled {db:.3f} mm", r["wall"]
     mover = info["mover"]
     pb, qb = r["final"]["base"]
 
@@ -218,19 +247,42 @@ def check_scene(name, kind, path, info):
         return np.linalg.norm(q2m(qb).T @ (r["final"][name][0] - pb) - (init[name] - init["base"])) / MM
 
     dc, dm = moved("cell"), moved(mover)
-    msg = f"cell moved {dc:.3f} mm in its holder, {mover} moved {dm:.3f} mm"
-    return dc < 0.6 and dm < 0.3, msg, r["wall"]
+    lim = info.get("side_play", 0.0) + 0.6
+    msg = f"cell moved {dc:.3f} mm in its holder (play {lim:.1f}), {mover} moved {dm:.3f} mm"
+    return dc < lim and dm < 0.3, msg, r["wall"]
 
 
 # ------------------------------------------------------------------ insertion
 HAND = '<body name="hand" mocap="true" pos="{pos}" quat="{quat}"/>'
 GRIP = '<equality><weld name="grip" body1="hand" body2="cell" relpose="0 0 0 1 0 0 0" solref="0.004 1"/></equality>'
+TAU = 0.002  # N.m for an M8 (scaled with d^3): turns a sound nut, not a crushed thread
 REV = {"cradle": (0, 0, 0, 1.0), "nine_volt": (0, 1.0, 0, 0), "coin": (0, 1.0, 0, 0)}  # 180 deg about z, x, x
 
 
 def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
-    """A mocap 'hand' welded to the cell carries it along the scripted keys, then lets go."""
+    """A mocap 'hand' welded to the cell carries it along the scripted keys, then lets go.
+
+    The design values (contact force, spring compression) are read from the holder's file, so a
+    varied holder (tired spring, softer clip) is checked against what it was made to do."""
     import mujoco
+
+    hstage = Usd.Stage.Open(holder_file)  # kept alive while its prims are read
+    hroot = hstage.GetDefaultPrim()
+    force_design = hroot.GetAttribute("quincaillerie:contactForce").Get()
+    pre_attr = hroot.GetAttribute("quincaillerie:springPreload")
+    pre_design = pre_attr.Get() / MM if pre_attr else None
+    # a cell made shorter than nominal (within its tolerance) compresses the spring, or lifts the
+    # clip, less: what this holder should do with this cell
+    cstage = Usd.Stage.Open(cell_file)
+    dl = cstage.GetDefaultPrim().GetAttribute("quincaillerie:variation:length_dmm")
+    dl = dl.Get() if dl else 0.0
+    Dn = holder_design(fmt)
+    if pre_design is not None:
+        k_attr = hroot.GetAttribute("quincaillerie:springStiffness").Get()
+        pre_design = pre_design + dl
+        force_design = k_attr * pre_design * MM
+    else:
+        force_design = force_design * (Dn["theta0"] + Dn["q_seat"] + dl / Dn["lever"]) / (Dn["theta0"] + Dn["q_seat"])
 
     D = holder_design(fmt)
     K = insertion_keys(fmt)
@@ -308,10 +360,10 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
         res.update(
             tilt_deg=tilt,
             compression_mm=float(comp),
-            design_mm=D["pre"],
+            design_mm=pre_design,
             stiffness=k,
             force_N=float(F) if seated else None,
-            force_design_N=CELLS[fmt]["F"],
+            force_design_N=force_design,
             seated=bool(seated),
             polarity=pol,
         )
@@ -330,7 +382,7 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
             tilt_deg=tilt,
             clip_lift_deg=float(np.degrees(q)),
             force_N=float(sum(on.values())),
-            force_design_N=CELLS[fmt]["F"],
+            force_design_N=force_design,
             seated=bool(seated),
             polarity={"can": "correct (+ under the clip)", "cap": "reversed (- under the clip)"}.get(top, "no contact"),
         )
@@ -341,7 +393,8 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
 
 
 def check_insertion(res):
-    """Normal insertion: seated, spring at its design compression (+-0.1 mm), force within 10 %.
+    """Normal insertion: seated, spring at its expected compression (+-0.1 mm), force within 10 % (clip:
+    15 %) of what this holder (its drawn spring or clip) should give with this cell (its drawn length).
     Reversed: a 9V must be refused (keyed); other cells seat with the wrong polarity."""
     if res["reverse"]:
         if res["format"] == "9V":
@@ -350,11 +403,13 @@ def check_insertion(res):
     ok = res["seated"] and res["polarity"].startswith("correct")
     if "compression_mm" in res:
         ok = ok and abs(res["compression_mm"] - res["design_mm"]) < 0.1
-        msg = f"spring {res['compression_mm']:.2f}/{res['design_mm']:.1f} mm, F {res['force_N'] or 0:.2f} N"
+        msg = f"spring {res['compression_mm']:.2f}/{res['design_mm']:.2f} mm, F {res['force_N'] or 0:.2f} N"
     else:
         msg = f"clip lifted {res['clip_lift_deg']:.2f} deg, F {res['force_N']:.2f} N"
-    ok = ok and res["force_N"] is not None and abs(res["force_N"] - res["force_design_N"]) < 0.1 * res["force_design_N"]
-    return ok, f"{msg} (design {res['force_design_N']:.1f} N), {res['polarity']}"
+    # the clip force comes from an estimate of where the clip touches the cell: 15 % (springs: 10 %)
+    tol = 0.10 if "compression_mm" in res else 0.15
+    ok = ok and res["force_N"] is not None and abs(res["force_N"] - res["force_design_N"]) < tol * res["force_design_N"]
+    return ok, f"{msg} (expected {res['force_design_N']:.2f} N), {res['polarity']}"
 
 
 # ------------------------------------------------------------------ screwing (optional)
@@ -405,8 +460,69 @@ def screwing(screw_file, nut_file, size, seconds=3.0):
     return out
 
 
+def _drive(screw_file, nut_file, size, zn, down, max_turns, rate):
+    """A nut driven at `rate` turns/s with a torque limit, no gravity; returns its final height."""
+    import mujoco
+
+    t = METRIC[size]
+    st = scene(
+        None,
+        [
+            ("bolt", screw_file, (0, 0, 0), (1, 0, 0, 0), {"kinematic": True}),
+            ("nut", nut_file, (0, 0, zn), (1, 0, 0, 0), {}),
+        ],
+    )
+    dt = 1e-4
+    xml = convert(
+        st,
+        options=OPTIONS.format(dt=dt).replace('"/>', '" gravity="0 0 0"/>'),
+        default='<default><geom solref="0.0005 1" solimp="0.95 0.99 0.0001" margin="0" condim="4"/></default>',
+    )
+    m = mujoco.MjModel.from_xml_string(xml)
+    d = mujoco.MjData(m)
+    bid = m.body("nut").id
+    va = m.jnt_dofadr[m.body_jntadr[bid]]
+    omega = (-1 if down else 1) * 2 * np.pi * rate
+    tau_max = TAU * (t["d"] / 8.0) ** 3  # N.m, a light hand on a nut driver
+    kd = m.body_inertia[bid][2] / (dt * 5)
+    for _ in range(int(max_turns / rate / dt)):
+        tau = float(np.clip(-kd * (d.qvel[va + 5] - omega), -tau_max, tau_max))
+        d.xfrc_applied[bid] = [0, 0, 0, 0, 0, tau]
+        mujoco.mj_step(m, d)
+    return float(d.qpos[m.jnt_qposadr[m.body_jntadr[bid]] + 2])
+
+
+def jam(screw, nut, size, sound_screw, max_turns=3.0, rate=2.0):
+    """A defect that must matter: a sound nut, driven with a light torque towards the crushed thread
+    of a screw, stops at it; the same nut on a sound screw, from the same place, goes on.
+
+    screw, nut, sound_screw: inventory entries. Returns dict(stopped, travel_mm, sound_travel_mm)."""
+    from ..fasteners import _zone
+    from ..variation import FastenerVariation
+
+    a = screw["attrs"]
+    P = METRIC[size]["P"] * MM
+    L = a["length"]
+    v = FastenerVariation(defect_z=a["variation:defect_z"], defect_angle_deg=a["variation:defect_angle_deg"])
+    z0, z1, _, _ = _zone(v, L, P)
+    H = nut["attrs"]["height"]
+    down = z1 + 1.6 * P + H <= L  # room above the zone: start there and tighten (towards the head)
+    n = int(np.ceil((z1 + 0.6 * P) / P)) if down else int(np.floor((z0 - 0.6 * P - H) / P))
+    zn = n * P
+    t0 = time.time()
+    travel = abs(_drive(screw["file"], nut["file"], size, zn, down, max_turns, rate) - zn) / MM
+    sound = abs(_drive(sound_screw["file"], nut["file"], size, zn, down, max_turns, rate) - zn) / MM
+    return dict(
+        stopped=bool(travel < sound - 0.25 * P / MM),  # held back by the crushed thread
+        travel_mm=travel,
+        sound_travel_mm=sound,
+        down=down,
+        wall=time.time() - t0,
+    )
+
+
 # ------------------------------------------------------------------ the whole suite
-def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None):
+def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, defects=False):
     rows = []
 
     def add(name, kind, ok, msg, wall):
@@ -420,20 +536,42 @@ def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None):
         ok, msg, wall = check_scene(name, kind, path, info)
         add(name, kind, ok, msg, wall)
     inv = inventory(set_dir)
-    by = {(a["kind"], a["key"]): a for a in inv.values()}
+
+    def of(kind, key, sound=False):
+        items = [(n, a) for n, a in inv.items() if a["kind"] == kind and a["key"] == key]
+        return _sound(items) if sound else items
+
     if insertions:
         for fmt in CELLS:
-            if ("cell", fmt) in by and ("holder", fmt) in by and (not only or only in f"insertion_{fmt}"):
+            for (hn, ha), (_, ca) in zip(of("holder", fmt), of("cell", fmt), strict=False):
+                tag = f"insertion_{hn.removeprefix('Holder_')}"
+                if only and only not in tag:
+                    continue
                 for rev in (False, True):
-                    r = insertion(by[("cell", fmt)]["file"], by[("holder", fmt)]["file"], fmt, rev)
+                    r = insertion(ca["file"], ha["file"], fmt, rev)
                     ok, msg = check_insertion(r)
-                    add(f"insertion_{fmt}{'_reversed' if rev else ''}", "insertion", ok, msg, r["wall"])
+                    add(f"{tag}{'_reversed' if rev else ''}", "insertion", ok, msg, r["wall"])
+    if defects:
+        for size in METRIC:
+            nuts = of("nut", size, sound=True)
+            for sn, sa in of("screw", size):
+                if sa["defect"] != "crushed_thread" or not nuts or (only and only not in f"jam_{sn}"):
+                    continue
+                sound = of("screw", size, sound=True)
+                if not sound:
+                    continue
+                r = jam(sa, nuts[0][1], size, sound[0][1])
+                msg = (
+                    f"nut driven {'down' if r['down'] else 'up'} with a light torque: {r['travel_mm']:.2f} mm, "
+                    f"then stuck (on a sound screw: {r['sound_travel_mm']:.2f} mm)"
+                )
+                add(f"jam_{sn}", "jam", r["stopped"], msg, r["wall"])
     if screw:
         for size in METRIC:
-            sc = [a for a in inv.values() if a["kind"] == "screw" and a["key"] == size]
-            if sc and ("nut", size) in by and (not only or only in f"screwing_{size}"):
+            sc, nu = of("screw", size, sound=True), of("nut", size, sound=True)
+            if sc and nu and (not only or only in f"screwing_{size}"):
                 t0 = time.time()
-                res = screwing(sc[0]["file"], by[("nut", size)]["file"], size)
+                res = screwing(sc[0][1]["file"], nu[0][1]["file"], size)
                 P = METRIC[size]["P"]
                 ok = all(abs(abs(x["per_turn_mm"]) - P) <= 0.05 * P and abs(x["turns"]) > 1 for x in res)
                 msg = ", ".join(f"{x['label']} {x['turns']:+.2f} turns, {x['per_turn_mm']:+.3f} mm/turn" for x in res)

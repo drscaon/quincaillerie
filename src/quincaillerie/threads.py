@@ -59,8 +59,24 @@ def int_profile_r(u, prof, clearance):
     return np.where(a <= root / 2, R, np.where(a <= root / 2 + flank, R - (a - root / 2) / flank * depth, r))
 
 
-def threaded_bolt_mesh(prof, length, clearance, nt=72, nz_per_pitch=24, head=None):
-    """Closed triangle mesh of a fully threaded shank (z from 0 to length) + optional hex head below z=0."""
+def zone_weight(theta, z, zone):
+    """Smooth 0..1 weight of a damaged zone: zone = (z0, z1, theta0, theta1) in m and rad."""
+    if zone is None:
+        return np.zeros_like(np.asarray(z, float))
+    z0, z1, t0, t1 = zone
+    span = (t1 - t0) % (2 * np.pi) or 2 * np.pi
+    rel = (np.asarray(theta) - t0) % (2 * np.pi)
+    wa = np.clip(np.minimum(rel, span - rel) / max(0.15 * span, 1e-9), 0, 1) * (rel <= span)
+    edge = max(0.2 * (z1 - z0), 1e-9)
+    wz = np.clip(np.minimum(np.asarray(z) - z0, z1 - np.asarray(z)) / edge, 0, 1)
+    return wa * wz
+
+
+def threaded_bolt_mesh(prof, length, clearance, nt=72, nz_per_pitch=24, head=None, crush=None, burr=None):
+    """Closed triangle mesh of a fully threaded shank (z from 0 to length) + optional hex head below z=0.
+
+    crush = (zone, widen, drop): in the zone, crests pushed sideways (the ridge widened axially by
+    widen, m) and flattened (by drop, m). burr = (theta0, theta1, height): a lip at the tip."""
     P = prof["P"]
     nz = int(np.ceil(length / P * nz_per_pitch)) + 1
     th = np.linspace(0, 2 * np.pi, nt, endpoint=False)
@@ -68,9 +84,21 @@ def threaded_bolt_mesh(prof, length, clearance, nt=72, nz_per_pitch=24, head=Non
     T, Z = np.meshgrid(th, zs, indexing="ij")
     U = Z / P - T / (2 * np.pi)
     R = ext_profile_r(U, prof, clearance)
+    if crush is not None:
+        zone, widen, drop = crush
+        Rd = np.maximum(
+            ext_profile_r(U - widen / (2 * P), prof, clearance), ext_profile_r(U + widen / (2 * P), prof, clearance)
+        )
+        Rd = np.minimum(Rd, prof["d"] / 2 - clearance - drop)
+        W = zone_weight(T, Z, zone)
+        R = R * (1 - W) + np.maximum(Rd, R * 0 + prof["d3"] / 2 - clearance) * W
     # chamfer the tip to the minor diameter over one pitch
     tip = np.clip((length - Z) / P, 0, 1)
     R = np.minimum(R, prof["d3"] / 2 - clearance + (prof["d"] / 2 - prof["d3"] / 2) * tip)
+    if burr is not None:
+        t0, t1, b = burr
+        W = zone_weight(T, Z, (length - P, length + 1e-9, t0, t1))
+        R = np.maximum(R, (prof["d"] / 2 - clearance + b) * W)
     V = np.stack([R * np.cos(T), R * np.sin(T), Z], -1).reshape(-1, 3)
     F = []
     for i in range(nt):
@@ -87,8 +115,9 @@ def threaded_bolt_mesh(prof, length, clearance, nt=72, nz_per_pitch=24, head=Non
     return V, np.array(F)
 
 
-def nut_mesh(prof, s_af, height, clearance, nt=72, nz_per_pitch=24):
-    """Closed mesh of a hex nut with an internal thread; z from 0 to height."""
+def nut_mesh(prof, s_af, height, clearance, nt=72, nz_per_pitch=24, crush=None):
+    """Closed mesh of a hex nut with an internal thread; z from 0 to height. crush as for the bolt
+    (the nut's ridges widened in the zone)."""
     P = prof["P"]
     nz = int(np.ceil(height / P * nz_per_pitch)) + 1
     th = np.linspace(0, 2 * np.pi, nt, endpoint=False)
@@ -96,6 +125,14 @@ def nut_mesh(prof, s_af, height, clearance, nt=72, nz_per_pitch=24):
     T, Z = np.meshgrid(th, zs, indexing="ij")
     U = Z / P - T / (2 * np.pi)
     Ri = int_profile_r(U, prof, clearance)
+    if crush is not None:
+        zone, widen, drop = crush
+        Rd = np.minimum(
+            int_profile_r(U - widen / (2 * P), prof, clearance), int_profile_r(U + widen / (2 * P), prof, clearance)
+        )
+        Rd = np.maximum(Rd, prof["d1"] / 2 + clearance + drop)
+        W = zone_weight(T, Z, zone)
+        Ri = Ri * (1 - W) + Rd * W
     inner = np.stack([Ri * np.cos(T), Ri * np.sin(T), Z], -1).reshape(-1, 3)
     # hex outer radius as a function of angle (across flats s_af)
     a = (th + np.pi / 6) % (np.pi / 3) - np.pi / 6
@@ -134,7 +171,7 @@ def mesh_mass_props(V, F, rho):
     return vol, vol * rho, com, I * rho
 
 
-def segments(prof, z0, z1, clearance, kind, seg_deg=10.0, s_af=None):
+def segments(prof, z0, z1, clearance, kind, seg_deg=10.0, s_af=None, crush=None, burr=None):
     """Convex pieces approximating a threaded part, for engines that need convex collision.
 
     kind='bolt': core cylinder handled separately; returns helical ridge pieces.
@@ -166,13 +203,23 @@ def segments(prof, z0, z1, clearance, kind, seg_deg=10.0, s_af=None):
     off = 0.0 if kind == "bolt" else P / 2
     n_start = int(np.floor((z0 - P) / P)) - 1
     n_end = int(np.ceil(z1 / P)) + 1
+    sec_crushed = None
+    if crush is not None:
+        _, widen, drop = crush
+        sign = -1 if kind == "bolt" else 1  # the crest moves towards the root (flattened)
+        crest_r = sec[2][0]
+        sec_crushed = [
+            (rr if abs(rr - crest_r) > 1e-12 else rr + sign * drop, dz + np.sign(dz) * widen / 2) for rr, dz in sec
+        ]
     for n in range(n_start, n_end):
         for s in range(nseg):
             ta, tb = s * dth, (s + 1) * dth
+            zm = P * (ta + tb) / (4 * np.pi) + n * P + off
+            hit = crush is not None and float(zone_weight((ta + tb) / 2, zm, crush[0])) > 0.3
             pts = []
             for t in np.linspace(ta, tb, 3):
                 zc = P * t / (2 * np.pi) + n * P + off
-                for rr, dz in sec:
+                for rr, dz in sec_crushed if hit else sec:
                     pts.append([rr * np.cos(t), rr * np.sin(t), zc + dz])
             pts = np.array(pts)
             # keep only pieces entirely inside the part (no clipping: clipping a slanted
@@ -192,5 +239,17 @@ def segments(prof, z0, z1, clearance, kind, seg_deg=10.0, s_af=None):
                 for rr in (Rout_in, ro):
                     for z in (z0, z1):
                         pts.append([rr * np.cos(t), rr * np.sin(t), z])
+            pieces.append(np.array(pts))
+    if kind == "bolt" and burr is not None:  # a lip at the tip, past the major diameter
+        t0, t1, b = burr
+        span = (t1 - t0) % (2 * np.pi)
+        for k in range(max(1, int(np.ceil(span / dth)))):
+            ta, tb = t0 + k * dth, min(t0 + (k + 1) * dth, t0 + span)
+            pts = [
+                [rr * np.cos(t), rr * np.sin(t), z]
+                for t in (ta, tb)
+                for rr in (prof["d3"] / 2 - clearance - 0.0002, prof["d"] / 2 - clearance + b)
+                for z in (z1 - 0.6 * P, z1)
+            ]
             pieces.append(np.array(pts))
     return pieces

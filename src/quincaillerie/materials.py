@@ -118,6 +118,13 @@ MATERIALS = {
         color=(0.03, 0.03, 0.035), metallic=0.0, roughness=0.35, coat=(0.4, 0.12), desc="9V case, black plastic"
     ),
 }
+MATERIALS["corrosion"] = dict(
+    color=(0.62, 0.66, 0.55),
+    metallic=0.0,
+    roughness=0.95,
+    rough_tex=("noise_rough.png", 0.1, 0.88),
+    desc="potassium carbonate / zinc oxide crust of a leaking cell, white-green",
+)
 CELL_FORMATS = ["AAA", "AA", "C", "D", "CR123A", "18650", "21700"]
 for f in CELL_FORMATS:
     MATERIALS[f"wrapper_{f}"] = dict(

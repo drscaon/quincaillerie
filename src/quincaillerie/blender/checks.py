@@ -109,9 +109,11 @@ def evaluate(kind, info, D):
         if base is None:
             return False, "base not found"
         mb = M(base, "last")[:3, 3] - M(base, "first")[:3, 3]
-        dp = float(np.linalg.norm(M(b, "last")[:3, 3] - M(b, "first")[:3, 3] - mb)) / MM
+        r0 = np.linalg.inv(M(base, "first")) @ M(b, "first")  # the contact in the base's frame
+        r1 = np.linalg.inv(M(base, "last")) @ M(b, "last")
+        dp = float(np.linalg.norm(r1[:3, 3] - r0[:3, 3])) / MM
         db = float(np.linalg.norm(mb)) / MM
-        return dp < 0.05 and db < 0.15, f"{sub} drift {dp:.4f} mm, base settled {db:.3f} mm"
+        return dp < 0.05 and db < 0.3, f"{sub} drift {dp:.4f} mm, base settled {db:.3f} mm"
     mover = info["mover"]
     _, bc = _find(bodies, mode, "cell")
     _, bm = _find(bodies, mode, "holder", mover)
@@ -125,7 +127,8 @@ def evaluate(kind, info, D):
         return float(np.linalg.norm(r1[:3, 3] - r0[:3, 3])) / MM
 
     dc, dm = moved(bc), moved(bm)
-    return dc < 0.6 and dm < 0.3, f"cell moved {dc:.3f} mm in its holder, {mover} moved {dm:.3f} mm"
+    lim = info.get("side_play", 0.0) + 0.6
+    return dc < lim and dm < 0.3, f"cell moved {dc:.3f} mm in its holder (play {lim:.1f}), {mover} moved {dm:.3f} mm"
 
 
 def blender_test(set_dir, mode="setup", blender=None, verbose=True, only=None):

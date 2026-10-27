@@ -71,10 +71,18 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install
         run: pip install -e ".[sim]"
-      - name: Generate the catalogue
-        run: quincaillerie generate all --out ci-output
+      - name: Generate the catalogue (nominal parts)
+        run: quincaillerie generate all --nominal --out ci-output
       - name: Drop, nut on screw, holders, seated cells, insertions
         run: quincaillerie sim-test ci-output/catalog
+      - name: Varied batches (tolerances, defects, wear, physics), crushed threads must jam a nut
+        run: |
+          quincaillerie generate screw M8 --with nut --count 6 --defect-rate 0.5 --detail low --out ci-varied
+          quincaillerie sim-test ci-varied/ISO4017_M8x30 --defects
+          for f in AA 9V CR2032; do
+            quincaillerie generate cell $f --with holder --count 5 --defect-rate 0.4 --out ci-varied
+            quincaillerie sim-test ci-varied/Cell_$f
+          done
       - name: Screwing (M8)
         run: |
           quincaillerie generate screw M8 --with nut --no-scene --out ci-output
@@ -83,7 +91,9 @@ jobs:
         if: always()
         with:
           name: sim-test-mujoco
-          path: ci-output/*/sim_test/*.json
+          path: |
+            ci-output/*/sim_test/*.json
+            ci-varied/*/sim_test/*.json
           retention-days: 14
 
   blender:
@@ -100,17 +110,25 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxrender1 libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libgl1 libegl1
       - name: Install
         run: pip install -e . bpy
-      - name: Generate the catalogue
-        run: quincaillerie generate all --out ci-output
-      - name: Gravity checks through the import script
+      - name: Generate the catalogue (nominal parts)
+        run: quincaillerie generate all --nominal --out ci-output
+      - name: Gravity checks through the add-on
         run: quincaillerie blender-test ci-output/catalog
+      - name: The same on varied batches
+        run: |
+          quincaillerie generate screw M8 --with nut --count 6 --defect-rate 0.5 --detail low --out ci-varied
+          quincaillerie blender-test ci-varied/ISO4017_M8x30
+          quincaillerie generate cell AA --with holder --count 5 --defect-rate 0.4 --out ci-varied
+          quincaillerie blender-test ci-varied/Cell_AA
       - name: The same, set up by hand (for comparison, not a gate)
         run: quincaillerie blender-test ci-output/catalog --mode naive
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: sim-test-blender
-          path: ci-output/catalog/sim_test/blender_*.json
+          path: |
+            ci-output/catalog/sim_test/blender_*.json
+            ci-varied/*/sim_test/blender_*.json
           retention-days: 14
 
   build:

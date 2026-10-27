@@ -70,8 +70,13 @@ def spring_design(F, pre, Dm, n=4):
     return k, d / MM
 
 
-def holder_design(name):
-    """Every number of a holder's design (mm unless stated), shared by the asset and the tests."""
+def holder_design(name, hv=None):
+    """Every number of a holder's design (mm unless stated), shared by the asset and the tests.
+
+    hv: a HolderVariation (stiffness, remaining preload, clip torque, side play) or None (nominal)."""
+    from .variation import HolderVariation
+
+    hv = hv or HolderVariation()
     c = CELLS[name]
     kind = c["kind"]
     out = dict(name=name, kind=kind)
@@ -79,13 +84,14 @@ def holder_design(name):
         L = c["L"]
         half_h = c["d"] / 2 if kind == "cradle" else c["T"] / 2
         x_pos, x_seat = L / 2, -L / 2
-        pre = c["pre"]
-        x_free = x_seat + pre
         Dm = max(5.0, 0.45 * (c["d"] if kind == "cradle" else c["T"]))
-        k, dw = spring_design(c["F"], pre, Dm)
+        k, dw = spring_design(c["F"], c["pre"], Dm)  # the design; then the part as made and used
+        k *= hv.spring_factor
+        pre = c["pre"] * hv.preload_factor  # a tired spring is shorter: less compression when seated
+        x_free = x_seat + pre
         Ls = 0.6 * Dm + 3.0  # seated spring length
         x_back = x_seat - 1.0 - Ls
-        width = (half_h if kind == "cradle" else c["W"] / 2) + 1.5
+        width = (half_h if kind == "cradle" else c["W"] / 2) + 1.5 + hv.play_dmm
         out.update(
             L=L,
             half_h=half_h,
@@ -103,6 +109,7 @@ def holder_design(name):
             x_lo=x_back - 2,
             x_hi=x_pos + (6 if kind == "nine_volt" else 4),
             axis="x",
+            F=k * pre * MM,
         )
     else:
         r, h = c["d"] / 2, c["h"]
@@ -117,7 +124,7 @@ def holder_design(name):
             r=r,
             h=h,
             cap_h=0.4,
-            Rw=r + 0.3,
+            Rw=r + 0.3 + hv.play_dmm / 2,
             xp=xp,
             zp=zp,
             t=t,
@@ -129,7 +136,8 @@ def holder_design(name):
             theta0=theta0,
             q_seat=q_seat,
             lever=lever,
-            kth=c["F"] * lever * MM / (theta0 + q_seat),
+            kth=c["F"] * lever * MM / (theta0 + q_seat) * hv.clip_factor,
+            F=c["F"] * hv.clip_factor,
             axis="z",
         )
     return out
@@ -175,14 +183,54 @@ def key_pose(name, p, theta):
 
 
 # ----------------------------------------------------------------------------------- cells
-def write_cell(path, name):
-    c = CELLS[name]
+def _dent(V, axis_x, x0, ang0, depth, r):
+    """Push a cylindrical surface inward around (x0 along the axis, angle ang0): a dent of `depth` (m)."""
+    V = np.array(V, float)
+    if axis_x:
+        x, a = V[:, 0], np.arctan2(V[:, 2], V[:, 1])
+    else:
+        x, a = V[:, 2], np.arctan2(V[:, 1], V[:, 0])
+    rad = np.hypot(*(V[:, [1, 2]] if axis_x else V[:, [0, 1]]).T)
+    da = (a - ang0 + np.pi) % (2 * np.pi) - np.pi
+    w = np.exp(-((da * r / (0.35 * r)) ** 2) - ((x - x0) / (0.35 * r)) ** 2) * (rad > 0.6 * r)
+    k = 1 - depth * w / np.maximum(rad, 1e-9)
+    if axis_x:
+        V[:, 1] *= k
+        V[:, 2] *= k
+    else:
+        V[:, 0] *= k
+        V[:, 1] *= k
+    return V
+
+
+def _crust(center, radius, seed, flatten_axis=0):
+    """An irregular blob of corrosion product (white-green crystals) on a terminal."""
+    rng = np.random.default_rng(seed)
+    V, F = revolve_profile(np.array([(np.sin(t) * radius, -np.cos(t) * radius) for t in np.linspace(0, np.pi, 9)]), 18)
+    V = V * (1 + 0.35 * rng.uniform(-1, 1, (len(V), 1)))
+    V[:, 2] *= 0.45  # flattened along its local z, then turned so that it lies on the terminal face
+    if flatten_axis == 0:
+        V = V[:, [2, 0, 1]]
+    return V + np.asarray(center), F
+
+
+def write_cell(path, name, cv=None, root_name=None):
+    from .variation import CellVariation
+
+    cv = cv or CellVariation()
+    c = dict(CELLS[name])
     kind = c["kind"]
-    root_name = f"Cell_{name}"
+    if kind == "cradle":
+        c["d"], c["L"] = c["d"] + cv.diameter_dmm, c["L"] + cv.length_dmm
+    elif kind == "nine_volt":
+        c["W"], c["T"], c["L"] = c["W"] + cv.diameter_dmm, c["T"] + cv.diameter_dmm, c["L"] + cv.length_dmm
+    else:
+        c["d"], c["h"] = c["d"] + cv.diameter_dmm, c["h"] + cv.length_dmm
+    root_name = root_name or f"Cell_{name}"
     stage, root = new_stage(path, root_name)
     R = f"/{root_name}"
-    pm = physics_material(stage, R, "cell", FRICTION)
-    mass = c["mass"] * 1e-3
+    pm = physics_material(stage, R, "cell", cv.friction)
+    mass = c["mass"] * 1e-3 * cv.mass_factor
     vb = VisualBuilder()
     if kind == "cradle":
         L, r, nr, nh = c["L"], c["d"] / 2, c["nub_d"] / 2, c["nub_h"]
@@ -198,9 +246,15 @@ def write_cell(path, name):
             ("nickel_can", [(nr + 0.6, h1), (nr, h1), (nr, h1 + nh - 0.2), (nr - 0.3, h1 + nh), (0, h1 + nh)], None),
         ]
         for mat, prof, along in parts:
-            V, F = revolve_profile(np.asarray(prof) * MM, 96, axis="x")
+            V, F = revolve_profile(np.asarray(prof) * MM, 96 if cv.defect != "dent" else 160, axis="x")
             uv = uv_cylindrical(V, F, "x", along=along) if along else uv_cylindrical(V, F, "x", vscale=100.0)
+            if cv.defect == "dent":  # visual: a few tenths of a millimetre do not change how it rolls
+                x0 = (cv.defect_z - 0.5) * (L - 6) * MM
+                V = _dent(V, True, x0, np.radians(cv.defect_angle_deg), cv.defect_size * MM, r * MM)
             vb.add(V, F, mat, uv, 40)
+        if cv.defect == "corroded_terminal":
+            V, F = _crust(m(-L / 2 - 0.2, 0.25 * r, 0.1 * r), 0.3 * r * MM, cv.seed)
+            vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
         collider_cylinder(stage, f"{R}/Collision/can", m(-nh / 2, 0, 0), r * MM, (L - nh) / 2 * MM, "X", pmat=pm)
         collider_cylinder(stage, f"{R}/Collision/nub", m(L / 2 - nh / 2, 0, 0), nr * MM, nh / 2 * MM, "X", pmat=pm)
         rr, LL = r * MM, L * MM
@@ -221,6 +275,9 @@ def write_cell(path, name):
         V = V + np.array(m(-L * 0.1, 0, 0))
         P = V[F].reshape(-1, 3)
         uvl = np.c_[(P[:, 0] - V[:, 0].min()) / np.ptp(V[:, 0]), (P[:, 2] - V[:, 2].min()) / np.ptp(V[:, 2])]
+        ny = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])[:, 1]
+        back = np.repeat(ny < 0, 3)  # the label reads the right way on both faces of the block
+        uvl[back, 0] = 1 - uvl[back, 0]
         vb.add(V, F, "label_9V", uvl, 30)
         collider_cube(stage, f"{R}/Collision/can", (0, 0, 0), m(L / 2, W / 2, T / 2), pmat=pm)
         for nm, yy, rr in (("plus_snap", 6.35, 3.0), ("minus_snap", -6.35, 4.0)):
@@ -228,6 +285,9 @@ def write_cell(path, name):
             V = V + np.array(m(L / 2, yy, 0))
             vb.add(V, F, "nickel_bright", uv_box(V, F, 200.0), 40)
             collider_cylinder(stage, f"{R}/Collision/{nm}", m(L / 2 + 1.5, yy, 0), rr * MM, 1.5 * MM, "X", pmat=pm)
+        if cv.defect == "corroded_terminal":
+            V, F = _crust(m(L / 2 + 1.0, -6.35 + 3.0, 1.5), 2.2 * MM, cv.seed)
+            vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
         Lm, Wm, Tm = L * MM, W * MM, T * MM
         rigid_body(
             root,
@@ -260,6 +320,10 @@ def write_cell(path, name):
         vb.add(V, F, f"coin_top_{name}", uv_planar(V, F, (r - 0.2) * MM), 40)
         V, F = revolve_profile(np.asarray([(0, -h / 2), (cr, -h / 2)]) * MM, 128)
         vb.add(V, F, "stainless_a2", uv_planar(V, F, cr * MM), 40)
+        if cv.defect == "corroded_terminal":  # crystals at the seal, between the two faces
+            a = np.radians(cv.defect_angle_deg)
+            V, F = _crust(m(r * np.cos(a), r * np.sin(a), -h / 2 + cap_h + 0.3), 0.18 * r * MM, cv.seed, 2)
+            vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
         collider_cylinder(stage, f"{R}/Collision/can", m(0, 0, cap_h / 2), r * MM, (h - cap_h) / 2 * MM, "Z", pmat=pm)
         collider_cylinder(stage, f"{R}/Collision/cap", m(0, 0, -(h - cap_h) / 2), cr * MM, cap_h / 2 * MM, "Z", pmat=pm)
         rr, hh = r * MM, h * MM
@@ -272,7 +336,32 @@ def write_cell(path, name):
         mate_frame(stage, f"{R}/MateFrame_plus", m(0, 0, h / 2), (1, 0, 0, 0), dict(role="terminal", polarity="+"))
         mate_frame(stage, f"{R}/MateFrame_minus", m(0, 0, -h / 2), (0, 1, 0, 0), dict(role="terminal", polarity="-"))
         dims = dict(diameter=c["d"] * MM, height=h * MM)
-    vb.write(stage, f"{R}/Visual/{root_name}_mesh", R)
+    _, subsets = vb.write(stage, f"{R}/Visual/{root_name}_mesh", R)
+    if cv.label_wear > 0.02 or cv.dirt > 0.02:  # the printed face gets the instance's scuffs and dirt
+        import os
+
+        from pxr import UsdShade
+
+        from .wear import instance_material
+
+        face = {"cradle": f"wrapper_{name}", "nine_volt": "label_9V", "coin": f"coin_top_{name}"}[kind]
+        set_dir = os.path.dirname(os.path.dirname(os.path.abspath(path)))
+        mpath = instance_material(
+            stage,
+            R,
+            f"{root_name}_worn",
+            face,
+            dict(label_wear=cv.label_wear, dirt=cv.dirt, scratches=0.3 * cv.label_wear),
+            cv.seed,
+            os.path.join(set_dir, "materials", "instances"),
+            "../materials/instances",
+            os.path.join(set_dir, "materials", "textures"),
+        )
+        UsdShade.MaterialBindingAPI.Apply(stage.GetPrimAtPath(subsets[face])).Bind(
+            UsdShade.Material(stage.GetPrimAtPath(mpath))
+        )
+    from .variation import as_attrs
+
     set_attrs(
         root,
         dict(
@@ -280,17 +369,18 @@ def write_cell(path, name):
             format=name,
             iec=c["iec"],
             nominalVoltage=c["volts"],
-            dimensionsStatus="nominal",
+            dimensionsStatus="nominal" if cv == CellVariation() else "varied within tolerance",
             massStatus="typical",
             mass=mass,
             compatibleWith=[f"Holder_{name}"],
             **dims,
+            **as_attrs(cv),
         ),
     )
     physx_tune(stage, CONTACT_OFFSET, 16, 0.1)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
-    return dict(name=root_name, kind="cell", format=name, mass_g=c["mass"])
+    return dict(name=root_name, kind="cell", format=name, mass_g=mass * 1e3, **as_attrs(cv))
 
 
 # --------------------------------------------------------------------------------- holders
@@ -325,16 +415,19 @@ def tube_mesh(pts, rad, sides=10):
     return V, np.array(F)
 
 
-def write_holder(path, name, fixed_base=False):
+def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
+    from .variation import HolderVariation, as_attrs
+
+    hv = hv or HolderVariation()
     c = CELLS[name]
     kind = c["kind"]
-    D = holder_design(name)
-    root_name = f"Holder_{name}"
+    D = holder_design(name, hv)
+    root_name = root_name or f"Holder_{name}"
     stage, root = new_stage(path, root_name)
     R = f"/{root_name}"
     B = f"{R}/base"
     xform(stage, B, m(0, 0, FLOOR_T))
-    pm = physics_material(stage, R, "holder", FRICTION)
+    pm = physics_material(stage, R, "holder", hv.friction)
     vb = VisualBuilder()
     boxes = []  # (centre, half) in metres, for the base mass
 
@@ -428,7 +521,7 @@ def write_holder(path, name, fixed_base=False):
                 note="visual only; follows the spring_plate (stretch along X between backFace and the plate)",
             ),
         )
-        info = dict(springStiffness=k, springPreload=D["pre"] * MM, springWire=D["wire"] * MM, contactForce=c["F"])
+        info = dict(springStiffness=k, springPreload=D["pre"] * MM, springWire=D["wire"] * MM, contactForce=D["F"])
         mate_frame(
             stage,
             f"{B}/MateFrame_seat",
@@ -491,7 +584,7 @@ def write_holder(path, name, fixed_base=False):
             30.0,
             body0=B,
         )
-        info = dict(clipTorsionStiffness=kth, clipPreloadAngle=theta0, contactForce=c["F"])
+        info = dict(clipTorsionStiffness=kth, clipPreloadAngle=theta0, contactForce=D["F"])
         mate_frame(
             stage, f"{B}/MateFrame_seat", (0, 0, h / 2 * MM), (1, 0, 0, 0), dict(role="cell_seat", axis="+Z = + face")
         )
@@ -504,7 +597,7 @@ def write_holder(path, name, fixed_base=False):
     com = (cen * vols[:, None]).sum(0) / vols.sum()
     ext = np.ptp(np.vstack([cen - halves, cen + halves]), axis=0)
     rigid_body(stage.GetPrimAtPath(B), mb, com, box_inertia(mb, ext), kinematic=fixed_base)
-    finish_variants(stage, root, [subsets["plastic"]], ["abs_black", "abs_grey"], "abs_black")
+    finish_variants(stage, root, [subsets["plastic"]], ["abs_black", "abs_grey"], hv.plastic)
     set_attrs(
         root,
         dict(
@@ -515,9 +608,10 @@ def write_holder(path, name, fixed_base=False):
             compatibleWith=[f"Cell_{name}"],
             seatHeight=FLOOR_T * MM,
             **info,
+            **as_attrs(hv),
         ),
     )
     physx_tune(stage, CONTACT_OFFSET, 16, 0.1)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
-    return dict(name=root_name, kind="holder", format=name, family=kind)
+    return dict(name=root_name, kind="holder", format=name, family=kind, **as_attrs(hv))
