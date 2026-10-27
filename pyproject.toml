@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quincaillerie"
-version = "0.1.0b1"
+version = "0.1.0b2"
 description = "Standard hardware assets generator for Physical AI: metric screws, nuts and washers with modelled threads, battery cells and their holders with working springs and clips, exported to OpenUSD with UsdPhysics and checked in MuJoCo and Blender."
 readme = "README.md"
 license = "MIT"
