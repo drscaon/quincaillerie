@@ -9,8 +9,10 @@
 
 <p align="center">
   <a href="https://github.com/drscaon/quincaillerie/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/drscaon/quincaillerie/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://pypi.org/project/quincaillerie/"><img alt="PyPI" src="https://img.shields.io/pypi/v/quincaillerie"></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
+  <a href="https://primvaria.com"><img alt="Part of Primvaria" src="https://img.shields.io/badge/suite-Primvaria-0f6e74"></a>
 </p>
 
 Quincaillerie (French for *hardware*, the nuts and bolts kind) generates
@@ -37,9 +39,9 @@ rigid bodies and constraints up by itself when a file is imported, so that
 pressing Play just works.
 
 It is built for **Physical AI**: robots that assemble, sort, screw and swap
-batteries are trained and tested in simulation, and they need small parts
-with exact geometry and physics, not a cylinder named "bolt". Everything
-can run on CPU. Quincaillerie is the fourth project of a series, after
+batteries are trained and tested in simulation, and they need small parts with
+exact geometry and physics, not a cylinder named "bolt". Everything can run on
+CPU. Quincaillerie is part of [**Primvaria**](https://primvaria.com), with
 [Granulaire](https://github.com/drscaon/granulaire) (granular assets),
 [Maillage](https://github.com/drscaon/maillage) (textiles) and
 [Filaire](https://github.com/drscaon/filaire) (cables), and follows the same
@@ -124,6 +126,18 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
 - **A Blender add-on** (`quincaillerie blender-addon`): rigid bodies and
   constraints set up on every USD import.
 - `--no-physics` for visual-only assets.
+
+## Engines
+
+Every file is OpenUSD with standard `UsdPhysics` schemas. Where each engine
+stands, as on the [Primvaria engine matrix](https://primvaria.com/#engines):
+
+| Engine | Status |
+|---|---|
+| OpenUSD validators (`usdchecker`) | **tested**: every part of the catalogue and varied instances, in CI |
+| Blender | **tested**: drop and assemblies through the add-on (`quincaillerie blender-test`) |
+| MuJoCo | **tested**: drop, screwing, jammed threads, insertion (`quincaillerie sim-test`) |
+| NVIDIA Isaac Sim (PhysX) | not tested yet (needs an NVIDIA RTX GPU); `UsdPhysics` and PhysX attributes |
 
 ## Installation
 
@@ -417,4 +431,4 @@ converted to paths, so it displays without the font installed.
 
 ---
 
-Quincaillerie is part of [**Primvaria**](https://github.com/drscaon/primvaria), physics-ready variability for Physical AI, in OpenUSD: `pip install primvaria` installs the whole suite.
+Quincaillerie is part of [**Primvaria**](https://primvaria.com), physics-ready variability for Physical AI, in OpenUSD: `pip install primvaria` installs the whole suite ([source](https://github.com/drscaon/primvaria)).
