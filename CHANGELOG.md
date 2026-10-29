@@ -6,6 +6,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0b3] - 2026-10-29 (beta)
+
+First release on PyPI.
+
 ### Changed
 
 - Released on PyPI (`pip install quincaillerie`) by the release workflow, through Trusted Publishing.
