@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from pxr import Gf, Sdf, UsdShade
+from pxr import Gf, Sdf, UsdGeom, UsdPhysics, UsdShade
 
 # name: (base colour, metallic, roughness, extras)
 # extras: rough_tex (texture, scale, bias), normal_tex, color_tex, coat (weight, roughness), specular
@@ -292,7 +292,7 @@ def make_textures(out):
 def _uv_reader(stage, path):
     r = UsdShade.Shader.Define(stage, path)
     r.CreateIdAttr("UsdPrimvarReader_float2")
-    r.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("st")
+    r.CreateInput("varname", Sdf.ValueTypeNames.String).Set("st")
     return r
 
 
@@ -314,6 +314,10 @@ def write_library(path):
     from .usd import create_stage
 
     stage = create_stage(path)
+    # the same stage metadata as the assets that reference the library
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    UsdPhysics.SetStageKilogramsPerUnit(stage, 1.0)
     root = stage.DefinePrim("/Materials", "Scope")
     stage.SetDefaultPrim(root)
     for name, m in MATERIALS.items():

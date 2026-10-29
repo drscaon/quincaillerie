@@ -147,7 +147,7 @@ def instance_material(stage, root_path, name, base_name, wear, seed, tex_dir, te
     ps.CreateIdAttr("UsdPreviewSurface")
     uv = UsdShade.Shader.Define(stage, f"{P}/uv")
     uv.CreateIdAttr("UsdPrimvarReader_float2")
-    uv.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("st")
+    uv.CreateInput("varname", Sdf.ValueTypeNames.String).Set("st")
     for key, inp, typ, out in (
         ("color", "diffuseColor", Sdf.ValueTypeNames.Color3f, "rgb"),
         ("roughness", "roughness", Sdf.ValueTypeNames.Float, "r"),

@@ -6,6 +6,19 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `python -m quincaillerie.validate FILE_OR_FOLDER`: every OpenUSD `UsdValidation` validator
+  (what `usdchecker` runs) on each file and each variant; the tests and a CI job
+  (every preset) require no error and no warning.
+
+### Fixed
+
+- UV primvar readers write `inputs:varname` as a `string`, as UsdPreviewSurface
+  specifies (was a `token`).
+- The material library layer has the stage metadata of the assets
+  (meters, Z up, kilograms).
+
 ## [0.1.0b3] - 2026-10-29 (beta)
 
 First release on PyPI.
