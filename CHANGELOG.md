@@ -6,6 +6,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Released on PyPI (`pip install quincaillerie`) by the release workflow, through Trusted Publishing.
+- README images and links use absolute URLs, so that they show on PyPI; the README links to Primvaria, the suite the project belongs to.
+
 ## [0.1.0b2] - 2026-10-27 (beta)
 
 Second beta: varied instances.
