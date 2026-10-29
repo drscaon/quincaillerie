@@ -1,7 +1,7 @@
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.svg">
-    <img alt="Quincaillerie" src="docs/images/logo.svg" width="420">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/logo-dark.svg">
+    <img alt="Quincaillerie" src="https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/logo.svg" width="420">
   </picture>
 </h1>
 
@@ -39,13 +39,13 @@ pressing Play just works.
 It is built for **Physical AI**: robots that assemble, sort, screw and swap
 batteries are trained and tested in simulation, and they need small parts
 with exact geometry and physics, not a cylinder named "bolt". Everything
-runs on CPU. Quincaillerie is the fourth project of a series, after
+can run on CPU. Quincaillerie is the fourth project of a series, after
 [Granulaire](https://github.com/drscaon/granulaire) (granular assets),
 [Maillage](https://github.com/drscaon/maillage) (textiles) and
 [Filaire](https://github.com/drscaon/filaire) (cables), and follows the same
 approach: distributions instead of one shape, measured outputs, honest limits.
 
-![Screws, washers and nuts M3 to M12 in six finishes, rendered in Blender](docs/images/fasteners.jpg)
+![Screws, washers and nuts M3 to M12 in six finishes, rendered in Blender](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/fasteners.jpg)
 
 *ISO 4017 screws, ISO 7089 washers and ISO 4032 nuts, M3 to M12, in the six
 finishes of the material library. The nuts sit on the thread at the height
@@ -55,7 +55,7 @@ rendered with Cycles.*
 
 ## Every instance is different
 
-![Ten instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](docs/images/variation.jpg)
+![Ten instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/variation.jpg)
 
 *`quincaillerie generate screw M10 --with nut,washer --count 10` and the same
 for AA and 9 V cells: each part is a distinct file. Rust, grime, oil and
@@ -76,7 +76,7 @@ Everything drawn is in `parts.csv` and in each file as
 `quincaillerie:variation:*` attributes; the clean finishes stay available in
 the `finish` variant set of a worn part. `--nominal` gives the reference part.
 
-![The same nut driven onto a sound M12 screw and onto one with crushed threads](docs/images/jam.gif)
+![The same nut driven onto a sound M12 screw and onto one with crushed threads](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/jam.gif)
 
 *The defects are physical. The same nut, the same light torque (a hand on a
 nut driver), simulated in MuJoCo from the files: it runs down the sound
@@ -88,11 +88,11 @@ batch.*
 
 | Dropped in Blender | Screwed in MuJoCo | Inserted in MuJoCo |
 |---|---|---|
-| ![Assemblies and parts dropped on the floor in Blender](docs/images/drop.gif) | ![A nut driven down an M10 screw](docs/images/screwing.gif) | ![An AA cell and a CR2032 pushed into their holders](docs/images/insertion.gif) |
+| ![Assemblies and parts dropped on the floor in Blender](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/drop.gif) | ![A nut driven down an M10 screw](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/screwing.gif) | ![An AA cell and a CR2032 pushed into their holders](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/insertion.gif) |
 | Two screw + washer + nut assemblies, an AA cell in its holder and loose parts, imported with File > Import > USD (add-on enabled) and dropped: Blender's rigid bodies, nothing set by hand. The nuts stay on their threads, the cell stays in its holder. | A nut driven by a torque on an M10 screw: it advances 1.5 mm per turn on the modelled thread, the washer waits below. | An AA cell and a CR2032 carried into their holders and released: the spring plate slides back and the coil compresses, the clip lifts and holds the coin cell. |
 
 All three are rendered in Blender (Cycles) from the generated OpenUSD files:
-[`scripts/physics_gifs.py`](scripts/physics_gifs.py).
+[`scripts/physics_gifs.py`](https://github.com/drscaon/quincaillerie/blob/main/scripts/physics_gifs.py).
 
 ## What it does
 
@@ -126,6 +126,14 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
 - `--no-physics` for visual-only assets.
 
 ## Installation
+
+From PyPI:
+
+```bash
+pip install "quincaillerie[sim]"
+```
+
+From a clone, for development:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -196,7 +204,7 @@ standards themselves were not consulted, and the files say `dimensionsStatus
 forces are typical orders of magnitude. The labels on the cells are generic
 ("QUINCAILLERIE synthetic test cell"), no brand.
 
-![Cells and their holders, rendered in Blender](docs/images/cells.jpg)
+![Cells and their holders, rendered in Blender](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/cells.jpg)
 
 *Every cell format, and AA, 18650, 9 V and CR2032 cells seated in their
 holders (spring compressed, clip lifted), rendered in Blender.*
@@ -367,7 +375,7 @@ A versioned `pre-push` hook refuses direct pushes to `main`. Enable it once per
 clone with `git config core.hooksPath .githooks` (emergency override:
 `ALLOW_MAIN_PUSH=1 git push`).
 
-The README images are made by [`scripts/`](scripts/): `make_logo.py` (logo),
+The README images are made by [`scripts/`](https://github.com/drscaon/quincaillerie/blob/main/scripts/): `make_logo.py` (logo),
 `readme_images.py` (Blender renders and the GitHub social preview
 `docs/images/social_preview.png`, to upload in the repository's Settings >
 General > Social preview), `physics_gifs.py` (the animations).
@@ -382,7 +390,11 @@ General > Social preview), `physics_gifs.py` (the animations).
 
 ## License
 
-[MIT](LICENSE) © 2026 Daniel Régis Sarmento Caon
+[MIT](https://github.com/drscaon/quincaillerie/blob/main/LICENSE) © 2026 Daniel Régis Sarmento Caon
 
 The logo is drawn from DejaVu Sans Bold outlines (Bitstream Vera license),
 converted to paths, so it displays without the font installed.
+
+---
+
+Quincaillerie is part of [**Primvaria**](https://github.com/drscaon/primvaria), physics-ready variability for Physical AI, in OpenUSD: `pip install primvaria` installs the whole suite.
