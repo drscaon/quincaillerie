@@ -322,6 +322,26 @@ when reversed; the coin clips press with 2.81 N (CR2032, 3.0 N designed)
 and 1.82 N (LR44, 2.0 N). The checks of the whole catalogue take about four
 minutes in MuJoCo and two in Blender; screwing, 1–2 minutes per size.
 
+## OpenUSD compliance
+
+```bash
+python -m quincaillerie.validate output/catalog
+```
+
+This runs every validator of OpenUSD's `UsdValidation` registry on each file,
+the checks `usdchecker` runs: composition, stage metadata (meters, Z up),
+geometry, material bindings, shaders, UsdPhysics rigid bodies and colliders,
+joints and articulations. Each file is checked once per variant (every
+finish), since a variant that is not selected is not composed. The tests and
+CI require no error and no warning, on every part of the catalogue and on
+varied, worn and defective instances.
+
+MaterialX networks (`ND_*` shaders) are checked by these validators only with
+an OpenUSD build that has its MaterialX plugin; the `usd-core` wheels from
+PyPI have none, so this check is skipped there. The `.mtlx` document is
+validated against the MaterialX standard library when the `materialx` extra is
+installed.
+
 ## Limits
 
 - **Nominal, not measured.** Fastener dimensions come from public tables,
