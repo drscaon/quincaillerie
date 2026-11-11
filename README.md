@@ -309,7 +309,8 @@ and the crushed threads are checked by the jam test.
 ### Results
 
 `quincaillerie generate all --nominal` then the checks of the whole
-catalogue (41 assets), MuJoCo 3.17 and Blender 5.2 (`bpy`), one CPU core:
+catalogue (41 assets), one CPU core; measured with MuJoCo 3.17, before 4.0 (CI
+runs every check on MuJoCo 4), and Blender 5.2 (`bpy`):
 
 | Check | MuJoCo | Blender (add-on) | Blender, rigid bodies added by hand |
 |---|---|---|---|

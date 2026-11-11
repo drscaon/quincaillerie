@@ -27,9 +27,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-sim = ["mujoco>=3.2"]
+sim = ["mujoco>=4.0"]
 materialx = ["materialx>=1.39"]
-dev = ["pytest>=7", "ruff>=0.5", "mujoco>=3.2", "materialx>=1.39"]
+dev = ["pytest>=7", "ruff>=0.5", "mujoco>=4.0", "materialx>=1.39"]
 
 [project.urls]
 Homepage = "https://github.com/drscaon/quincaillerie"

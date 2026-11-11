@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- MuJoCo 4 (`mujoco>=4.0`, was 3.2) for the `sim` and `dev` extras: the version CI
+  tests; MuJoCo 3 is no longer supported.
 - README: how the number of thread colliders weighs on engines that size their
   contact buffers in advance (measured in Newton), and what to do.
 - `usd-core` 26.5 or later (was 24.0): the OpenUSD validators do not load from
