@@ -8,6 +8,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Ground truth of the variation, in the file (Primvaria contract, variation
+  model): `primvaria:variation:aspects`, the aspects that were switched on, and
+  one `primvaria:variation:<name>` per drawn value (the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…).
+  `python -m quincaillerie.conformance` requires the aspects on every asset.
 - `CONTRIBUTING.md`, issue templates (bug report, part request),
   `SECURITY.md` and `CITATION.cff`.
 - Primvaria OpenUSD contract, version 0

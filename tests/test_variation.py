@@ -92,3 +92,23 @@ def test_varied_set_passes_its_checks(varied_set):
 
     rows = sim_test(varied_set.out_dir, verbose=False, only="AA")  # holders, seated cells, insertions
     assert rows and all(r["ok"] for r in rows), [r for r in rows if not r["ok"]]
+
+
+def test_every_instance_carries_its_draws(varied_set, small_set):
+    from quincaillerie.contract import variation
+
+    with open(os.path.join(varied_set.out_dir, "parts.csv")) as f:
+        rows = {r["name"]: r for r in csv.DictReader(f)}
+    assets = os.path.join(varied_set.out_dir, "assets")
+    for name in ("ISO4017_M6x12_002", "Holder_AA_004", "Cell_AA_001"):
+        st = Usd.Stage.Open(os.path.join(assets, next(f for f in os.listdir(assets) if f.startswith(name))))
+        drawn = variation(st.GetDefaultPrim())
+        assert drawn.pop("aspects") == ["tolerance", "defect", "wear", "physics"]
+        assert drawn  # the same names and values as the variation:* columns of parts.csv
+        for key, value in drawn.items():
+            cell = rows[name][f"variation:{key}"]
+            assert (abs(float(cell) - value) < 1e-9) if isinstance(value, float) else (cell == str(value))
+    # a nominal set draws nothing
+    nominal = sorted(os.listdir(os.path.join(small_set.out_dir, "assets")))[0]
+    st = Usd.Stage.Open(os.path.join(small_set.out_dir, "assets", nominal))
+    assert variation(st.GetDefaultPrim()) == {"aspects": []}

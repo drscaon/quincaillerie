@@ -395,6 +395,12 @@ version 0, which the four generators share. Every part is an asset any tool can 
 the stage units, the model hierarchy and this identity; the tests and CI
 require it on every preset.
 
+What was drawn for each instance is in the file too, its ground truth:
+`primvaria:variation:aspects` lists the aspects that were switched on
+(`tolerance`, `defect`, `wear`, `physics`) and `primvaria:variation:<name>` holds each drawn value
+(the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…). The `quincaillerie:variation:*` attributes hold the same values and stay until the next breaking release. An aspect that is switched off is still recorded, at its
+nominal value, and the other aspects keep their draws.
+
 ## Limits
 
 - **Nominal, not measured.** Fastener dimensions come from public tables,
