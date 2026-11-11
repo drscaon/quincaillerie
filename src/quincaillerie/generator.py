@@ -148,7 +148,7 @@ def generate(
             name = f"{p.name}_{i:03d}" if vary else None
             info = write_part(p, assets, finish, draw(sampler, p, finish), name, detail)
             drawn = {k.removeprefix("variation:"): v for k, v in info.items() if k.startswith("variation:")}
-            stamp_identity(os.path.join(root, info["file"]), p.name, seed, aspects=vary, drawn=drawn if vary else {})
+            stamp_identity(os.path.join(root, info["file"]), p.name, seed, aspects=vary, drawn=drawn)
             if not physics:
                 from pxr import Usd
 

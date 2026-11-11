@@ -6,6 +6,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Breaking changes
+
+- The drawn values of an instance are written as `primvaria:variation:<name>`
+  attributes (Primvaria contract, variation model); the
+  `quincaillerie:variation:<name>` attributes are gone. The names and the
+  `variation:*` columns of `parts.csv` are unchanged.
+
 ### Added
 
 - Ground truth of the variation, in the file (Primvaria contract, variation

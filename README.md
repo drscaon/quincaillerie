@@ -75,7 +75,7 @@ picture, a different thread fit, alloy density, friction and spring for each.*
 Each aspect has its own random stream: `--no-vary wear` keeps the same
 tolerances and defects with clean parts; the same seed gives the same parts.
 Everything drawn is in `parts.csv` and in each file as
-`quincaillerie:variation:*` attributes; the clean finishes stay available in
+`primvaria:variation:*` attributes; the clean finishes stay available in
 the `finish` variant set of a worn part. `--nominal` gives the reference part.
 
 ![The same nut driven onto a sound M12 screw and onto one with crushed threads](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/jam.gif)
@@ -398,7 +398,7 @@ require it on every preset.
 What was drawn for each instance is in the file too, its ground truth:
 `primvaria:variation:aspects` lists the aspects that were switched on
 (`tolerance`, `defect`, `wear`, `physics`) and `primvaria:variation:<name>` holds each drawn value
-(the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…). The `quincaillerie:variation:*` attributes hold the same values and stay until the next breaking release. An aspect that is switched off is still recorded, at its
+(the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…). An aspect that is switched off is still recorded, at its
 nominal value, and the other aspects keep their draws.
 
 ## Limits

@@ -49,8 +49,10 @@ def new_stage(path, root_name, kind="component"):
 
 
 def set_attrs(prim, attrs):
+    """Write quincaillerie:* attributes. The drawn values (keys ``variation:<name>``) are the
+    instance's ground truth and go to the suite's namespace, primvaria:variation:<name>."""
     for k, v in attrs.items():
-        name = f"{NS}:{k}"
+        name = f"primvaria:{k}" if k.startswith("variation:") else f"{NS}:{k}"
         if isinstance(v, bool):
             prim.CreateAttribute(name, Sdf.ValueTypeNames.Bool).Set(v)
         elif isinstance(v, (int, np.integer)):

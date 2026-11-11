@@ -15,7 +15,7 @@ were):
 * physics: density of the alloy (brass and stainless finishes are solid alloys, the others plated
   steel), spring stiffness and preload loss (fatigue), clip torque, cell mass.
 
-Everything drawn is written into the asset (``quincaillerie:variation:*`` attributes) and into
+Everything drawn is written into the asset (``primvaria:variation:*`` attributes) and into
 ``parts.csv``: the ground truth of each instance.
 """
 

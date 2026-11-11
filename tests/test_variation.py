@@ -108,7 +108,9 @@ def test_every_instance_carries_its_draws(varied_set, small_set):
         for key, value in drawn.items():
             cell = rows[name][f"variation:{key}"]
             assert (abs(float(cell) - value) < 1e-9) if isinstance(value, float) else (cell == str(value))
-    # a nominal set draws nothing
+    # a nominal set has no aspect switched on
     nominal = sorted(os.listdir(os.path.join(small_set.out_dir, "assets")))[0]
     st = Usd.Stage.Open(os.path.join(small_set.out_dir, "assets", nominal))
-    assert variation(st.GetDefaultPrim()) == {"aspects": []}
+    drawn = variation(st.GetDefaultPrim())
+    assert drawn["aspects"] == [] and drawn["defect"] == "none"  # nominal values, still recorded
+    assert not st.GetDefaultPrim().GetAuthoredPropertiesInNamespace("quincaillerie:variation")
