@@ -13,6 +13,7 @@ from pxr import Usd, UsdGeom, UsdPhysics
 
 from .batteries import FLOOR_T, holder_design
 from .catalog import CELLS, METRIC
+from .contract import set_group
 from .ground import GROUND_MARGIN, ground, physics_scene
 from .usd import create_stage, place, quat_axis_angle
 
@@ -29,6 +30,7 @@ def new_scene(path, floor=True, floor_size=2.0, physics=True):
     UsdPhysics.SetStageKilogramsPerUnit(st, 1.0)
     w = UsdGeom.Xform.Define(st, "/World")
     st.SetDefaultPrim(w.GetPrim())
+    set_group(w.GetPrim(), assembly=True)  # Primvaria contract: the assets under it are components
     if not physics:
         return st
     physics_scene(st)

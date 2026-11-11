@@ -379,6 +379,22 @@ PyPI have none, so this check is skipped there. The `.mtlx` document is
 validated against the MaterialX standard library when the `materialx` extra is
 installed.
 
+## Primvaria contract
+
+```bash
+python -m quincaillerie.conformance output/catalog
+```
+
+Quincaillerie is part of [Primvaria](https://primvaria.com) and follows its
+[mission](https://github.com/drscaon/primvaria/blob/main/MISSION.md) and its
+[OpenUSD contract](https://github.com/drscaon/primvaria/blob/main/docs/contract.md),
+version 0, which the four generators share. Every part is an asset any tool can find without knowing Quincaillerie: a model of kind
+`component` with `assetInfo` (name, identifier, version) and the attributes
+`primvaria:contract`, `primvaria:generator`, `primvaria:version`,
+`primvaria:preset` and `primvaria:seed`; in `scene.usda`, `/World` is an `assembly` that references them; `primvaria:preset` is the catalogue entry the instance was drawn from (`ISO4017_M8x30`). The command above checks
+the stage units, the model hierarchy and this identity; the tests and CI
+require it on every preset.
+
 ## Limits
 
 - **Nominal, not measured.** Fastener dimensions come from public tables,
