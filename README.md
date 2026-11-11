@@ -155,8 +155,13 @@ pip install -e ".[sim]"            # add ",dev" for tests and linting, ",materia
 ```
 
 Requires Python 3.10+. Dependencies: NumPy, SciPy, Pillow and the OpenUSD
-bindings (`usd-core`); MuJoCo for the checks. The Blender checks need Blender
+bindings (`usd-core` 26.5+); MuJoCo for the checks. The Blender checks need Blender
 as a Python module (`pip install bpy`, Python 3.13) or a Blender executable.
+
+Earlier `usd-core` wheels generate the same files, but their OpenUSD
+validators do not load (25.5 ships without the validator
+libraries, 25.8 and 25.11 without the UsdPreviewSurface definitions), and CI
+tests both 26.5 and the newest release.
 
 ## Usage
 
@@ -368,8 +373,13 @@ installed.
   the collision too.
 - **Collision in pieces.** A thread is ≈ 1000 convex pieces: exact enough to
   screw, heavy for large scenes (a scene of 100 screws is 100 000 shapes).
-  Loose parts that only need to fall could use a simplified collider; not
-  generated yet.
+  Engines that size their contact buffers in advance feel it first: loaded in
+  [Newton](https://github.com/newton-physics/newton) (CPU), a scene of 3 M8
+  screws, nuts and washers (4 224 shapes) filled its default buffer of
+  210 600 contacts and the washers fell through the floor; with 400 000
+  they rest, the buffer still full. Raise the engine's contact limits for
+  threaded parts, or keep them few per scene. Loose parts that only need to
+  fall could use a simplified collider; not generated yet.
 - **Simplified holders.** Generic designs (ABS boxes, a flat spring plate),
   not a product; no electrical contact model.
 - **Blender springs start at rest.** See [Blender](#blender): a cell placed

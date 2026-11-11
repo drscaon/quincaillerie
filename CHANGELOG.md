@@ -21,6 +21,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- README: how the number of thread colliders weighs on engines that size their
+  contact buffers in advance (measured in Newton), and what to do.
+- `usd-core` 26.5 or later (was 24.0): the OpenUSD validators do not load from
+  earlier wheels (25.5 lacks the validator libraries, 25.8 and 25.11 the
+  UsdPreviewSurface definitions), and 24.x has no `UsdValidation` at all. A CI
+  job runs the tests on exactly 26.5.
 - README: the same header as the other Primvaria projects (PyPI and suite
   badges), an Engines table matching the suite's engine matrix, and links to
   primvaria.com.

@@ -153,6 +153,23 @@ jobs:
       - name: Validate every file (what usdchecker runs)
         run: python -m quincaillerie.validate ci-usd
 
+  usd-floor:
+    name: Oldest supported OpenUSD (usd-core 26.5)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install with the lowest usd-core the package accepts
+        run: pip install -e ".[dev]" "usd-core==26.5"
+      - name: Tests (OpenUSD validators included)
+        run: |
+          python -c "from pxr import Usd; assert Usd.GetVersion() == (0, 26, 5), Usd.GetVersion()"
+          pytest -q
+
   build:
     name: Build packages
     runs-on: ubuntu-latest
