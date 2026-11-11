@@ -65,7 +65,7 @@ def simulate(scene_path, out, mode="setup", seconds=1.0):
             if o.type != "MESH":
                 continue
             with bpy.context.temp_override(object=o, active_object=o, selected_objects=[o]):
-                bpy.ops.rigidbody.object_add(type="PASSIVE" if _base(o.name) == "ground" else "ACTIVE")
+                bpy.ops.rigidbody.object_add(type="PASSIVE" if _base(o.name) == "Ground" else "ACTIVE")
     else:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from physics import import_with_physics
@@ -79,7 +79,7 @@ def simulate(scene_path, out, mode="setup", seconds=1.0):
         return [
             o
             for o in sc.objects
-            if o.type == "MESH" and o.rigid_body and _base(o.name) != "ground" and (mode == "naive" or o.parent is None)
+            if o.type == "MESH" and o.rigid_body and _base(o.name) != "Ground" and (mode == "naive" or o.parent is None)
         ]
 
     first, traj = {}, {}

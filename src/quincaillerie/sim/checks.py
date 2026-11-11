@@ -84,7 +84,7 @@ def build_test_scenes(set_dir, pairs=2):
     out = []
 
     def new(name):
-        return new_scene(os.path.join(sdir, f"{name}.usda"), floor_size=0.6, floor_visible=True)
+        return new_scene(os.path.join(sdir, f"{name}.usda"), floor_size=1.0)
 
     for name, a in inv.items():
         h = 0.05 if a["kind"] == "cell" else 0.04

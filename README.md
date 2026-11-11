@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://github.com/drscaon/quincaillerie/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/drscaon/quincaillerie/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://pypi.org/project/quincaillerie/"><img alt="PyPI" src="https://img.shields.io/pypi/v/quincaillerie"></a>
-  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB">
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
   <a href="https://primvaria.com"><img alt="Part of Primvaria" src="https://img.shields.io/badge/suite-Primvaria-0f6e74"></a>
 </p>
@@ -154,9 +154,14 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[sim]"            # add ",dev" for tests and linting, ",materialx" for the .mtlx file
 ```
 
-Requires Python 3.10+. Dependencies: NumPy, SciPy, Pillow and the OpenUSD
-bindings (`usd-core`); MuJoCo for the checks. The Blender checks need Blender
+Requires Python 3.11+. Dependencies: NumPy, SciPy, Pillow and the OpenUSD
+bindings (`usd-core` 26.5+); MuJoCo for the checks. The Blender checks need Blender
 as a Python module (`pip install bpy`, Python 3.13) or a Blender executable.
+
+Earlier `usd-core` wheels generate the same files, but their OpenUSD
+validators do not load (25.5 ships without the validator
+libraries, 25.8 and 25.11 without the UsdPreviewSurface definitions), and CI
+tests both 26.5 and the newest release.
 
 ## Usage
 
@@ -229,7 +234,7 @@ holders (spring compressed, clip lifted), rendered in Blender.*
 |---|---|
 | `assets/*.usdc`, `assets/*.usda` | one file per instance, `ISO4017_M8x30_007.usdc` (Blender: File > Import > USD) |
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
-| `scene.usda` | every instance on a floor collider, plus the assemblies |
+| `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
 | `parts.csv` | one row per instance: mass, collision pieces and **every drawn value** (`variation:clearance_mm`, `variation:defect`, `variation:rust`, `variation:spring_factor`…): the ground truth |
 | `summary.json` | counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |
@@ -255,6 +260,23 @@ The underside of a holder is at z = 0 of the asset: it sits on a floor where
 it is placed. Angular drives use UsdPhysics units (per degree). Every
 collider has `PhysxCollisionAPI` offsets and every body `PhysxRigidBodyAPI`
 iterations, read by Isaac Sim and ignored elsewhere.
+
+
+### Ground and physics scene (the same in every Primvaria project)
+
+Every file with physics carries the same two prims, so that assets from
+different generators can share one scene and every engine gets the same floor:
+
+| Prim | What it is |
+|---|---|
+| `/World/PhysicsScene` | gravity 9.81 m/s² along −Z |
+| `/World/Ground` | a static box (`UsdGeom.Cube`, `CollisionAPI`), its top face at z = 0, 2 cm thick, covering the content with 0.5 m to spare on each side (1 m × 1 m at least), grey and rendered, no PhysX attributes (engines derive their contact offsets) |
+| `/World/GroundMaterial` | its physics material: static friction 0.6, dynamic friction 0.5, restitution 0.1, a wooden or concrete floor |
+
+The code is one file, `ground.py`, identical in Granulaire, Maillage, Filaire
+and Quincaillerie; a test checks every generated file against it. The MuJoCo
+checks and the Blender rigid-body checks take the ground's friction from the
+file (Blender's cloth, in Maillage, has its own collision settings).
 
 ## Blender
 
@@ -304,7 +326,8 @@ and the crushed threads are checked by the jam test.
 ### Results
 
 `quincaillerie generate all --nominal` then the checks of the whole
-catalogue (41 assets), MuJoCo 3.17 and Blender 5.2 (`bpy`), one CPU core:
+catalogue (41 assets), one CPU core; measured with MuJoCo 3.17, before 4.0 (CI
+runs every check on MuJoCo 4), and Blender 5.2 (`bpy`):
 
 | Check | MuJoCo | Blender (add-on) | Blender, rigid bodies added by hand |
 |---|---|---|---|
@@ -368,8 +391,13 @@ installed.
   the collision too.
 - **Collision in pieces.** A thread is ≈ 1000 convex pieces: exact enough to
   screw, heavy for large scenes (a scene of 100 screws is 100 000 shapes).
-  Loose parts that only need to fall could use a simplified collider; not
-  generated yet.
+  Engines that size their contact buffers in advance feel it first: loaded in
+  [Newton](https://github.com/newton-physics/newton) (CPU), a scene of 3 M8
+  screws, nuts and washers (4 224 shapes) filled its default buffer of
+  210 600 contacts and the washers fell through the floor; with 400 000
+  they rest, the buffer still full. Raise the engine's contact limits for
+  threaded parts, or keep them few per scene. Loose parts that only need to
+  fall could use a simplified collider; not generated yet.
 - **Simplified holders.** Generic designs (ABS boxes, a flat spring plate),
   not a product; no electrical contact model.
 - **Blender springs start at rest.** See [Blender](#blender): a cell placed
@@ -418,7 +446,7 @@ General > Social preview), `physics_gifs.py` (the animations).
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every push to `main`, every pull request | `ruff check` and `ruff format --check`; `pytest` on Python 3.10–3.13 (Linux) and 3.12 (macOS, Windows); a command-line smoke test; **the MuJoCo checks of the whole catalogue** and an M8 screwing, then **varied batches** (screws and nuts with crushed threads that must jam, cells and holders with drawn tolerances and springs); **the Blender checks** of the catalogue and of varied batches through the add-on (and, for comparison, by hand); reports kept as run artifacts; build the wheel and sdist, `twine check`, install the wheel in a clean environment. |
+| `ci.yml` | every push to `main`, every pull request | `ruff check` and `ruff format --check`; `pytest` on Python 3.11–3.13 (Linux) and 3.12 (macOS, Windows); a command-line smoke test; **the MuJoCo checks of the whole catalogue** and an M8 screwing, then **varied batches** (screws and nuts with crushed threads that must jam, cells and holders with drawn tolerances and springs); **the Blender checks** of the catalogue and of varied batches through the add-on (and, for comparison, by hand); reports kept as run artifacts; build the wheel and sdist, `twine check`, install the wheel in a clean environment. |
 | `release.yml` | a pushed tag `v*` | checks the tag matches the version in `pyproject.toml`, tests, builds, then creates the GitHub release with the packages and the Blender add-on attached and the notes taken from `CHANGELOG.md`. Versions with `a`, `b` or `rc` are marked as pre-releases. |
 | Dependabot | monthly | pull requests to update the GitHub Actions and the Python dependencies. |
 

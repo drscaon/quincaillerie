@@ -6,6 +6,28 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0b1] - 2026-11-13 (beta)
+
+### Breaking changes
+
+- Python 3.11 or later (was 3.10): MuJoCo 4 requires it, and Python 3.10 reached
+  its end of life in October 2026.
+- `usd-core` 26.5 or later (was 24.0): the OpenUSD validators do not load from
+  earlier wheels (25.5 lacks the validator libraries, 25.8 and 25.11 the
+  UsdPreviewSurface definitions), and 24.x has no `UsdValidation` at all. A CI
+  job runs the tests on exactly 26.5.
+- MuJoCo 4 (`mujoco>=4.0`, was 3.2) for the `sim` and `dev` extras; MuJoCo 3 is no
+  longer supported.
+- The ground and physics scene are the same in every Primvaria project (`ground.py`, the
+  same file in each): `/World/PhysicsScene`, gravity 9.81 m/s² along −Z; `/World/Ground`,
+  a 2 cm box (`UsdGeom.Cube`) whose top is z = 0, covering the content with 0.5 m to
+  spare, rendered, no PhysX attributes; `/World/GroundMaterial`, static friction 0.6,
+  dynamic 0.5, restitution 0.1. A test checks every generated file against it.
+  Quincaillerie's ground was `/World/ground` (lower case), hidden (purpose guide), with
+  friction 0.4, no bounce and its material in `PhysicsMaterials/ground`; it is now
+  `/World/Ground`, rendered (the README renders hide it, as Filaire's do).
+  `scenes.new_scene()` lost its `floor_visible` argument.
+
 ### Added
 
 - `python -m quincaillerie.validate FILE_OR_FOLDER`: every OpenUSD `UsdValidation` validator
@@ -21,6 +43,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- README: how the number of thread colliders weighs on engines that size their
+  contact buffers in advance (measured in Newton), and what to do.
 - README: the same header as the other Primvaria projects (PyPI and suite
   badges), an Engines table matching the suite's engine matrix, and links to
   primvaria.com.
