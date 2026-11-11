@@ -152,6 +152,8 @@ jobs:
           quincaillerie generate cell AA --with holder --count 3 --defect-rate 0.4 --out ci-usd > /dev/null
       - name: Validate every file (what usdchecker runs)
         run: python -m quincaillerie.validate ci-usd
+      - name: Check every file against the Primvaria contract
+        run: python -m quincaillerie.conformance ci-usd
 
   usd-floor:
     name: Oldest supported OpenUSD (usd-core 26.5)

@@ -7,8 +7,12 @@ PhysX attributes for Isaac Sim are added as applied API schemas, ignored by othe
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
+
+from .contract import write_identity
 
 NS = "quincaillerie"
 
@@ -34,6 +38,11 @@ def new_stage(path, root_name, kind="component"):
     root = UsdGeom.Xform.Define(stage, f"/{root_name}")
     stage.SetDefaultPrim(root.GetPrim())
     Usd.ModelAPI(root.GetPrim()).SetKind(kind)
+    # Primvaria contract: the root is the asset. A part written on its own is its own preset,
+    # with seed 0; generate() stamps the catalogue entry and the seed of the run.
+    write_identity(
+        root.GetPrim(), name=root_name, preset=root_name, seed=0, identifier=f"./{os.path.basename(str(path))}"
+    )
     return stage, root.GetPrim()
 
 
@@ -575,4 +584,13 @@ def strip_physics(stage):
     for path in sorted(remove, key=lambda x: -len(str(x))):
         if stage.GetPrimAtPath(path):
             stage.RemovePrim(path)
+    stage.GetRootLayer().Save()
+
+
+def stamp_identity(path, preset, seed) -> None:
+    """Rewrite the identity of the asset in ``path`` (Primvaria contract) with the catalogue entry
+    it is an instance of and the seed of the run that drew it."""
+    stage = Usd.Stage.Open(str(path))
+    root = stage.GetDefaultPrim()
+    write_identity(root, name=root.GetName(), preset=preset, seed=seed, identifier=f"./{os.path.basename(str(path))}")
     stage.GetRootLayer().Save()

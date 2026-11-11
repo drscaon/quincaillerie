@@ -25,7 +25,7 @@ from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset
 from .fasteners import write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .scenes import add_ref, footprint, new_scene, place_seated, rest_pose, save, thread_height
-from .usd import quat_axis_angle
+from .usd import quat_axis_angle, stamp_identity
 from .variation import ASPECTS, Sampler
 
 
@@ -147,6 +147,7 @@ def generate(
         for i in range(n):
             name = f"{p.name}_{i:03d}" if vary else None
             info = write_part(p, assets, finish, draw(sampler, p, finish), name, detail)
+            stamp_identity(os.path.join(root, info["file"]), preset=p.name, seed=seed)
             if not physics:
                 from pxr import Usd
 
