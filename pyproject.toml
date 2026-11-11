@@ -9,7 +9,7 @@ description = "Standard hardware assets generator for Physical AI: metric screws
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Daniel Régis Sarmento Caon" }]
 keywords = ["screw", "nut", "battery", "fastener", "simulation", "openusd", "mujoco", "blender", "procedural", "robotics", "physical-ai", "synthetic-data", "robot-learning", "primvaria"]
 classifiers = [
@@ -49,7 +49,7 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]

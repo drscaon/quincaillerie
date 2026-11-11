@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Python 3.11 or later (was 3.10): MuJoCo 4 requires it, and Python 3.10 reached
+  its end of life in October 2026. CI tests 3.11 to 3.13.
 - MuJoCo 4 (`mujoco>=4.0`, was 3.2) for the `sim` and `dev` extras: the version CI
   tests; MuJoCo 3 is no longer supported.
 - README: how the number of thread colliders weighs on engines that size their
