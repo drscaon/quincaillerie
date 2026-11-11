@@ -12,7 +12,7 @@ import os
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
 
-from .contract import write_identity
+from .contract import write_identity, write_variation
 
 NS = "quincaillerie"
 
@@ -39,10 +39,12 @@ def new_stage(path, root_name, kind="component"):
     stage.SetDefaultPrim(root.GetPrim())
     Usd.ModelAPI(root.GetPrim()).SetKind(kind)
     # Primvaria contract: the root is the asset. A part written on its own is its own preset,
-    # with seed 0; generate() stamps the catalogue entry and the seed of the run.
+    # with seed 0 and nothing drawn; generate() stamps the catalogue entry, the seed of the run,
+    # the aspects that varied and the drawn values.
     write_identity(
         root.GetPrim(), name=root_name, preset=root_name, seed=0, identifier=f"./{os.path.basename(str(path))}"
     )
+    write_variation(root.GetPrim(), (), {})
     return stage, root.GetPrim()
 
 
@@ -587,10 +589,12 @@ def strip_physics(stage):
     stage.GetRootLayer().Save()
 
 
-def stamp_identity(path, preset, seed) -> None:
+def stamp_identity(path, preset, seed, aspects=(), drawn=None) -> None:
     """Rewrite the identity of the asset in ``path`` (Primvaria contract) with the catalogue entry
-    it is an instance of and the seed of the run that drew it."""
+    it is an instance of and the seed of the run that drew it, and write its ground truth: the
+    aspects that varied and the drawn values (primvaria:variation:*, the names of parts.csv)."""
     stage = Usd.Stage.Open(str(path))
     root = stage.GetDefaultPrim()
     write_identity(root, name=root.GetName(), preset=preset, seed=seed, identifier=f"./{os.path.basename(str(path))}")
+    write_variation(root, aspects, drawn or {})
     stage.GetRootLayer().Save()
