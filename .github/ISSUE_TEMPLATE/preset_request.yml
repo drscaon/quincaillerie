@@ -1,5 +1,5 @@
-name: Part request
-description: Ask for a new fastener, cell format or holder
+name: "Part request"
+description: "Ask for a new fastener, cell format or holder"
 labels: [preset-request]
 body:
   - type: markdown
