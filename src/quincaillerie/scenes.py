@@ -9,20 +9,19 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from pxr import Gf, Usd, UsdGeom, UsdPhysics
+from pxr import Usd, UsdGeom, UsdPhysics
 
 from .batteries import FLOOR_T, holder_design
 from .catalog import CELLS, METRIC
-from .usd import bind_physics, create_stage, physics_material, place, quat_axis_angle
+from .ground import GROUND_MARGIN, ground, physics_scene
+from .usd import create_stage, place, quat_axis_angle
 
 MM = 1e-3
-GROUND_FRICTION = 0.4
 
 
-def new_scene(path, floor=True, floor_size=2.0, floor_visible=False, physics=True):
-    """Stage with /World, a physics scene (gravity -Z, 9.81) and a floor collider whose top is z = 0.
-
-    The floor has purpose 'guide' unless floor_visible: it collides but is not rendered.
+def new_scene(path, floor=True, floor_size=2.0, physics=True):
+    """Stage with /World, the shared physics scene and ground (ground.py: gravity 9.81 along -Z,
+    a 2 cm box whose top is z = 0, floor_size × floor_size, rendered like every Primvaria ground).
     physics=False: no physics scene and no floor."""
     st = create_stage(path)
     UsdGeom.SetStageMetersPerUnit(st, 1.0)
@@ -32,17 +31,10 @@ def new_scene(path, floor=True, floor_size=2.0, floor_visible=False, physics=Tru
     st.SetDefaultPrim(w.GetPrim())
     if not physics:
         return st
-    ps = UsdPhysics.Scene.Define(st, "/World/PhysicsScene")
-    ps.CreateGravityDirectionAttr(Gf.Vec3f(0, 0, -1))
-    ps.CreateGravityMagnitudeAttr(9.81)
+    physics_scene(st)
     if floor:
-        g = UsdGeom.Cube.Define(st, "/World/ground")
-        g.CreateSizeAttr(1.0)
-        if not floor_visible:
-            g.CreatePurposeAttr(UsdGeom.Tokens.guide)
-        place(g, (0, 0, -0.01), (1, 0, 0, 0), (floor_size, floor_size, 0.02))
-        UsdPhysics.CollisionAPI.Apply(g.GetPrim())
-        bind_physics(g.GetPrim(), physics_material(st, "/World", "ground", GROUND_FRICTION))
+        inner = max(floor_size / 2 - GROUND_MARGIN, 0.0)  # the content's footprint, the margin added
+        ground(st, (-inner, -inner), (inner, inner))
     return st
 
 

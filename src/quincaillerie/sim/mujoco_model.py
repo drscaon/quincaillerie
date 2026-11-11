@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 from pxr import Gf, Usd, UsdGeom, UsdPhysics, UsdShade
 
+from ..ground import physics_scene
 from ..usd import mat2quat, place, q2m
 
 
@@ -215,7 +216,7 @@ def scene(path_or_none, items):
     UsdPhysics.SetStageKilogramsPerUnit(st, 1.0)
     w = UsdGeom.Xform.Define(st, "/World")
     st.SetDefaultPrim(w.GetPrim())
-    UsdPhysics.Scene.Define(st, "/World/PhysicsScene")
+    physics_scene(st)
     for name, asset, pos, quat, ov in items:
         x = UsdGeom.Xform.Define(st, f"/World/{name}")
         x.GetPrim().GetReferences().AddReference(asset)

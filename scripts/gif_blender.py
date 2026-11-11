@@ -43,6 +43,9 @@ def capture_prim_map(path):
     bpy.utils.register_class(Capture)
     bpy.ops.wm.usd_import(filepath=path, import_guide=False)
     bpy.utils.unregister_class(Capture)
+    for o in bpy.data.objects:  # the shared ground collides, the studio has its own floor
+        if o.name.split(".")[0] in ("Ground", "PhysicsScene"):
+            o.hide_render = o.hide_viewport = True
     return out
 
 

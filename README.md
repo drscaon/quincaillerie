@@ -234,7 +234,7 @@ holders (spring compressed, clip lifted), rendered in Blender.*
 |---|---|
 | `assets/*.usdc`, `assets/*.usda` | one file per instance, `ISO4017_M8x30_007.usdc` (Blender: File > Import > USD) |
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
-| `scene.usda` | every instance on a floor collider, plus the assemblies |
+| `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
 | `parts.csv` | one row per instance: mass, collision pieces and **every drawn value** (`variation:clearance_mm`, `variation:defect`, `variation:rust`, `variation:spring_factor`…): the ground truth |
 | `summary.json` | counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |
@@ -260,6 +260,23 @@ The underside of a holder is at z = 0 of the asset: it sits on a floor where
 it is placed. Angular drives use UsdPhysics units (per degree). Every
 collider has `PhysxCollisionAPI` offsets and every body `PhysxRigidBodyAPI`
 iterations, read by Isaac Sim and ignored elsewhere.
+
+
+### Ground and physics scene (the same in every Primvaria project)
+
+Every file with physics carries the same two prims, so that assets from
+different generators can share one scene and every engine gets the same floor:
+
+| Prim | What it is |
+|---|---|
+| `/World/PhysicsScene` | gravity 9.81 m/s² along −Z |
+| `/World/Ground` | a static box (`UsdGeom.Cube`, `CollisionAPI`), its top face at z = 0, 2 cm thick, covering the content with 0.5 m to spare on each side (1 m × 1 m at least), grey and rendered, no PhysX attributes (engines derive their contact offsets) |
+| `/World/GroundMaterial` | its physics material: static friction 0.6, dynamic friction 0.5, restitution 0.1, a wooden or concrete floor |
+
+The code is one file, `ground.py`, identical in Granulaire, Maillage, Filaire
+and Quincaillerie; a test checks every generated file against it. The MuJoCo
+checks and the Blender rigid-body checks take the ground's friction from the
+file (Blender's cloth, in Maillage, has its own collision settings).
 
 ## Blender
 

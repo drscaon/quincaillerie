@@ -68,6 +68,9 @@ def area(name, loc, size, energy, color=(1, 1, 1), size_y=None):
 def render(scene_path, out, W, H, spp, eye, tgt, lens, fstop=0.0):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.wm.usd_import(filepath=scene_path, import_guide=False, import_proxy=False)
+    for o in bpy.data.objects:  # the shared ground collides, the studio has its own floor
+        if o.name.split(".")[0] in ("Ground", "PhysicsScene"):
+            o.hide_render = o.hide_viewport = True
     studio(W, H, spp, eye, tgt, lens, fstop)
     sc = bpy.context.scene
     sc.render.filepath = out
