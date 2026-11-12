@@ -12,7 +12,7 @@ import os
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
 
-from .contract import write_identity, write_variation
+from .contract import write_identity, write_measured, write_variation
 
 NS = "quincaillerie"
 
@@ -591,12 +591,14 @@ def strip_physics(stage):
     stage.GetRootLayer().Save()
 
 
-def stamp_identity(path, preset, seed, aspects=(), drawn=None) -> None:
+def stamp_identity(path, preset, seed, aspects=(), drawn=None, measured=None) -> None:
     """Rewrite the identity of the asset in ``path`` (Primvaria contract) with the catalogue entry
     it is an instance of and the seed of the run that drew it, and write its ground truth: the
-    aspects that varied and the drawn values (primvaria:variation:*, the names of parts.csv)."""
+    aspects that varied and the drawn values (primvaria:variation:*), and what was measured on
+    the generated part (primvaria:measured:*)."""
     stage = Usd.Stage.Open(str(path))
     root = stage.GetDefaultPrim()
     write_identity(root, name=root.GetName(), preset=preset, seed=seed, identifier=f"./{os.path.basename(str(path))}")
     write_variation(root, aspects, drawn or {})
+    write_measured(root, measured or {})
     stage.GetRootLayer().Save()

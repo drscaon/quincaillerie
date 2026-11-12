@@ -74,7 +74,7 @@ picture, a different thread fit, alloy density, friction and spring for each.*
 
 Each aspect has its own random stream: `--no-vary wear` keeps the same
 tolerances and defects with clean parts; the same seed gives the same parts.
-Everything drawn is in `parts.csv` and in each file as
+Everything drawn is in `instances.csv` and in each file as
 `primvaria:variation:*` attributes; the clean finishes stay available in
 the `finish` variant set of a worn part. `--nominal` gives the reference part.
 
@@ -235,8 +235,8 @@ holders (spring compressed, clip lifted), rendered in Blender.*
 | `assets/*.usdc`, `assets/*.usda` | one file per instance, `ISO4017_M8x30_007.usdc` (Blender: File > Import > USD) |
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
 | `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
-| `parts.csv` | one row per instance: mass, collision pieces and **every drawn value** (`variation:clearance_mm`, `variation:defect`, `variation:rust`, `variation:spring_factor`…): the ground truth |
-| `summary.json` | counts by kind and by defect, the options used |
+| `instances.csv` | one row per instance, read back from the files: its identity, **every drawn value** (`variation:<name>`) and **every measured value** (`measured:<name>`), then its kind, size or format: the ground truth |
+| `manifest.json` | what the pack is (contract, generator, version, preset, seed, aspects, files) and its summary: counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |
 
 ### OpenUSD layout
@@ -398,8 +398,15 @@ require it on every preset.
 What was drawn for each instance is in the file too, its ground truth:
 `primvaria:variation:aspects` lists the aspects that were switched on
 (`tolerance`, `defect`, `wear`, `physics`) and `primvaria:variation:<name>` holds each drawn value
-(the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…). An aspect that is switched off is still recorded, at its
+(the `variation:*` columns of `instances.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…). An aspect that is switched off is still recorded, at its
 nominal value, and the other aspects keep their draws.
+
+What was measured on each instance once generated is there as well, as
+`primvaria:measured:<name>` (`mass_kg`, `colliders`).
+The pack's `instances.csv` is read back from the OpenUSD files, one row per
+asset with the same names (`variation:<name>`, `measured:<name>`), and
+`manifest.json` says what the pack is; both have the same shape in the four
+generators, and the command above fails when the table and the files disagree.
 
 ## Limits
 

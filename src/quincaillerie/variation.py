@@ -16,7 +16,7 @@ were):
   steel), spring stiffness and preload loss (fatigue), clip torque, cell mass.
 
 Everything drawn is written into the asset (``primvaria:variation:*`` attributes) and into
-``parts.csv``: the ground truth of each instance.
+``instances.csv``: the ground truth of each instance.
 """
 
 from __future__ import annotations
