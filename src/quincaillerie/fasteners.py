@@ -44,6 +44,36 @@ MM = 1e-3
 CONTACT_OFFSET = 0.0001  # PhysX contact offset (m), below twice the thread clearance
 SEG_DEG = 10.0  # helix angle covered by one convex collision piece
 DETAIL = {"low": (48, 8), "normal": (72, 14), "high": (96, 24)}  # visual mesh: sides, rings per pitch
+# Collision of a fastener. "thread": every turn of the helix as convex pieces, so a nut screws on
+# and a crushed thread jams (about a thousand pieces for an M8x30). "simple": the envelope alone,
+# a cylinder for the shank, twelve wedges for a nut, eight sectors for a washer: parts fall, pile up
+# and can be grasped, a nut slides freely over a shank, and nothing screws or jams.
+COLLIDERS = ("thread", "simple")
+
+
+def _collider(name: str) -> str:
+    if name not in COLLIDERS:
+        raise ValueError(f"unknown collider {name!r}: {', '.join(COLLIDERS)}")
+    return name
+
+
+def nut_wedges(s_af, bore_r, height):
+    """A hex nut as twelve convex wedges around its bore, two per flat: [points].
+
+    Each wedge spans 30 degrees, from a corner of the hexagon to the middle of a flat. Its inner
+    face is a chord tangent to the bore circle, so the hole is never narrower than the bore."""
+    step = np.pi / 6
+    inner = bore_r / np.cos(step / 2)  # the chord between two inner points touches the bore
+    out = []
+    for i in range(12):
+        pts = []
+        for a in (i * step + np.pi / 6, (i + 1) * step + np.pi / 6):
+            corner = round((a - np.pi / 6) / step) % 2 == 0  # corners at 30 + 60 k degrees
+            outer = s_af / np.sqrt(3) if corner else s_af / 2
+            for r in (inner, outer):
+                pts += [[r * np.cos(a), r * np.sin(a), z] for z in (0.0, height)]
+        out.append(np.array(pts))
+    return out
 
 
 def hex_prism(s_af, z0, z1):
@@ -121,8 +151,13 @@ def _bend(points, angle_deg, length):
     return P
 
 
-def write_screw(path, size="M8", length=None, finish="zinc_clear", v=None, name=None, detail="normal"):
-    """Fully threaded hex head screw. Head from z=-k to 0, shank from 0 to the length, axis +Z."""
+def write_screw(
+    path, size="M8", length=None, finish="zinc_clear", v=None, name=None, detail="normal", collider="thread"
+):
+    """Fully threaded hex head screw. Head from z=-k to 0, shank from 0 to the length, axis +Z.
+
+    collider: "thread" (the helix, in convex pieces) or "simple" (a cylinder at the major diameter)."""
+    simple = _collider(collider) == "simple"
     from .catalog import DEFAULT_LENGTH
 
     v = v or FastenerVariation()
@@ -147,8 +182,9 @@ def write_screw(path, size="M8", length=None, finish="zinc_clear", v=None, name=
     nt, nz = DETAIL[detail]
     Vs, Fs = threaded_bolt_mesh(prof, L, clearance, nt=nt, nz_per_pitch=nz, crush=crush, burr=burr)
     Vh, Fh = hex_prism(s_af, -k, 0.0)
-    pieces = segments(prof, 0.0, L, clearance, "bolt", SEG_DEG, crush=crush, burr=burr)
-    core_r = prof["d3"] / 2 - clearance
+    pieces = [] if simple else segments(prof, 0.0, L, clearance, "bolt", SEG_DEG, crush=crush, burr=burr)
+    # the simple collider is the shank at its major diameter; the core carries the thread pieces
+    core_r = (d / 2 if simple else prof["d3"] / 2) - clearance
     if v.defect == "bent":
         Vs = _bend(Vs, v.defect_size, L)
         pieces = [_bend(p, v.defect_size, L) for p in pieces]
@@ -160,8 +196,9 @@ def write_screw(path, size="M8", length=None, finish="zinc_clear", v=None, name=
     m, com, inertia = _combined_mass([(Vs, Fs), (Vh, Fh)], v.density)
     ev, q = inertia_principal(inertia)
     rigid_body(root, m, com, ev, q)
+    slices = 0
     if v.defect == "bent":  # the core follows the bend: stacked convex slices
-        n = max(4, int(np.ceil(L / (2 * P))))
+        n = slices = max(4, int(np.ceil(L / (2 * P))))
         ring = np.linspace(0, 2 * np.pi, 16, endpoint=False)
         for i in range(n):
             za, zb = L * i / n, L * (i + 1) / n
@@ -188,6 +225,7 @@ def write_screw(path, size="M8", length=None, finish="zinc_clear", v=None, name=
             propertyClass="8.8",
             finishes=FINISHES,
             threadClearance=clearance,
+            collision=collider,
             dimensionsStatus="nominal" if v == FastenerVariation() else "varied within tolerance",
             mass=m,
             compatibleWith=[nut_name(size), washer_name(size)],
@@ -210,12 +248,21 @@ def write_screw(path, size="M8", length=None, finish="zinc_clear", v=None, name=
     )
     _save(stage)
     return dict(
-        name=name, kind="screw", size=size, length_mm=length, mass_g=m * 1e3, colliders=len(pieces) + 2, **as_attrs(v)
+        name=name,
+        kind="screw",
+        size=size,
+        length_mm=length,
+        mass_g=m * 1e3,
+        colliders=len(pieces) + 1 + (slices or 1),
+        **as_attrs(v),
     )
 
 
-def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="normal"):
-    """Hex nut, z from 0 to its height, threaded along +Z."""
+def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="normal", collider="thread"):
+    """Hex nut, z from 0 to its height, threaded along +Z.
+
+    collider: "thread" (the helix, in convex pieces) or "simple" (twelve wedges around a smooth bore)."""
+    simple = _collider(collider) == "simple"
     v = v or FastenerVariation()
     t = METRIC[size]
     d, P = t["d"] * MM, t["P"] * MM
@@ -232,7 +279,10 @@ def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="n
         crush = (_zone(v, H, P), _widen(v, P), 0.5 * v.defect_size * (prof["d"] - prof["d1"]) / 2)
     nt, nz = DETAIL[detail]
     V, F = nut_mesh(prof, s_af, H, clearance, nt=nt, nz_per_pitch=nz, crush=crush)
-    pieces = segments(prof, 0.0, H, clearance, "nut", SEG_DEG, s_af=s_af, crush=crush)
+    if simple:  # a smooth bore at the major diameter: the nut slides over a shank
+        pieces = nut_wedges(s_af, d / 2 + clearance, H)
+    else:
+        pieces = segments(prof, 0.0, H, clearance, "nut", SEG_DEG, s_af=s_af, crush=crush)
     if v.defect == "oval":  # squeezed: one diameter shorter, the other longer
         e = v.defect_size * MM / d
         S = np.diag([1 + e, 1 - e, 1.0])
@@ -251,6 +301,7 @@ def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="n
         root,
         dict(
             category="nut",
+            collision=collider,
             standard="ISO 4032",
             designation=f"ISO 4032 - {size}",
             size=size,
@@ -299,8 +350,13 @@ def _dish(points, d1, d2, height):
     return P
 
 
-def write_washer(path, size="M8", finish="zinc_clear", v=None, name=None, sectors=24, detail="normal"):
-    """Plain washer, z from 0 to its thickness. Collision: `sectors` convex ring sectors."""
+def write_washer(
+    path, size="M8", finish="zinc_clear", v=None, name=None, sectors=24, detail="normal", collider="thread"
+):
+    """Plain washer, z from 0 to its thickness. Collision: `sectors` convex ring sectors (8 with
+    collider="simple")."""
+    if _collider(collider) == "simple":
+        sectors = 8
     v = v or FastenerVariation()
     d1, d2, h = (x * MM for x in METRIC[size]["washer"])
     h += v.height_dmm * MM * 0.3  # thickness tolerance is tighter than a head's
@@ -335,6 +391,7 @@ def write_washer(path, size="M8", finish="zinc_clear", v=None, name=None, sector
         root,
         dict(
             category="washer",
+            collision=collider,
             standard="ISO 7089",
             designation=f"ISO 7089 - {size}",
             size=size,

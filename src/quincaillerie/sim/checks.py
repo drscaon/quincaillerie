@@ -58,6 +58,7 @@ def inventory(set_dir):
             file=os.path.abspath(f),
             length=get("length"),
             defect=get("variation:defect") or "none",
+            threaded=(get("collision") or "thread") == "thread",
             contact_force=get("contactForce"),
             preload=get("springPreload"),
             attrs={
@@ -71,6 +72,11 @@ def inventory(set_dir):
 
 def _sound(items):
     return [(n, a) for n, a in items if a["defect"] == "none"]
+
+
+def _threaded(items):
+    """The fasteners whose collision carries the thread (collider "thread", not "simple")."""
+    return [(n, a) for n, a in items if a["threaded"]]
 
 
 # ------------------------------------------------------------------ test scenes
@@ -99,6 +105,8 @@ def build_test_scenes(set_dir, pairs=2):
     for size in sizes:
         screws = _sound([(n, a) for n, a in inv.items() if a["kind"] == "screw" and a["key"] == size])
         nuts = _sound([(n, a) for n, a in inv.items() if a["kind"] == "nut" and a["key"] == size])
+        # a nut holds on a screw by their threads: not with simple colliders
+        screws, nuts = _threaded(screws), _threaded(nuts)
         for j, ((sn, sa), (nn, na)) in enumerate(zip(screws, nuts, strict=False)):
             if j >= pairs:
                 break
@@ -251,6 +259,21 @@ def check_scene(name, kind, path, info):
     lim = info.get("side_play", 0.0) + 0.6
     msg = f"cell moved {dc:.3f} mm in its holder (play {lim:.1f}), {mover} moved {dm:.3f} mm"
     return dc < lim and dm < 0.3, msg, r["wall"]
+
+
+def settle_scene(path, seconds=1.0, dt=5e-4):
+    """The whole scene of a set under gravity: every body must come to rest on the floor.
+
+    Meant for sets made with simple colliders (hundreds of fasteners in one scene); with threaded
+    colliders the model has about a thousand collision pieces per screw."""
+    r = run_mujoco(path, seconds, dt)
+    n = len(r["final"])
+    if not r["finite"]:
+        return False, f"{n} bodies, diverged", r["wall"]
+    speed = max(np.linalg.norm(v) for v in r["vel"].values()) / MM
+    low = min(p[2] for p, _ in r["final"].values()) / MM
+    ok = speed < 10.0 and low > -1.0
+    return ok, f"{n} bodies at rest: fastest {speed:.2f} mm/s, lowest centre {low:+.2f} mm", r["wall"]
 
 
 # ------------------------------------------------------------------ insertion
@@ -523,7 +546,7 @@ def jam(screw, nut, size, sound_screw, max_turns=3.0, rate=2.0):
 
 
 # ------------------------------------------------------------------ the whole suite
-def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, defects=False):
+def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, defects=False, scene=False):
     rows = []
 
     def add(name, kind, ok, msg, wall):
@@ -552,13 +575,16 @@ def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, def
                     r = insertion(ca["file"], ha["file"], fmt, rev)
                     ok, msg = check_insertion(r)
                     add(f"{tag}{'_reversed' if rev else ''}", "insertion", ok, msg, r["wall"])
+    if scene and (not only or only in "scene"):
+        ok, msg, wall = settle_scene(os.path.join(set_dir, "scene.usda"))
+        add("scene", "scene", ok, msg, wall)
     if defects:
         for size in METRIC:
-            nuts = of("nut", size, sound=True)
-            for sn, sa in of("screw", size):
+            nuts = _threaded(of("nut", size, sound=True))
+            for sn, sa in _threaded(of("screw", size)):
                 if sa["defect"] != "crushed_thread" or not nuts or (only and only not in f"jam_{sn}"):
                     continue
-                sound = of("screw", size, sound=True)
+                sound = _threaded(of("screw", size, sound=True))
                 if not sound:
                     continue
                 r = jam(sa, nuts[0][1], size, sound[0][1])
@@ -569,7 +595,7 @@ def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, def
                 add(f"jam_{sn}", "jam", r["stopped"], msg, r["wall"])
     if screw:
         for size in METRIC:
-            sc, nu = of("screw", size, sound=True), of("nut", size, sound=True)
+            sc, nu = _threaded(of("screw", size, sound=True)), _threaded(of("nut", size, sound=True))
             if sc and nu and (not only or only in f"screwing_{size}"):
                 t0 = time.time()
                 res = screwing(sc[0][1]["file"], nu[0][1]["file"], size)

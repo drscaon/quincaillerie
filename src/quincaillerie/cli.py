@@ -8,6 +8,7 @@ import time
 
 from . import __version__
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
+from .fasteners import COLLIDERS
 from .materials import FINISHES
 from .variation import ASPECTS
 
@@ -60,6 +61,7 @@ def cmd_generate(args):
         vary=() if args.nominal else tuple(a for a in ASPECTS if a not in (args.no_vary or "").split(",")),
         defect_rate=args.defect_rate,
         detail=args.detail,
+        collider=args.collider,
     )
     print(f"{len(res.parts)} assets in {res.out_dir}/assets ({time.time() - t0:.1f}s)")
     if len(res.parts) > 12:  # a summary, not every line
@@ -83,7 +85,12 @@ def cmd_sim_test(args):
     from .sim.checks import sim_test
 
     rows = sim_test(
-        args.dir, insertions=not args.no_insertion, screw=args.screwing, only=args.only, defects=args.defects
+        args.dir,
+        insertions=not args.no_insertion,
+        screw=args.screwing,
+        only=args.only,
+        defects=args.defects,
+        scene=args.scene,
     )
     return 0 if all(r["ok"] for r in rows) else 1
 
@@ -131,6 +138,13 @@ def build_parser():
     )
     g.add_argument("--defect-rate", type=float, default=0.15, help="share of instances with a defect (default 0.15)")
     g.add_argument("--detail", choices=["low", "normal", "high"], default="normal", help="visual mesh resolution")
+    g.add_argument(
+        "--collider",
+        choices=COLLIDERS,
+        default="thread",
+        help="collision of fasteners: thread (default; nuts screw on, crushed threads jam) or simple "
+        "(the envelope alone: for large scenes where parts only fall, pile up and are grasped)",
+    )
     g.add_argument("--finish", default="zinc_clear", choices=FINISHES, help="default finish of fasteners")
     g.add_argument("--seed", type=int, default=1)
     g.add_argument("--out", default="output")
@@ -142,6 +156,7 @@ def build_parser():
     s.add_argument("--no-insertion", action="store_true", help="skip the cell insertion tests")
     s.add_argument("--screwing", action="store_true", help="also screw each nut on its screw (slow)")
     s.add_argument("--defects", action="store_true", help="check that crushed threads jam a nut (slow)")
+    s.add_argument("--scene", action="store_true", help="also let the whole scene.usda settle under gravity")
     s.add_argument("--only", help="run the tests whose name contains this text")
     s.set_defaults(func=cmd_sim_test)
     b = sub.add_parser("blender-test", help="the same gravity checks in Blender")

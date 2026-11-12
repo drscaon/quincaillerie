@@ -35,9 +35,15 @@ def new_scene(path, floor=True, floor_size=2.0, physics=True):
         return st
     physics_scene(st)
     if floor:
-        inner = max(floor_size / 2 - GROUND_MARGIN, 0.0)  # the content's footprint, the margin added
-        ground(st, (-inner, -inner), (inner, inner))
+        add_floor(st, floor_size)
     return st
+
+
+def add_floor(st, floor_size=2.0, reach=(0.0, 0.0)):
+    """The shared ground, floor_size x floor_size around the origin, extended to cover content
+    that reaches (x, y) = reach."""
+    inner = max(floor_size / 2 - GROUND_MARGIN, 0.0)  # the content's footprint, the margin added
+    ground(st, (-inner, -inner), (max(inner, reach[0]), max(inner, reach[1])))
 
 
 def add_ref(st, prim_name, asset_file, pos, quat=(1, 0, 0, 0), finish=None):

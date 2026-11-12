@@ -84,6 +84,10 @@ jobs:
             quincaillerie generate cell $f --with holder --count 5 --defect-rate 0.4 --out ci-varied
             quincaillerie sim-test ci-varied/Cell_$f
           done
+      - name: Simple colliders, a scene of 100 screws, nuts and washers settles
+        run: |
+          quincaillerie generate screw M8 --with nut,washer --count 100 --detail low --collider simple --out ci-simple
+          quincaillerie sim-test ci-simple/ISO4017_M8x30 --scene --only scene
       - name: Screwing (M8)
         run: |
           quincaillerie generate screw M8 --with nut --no-scene --out ci-output

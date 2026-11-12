@@ -20,6 +20,17 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `--collider simple` (`generate(..., collider="simple")`): fasteners collide
+  as their envelope alone, 2 pieces for a screw, 12 for a nut and 8 for a
+  washer, where a threaded M8 × 30 screw takes 837. For scenes with many parts
+  that only fall, pile up and are grasped; nothing screws or jams. The mesh,
+  the mass and the drawn values are unchanged, and each file says which
+  collider it has (`quincaillerie:collision`).
+- `sim-test --scene`: the whole `scene.usda` of a set settles under gravity in
+  MuJoCo. A scene of 100 screws, nuts and washers with simple colliders (303
+  bodies) comes to rest in about 25 s.
+- The scene lays instances out 25 to a row, on a floor that covers them all
+  (it was one row per part on a 2 m floor).
 - What was measured on each instance is written in the file as
   `primvaria:measured:<name>` (`mass_kg`, `colliders`).
 - `python -m quincaillerie.conformance` also checks every pack it finds: the table must
