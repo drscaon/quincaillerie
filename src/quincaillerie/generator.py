@@ -24,7 +24,7 @@ from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset
 from .fasteners import write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .pack import write_pack
-from .scenes import add_ref, footprint, new_scene, place_seated, rest_pose, save, thread_height
+from .scenes import add_floor, add_ref, footprint, new_scene, place_seated, rest_pose, save, thread_height
 from .usd import quat_axis_angle, stamp_identity
 from .variation import ASPECTS, Sampler
 
@@ -84,16 +84,16 @@ def catalog_parts():
     return out
 
 
-def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None, detail="normal"):
+def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None, detail="normal", collider="thread"):
     """Write one part; `name` (file and root prim) and `variation` for an instance."""
     filename = (name + os.path.splitext(part.filename)[1]) if name else part.filename
     path = os.path.join(assets_dir, filename)
     if part.kind == "screw":
-        info = write_screw(path, part.key, part.length, finish, variation, name, detail)
+        info = write_screw(path, part.key, part.length, finish, variation, name, detail, collider)
     elif part.kind == "nut":
-        info = write_nut(path, part.key, finish, variation, name, detail)
+        info = write_nut(path, part.key, finish, variation, name, detail, collider)
     elif part.kind == "washer":
-        info = write_washer(path, part.key, finish, variation, name, detail=detail)
+        info = write_washer(path, part.key, finish, variation, name, detail=detail, collider=collider)
     elif part.kind == "cell":
         info = write_cell(path, part.key, variation, name)
     else:
@@ -123,12 +123,14 @@ def generate(
     vary=ASPECTS,
     defect_rate=0.15,
     detail="normal",
+    collider="thread",
 ):
     """Write `count` instances of each part, the material library and a scene. Returns a Result.
 
     vary: the aspects that vary between instances (tolerance, defect, wear, physics); () writes one
     nominal file per part, placed `count` times in the scene. physics=False writes visual assets
-    only: no rigid bodies, colliders, joints or physics scene."""
+    only: no rigid bodies, colliders, joints or physics scene. collider: "thread" (fasteners screw
+    and jam) or "simple" (their envelope alone, for large scenes; see fasteners.COLLIDERS)."""
     if finish not in FINISHES:
         raise ValueError(f"unknown finish {finish!r}; expected one of {', '.join(FINISHES)}")
     set_name = set_name or parts[0].name
@@ -146,7 +148,7 @@ def generate(
         n = count if vary else 1
         for i in range(n):
             name = f"{p.name}_{i:03d}" if vary else None
-            info = write_part(p, assets, finish, draw(sampler, p, finish), name, detail)
+            info = write_part(p, assets, finish, draw(sampler, p, finish), name, detail, collider)
             drawn = {k.removeprefix("variation:"): v for k, v in info.items() if k.startswith("variation:")}
             mass = info.get("mass_g")
             measured = {"mass_kg": mass / 1e3 if mass is not None else None, "colliders": info.get("colliders")}
@@ -178,6 +180,7 @@ def generate(
             for d in sorted({p.get("variation:defect", "none") for p in res.parts})
         },
         finish=finish,
+        collider=collider,
         materials=mat_info,
         scene="scene.usda" if scene else None,
         physics=physics,
@@ -189,16 +192,20 @@ def generate(
     return res
 
 
+ROW = 25  # instances of one part side by side in the scene, before a new row
+
+
 def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed=1, physics=True, varied=True):
-    """Lay every instance out on the floor, in rows by part, with random yaw (nominal parts: `count`
-    copies); then the assemblies that the parts allow (screw + washer + nut of one size, cell + holder
-    of one format), made of instances without defects."""
+    """Lay every instance out on the floor, in rows by part (at most ROW of them side by side), with
+    random yaw (nominal parts: `count` copies); then the assemblies that the parts allow (screw +
+    washer + nut of one size, cell + holder of one format), made of instances without defects. The
+    floor covers them all."""
     from .usd import qmul
 
     rng = np.random.default_rng(seed)
-    st = new_scene(path, physics=physics)
+    st = new_scene(path, floor=False, physics=physics)
     by = {(p.kind, p.key): p for p in parts}
-    y = 0.0
+    y = reach = 0.0
     for p in parts:
         w, d = footprint(p.kind, p.key, p.length)
         w, d = w + 0.01, d + 0.01
@@ -208,12 +215,13 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
         for i in range(count):
             yaw = rng.uniform(0, 2 * np.pi) if p.kind in ("screw", "nut", "washer") else 0.0
             q = qmul(quat_axis_angle((0, 0, 1), yaw), q0)
-            pos = (i * w + off[0], y + off[1], off[2])
+            pos = ((i % ROW) * w + off[0], y + (i // ROW) * d + off[1], off[2])
             fin = None if varied or p.kind not in ("screw", "nut", "washer") else finish
             k = i if varied else 0
             prim = names[k] if varied else f"{p.name}_{i:03d}"
             add_ref(st, prim, files[k], pos, q, fin)
-        y += d
+        y += d * ((count - 1) // ROW + 1)
+        reach = max(reach, min(count, ROW) * w)
 
     def sound(part):  # an instance without a defect, for the assemblies
         for info in instances[part]:
@@ -245,4 +253,6 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
                 st, f"assembly_{p.name}", f"assembly_{by[('cell', p.key)].name}", sound(by[("cell", p.key)]), p.key, hp
             )
             x += w + 0.01
+    if physics:  # the floor covers every row, however many instances
+        add_floor(st, reach=(max(reach, x) + 0.05, y + 0.1))
     return save(st)

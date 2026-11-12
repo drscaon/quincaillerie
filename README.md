@@ -200,6 +200,7 @@ generate(parts, "output", vary=("tolerance", "physics"))  # clean, undamaged, va
 | `--no-vary ASPECTS` | | aspects that stay nominal: `tolerance`, `defect`, `wear`, `physics` |
 | `--nominal` | | no variation: the reference part (`--count` copies in the scene) |
 | `--detail` | `normal` | visual mesh resolution, `low`, `normal` or `high` (1.4, 3.4 and 7.5 MB for an M8 × 30 screw) |
+| `--collider` | `thread` | collision of the fasteners: `thread` (the helix in convex pieces: nuts screw on, crushed threads jam) or `simple` (the envelope alone: 2 pieces for a screw, 12 for a nut, 8 for a washer), see [Simple colliders](#simple-colliders) |
 | `--finish F` | `zinc_clear` | default finish of the fasteners (all six are in every file's variant set) |
 | `--no-physics` | | no rigid bodies, colliders, joints or physics scene |
 | `--no-scene` | | assets and materials only |
@@ -379,6 +380,33 @@ PyPI have none, so this check is skipped there. The `.mtlx` document is
 validated against the MaterialX standard library when the `materialx` extra is
 installed.
 
+## Simple colliders
+
+A threaded fastener collides as its helix, in convex pieces: 837 for an
+M8 × 30 screw. That is what lets a nut screw on and a crushed thread
+jam, and it is heavy for scenes with many parts. When parts only need to
+fall, pile up and be grasped, generate them with their envelope alone:
+
+```bash
+quincaillerie generate screw M8 --with nut,washer --count 100 --collider simple
+quincaillerie sim-test output/ISO4017_M8x30 --scene      # the whole scene settles (MuJoCo)
+```
+
+| Part | `thread` | `simple` |
+|---|---|---|
+| Screw | the helix, a core and the head (837 pieces at M8 × 30) | a cylinder at the major diameter and the head |
+| Nut | the internal helix (198 pieces at M8) | twelve wedges around a smooth bore, never narrower than the screw |
+| Washer | 24 ring sectors | 8 ring sectors |
+
+The visual mesh, the mass, the inertia, the materials and every drawn value
+are the same in both: only the collision changes, and each file says which
+it has (`quincaillerie:collision`, and `measured:colliders` in
+`instances.csv`). A scene of 100 screws, 100 nuts and 100 washers (303
+bodies) settles on the floor in MuJoCo 4.0 in about 25 s on one CPU; the
+scene lays the instances out 25 to a row on a floor that covers them all.
+`sim-test` skips the tests that need a thread (a nut held on a screw,
+screwing, jamming) for parts with simple colliders.
+
 ## Primvaria contract
 
 ```bash
@@ -425,8 +453,12 @@ generators, and the command above fails when the table and the files disagree.
   screws, nuts and washers (4 224 shapes) filled its default buffer of
   210 600 contacts and the washers fell through the floor; with 400 000
   they rest, the buffer still full. Raise the engine's contact limits for
-  threaded parts, or keep them few per scene. Loose parts that only need to
-  fall could use a simplified collider; not generated yet.
+  threaded parts, keep them few per scene, or generate the parts that only
+  need to fall, pile up and be grasped with `--collider simple`.
+- **Simple colliders do not screw or jam.** With `--collider simple` a nut
+  slides freely over a shank and a crushed thread no longer stops it: the
+  defect is still drawn, recorded and visible, but it is not physical. Bent
+  shanks, oval nuts and dished washers keep their effect.
 - **Simplified holders.** Generic designs (ABS boxes, a flat spring plate),
   not a product; no electrical contact model.
 - **Blender springs start at rest.** See [Blender](#blender): a cell placed
@@ -441,9 +473,8 @@ generators, and the command above fails when the table and the files disagree.
    and wrenches matched to the drives (`--with tool`), and tapped bases.
 2. More fasteners: socket head cap screws (ISO 4762), countersunk and pan
    head screws, partially threaded shanks, lock and spring washers.
-3. Simplified colliders for parts that only need to fall; level of detail.
-4. A PhysX test in Isaac Sim; CAD export (STEP) of the same parametric parts.
-5. Assembly tasks: torque, misalignment tolerances, success labels.
+3. A PhysX test in Isaac Sim; CAD export (STEP) of the same parametric parts.
+4. Assembly tasks: torque, misalignment tolerances, success labels.
 
 ## Development
 

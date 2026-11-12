@@ -26,3 +26,15 @@ def test_insertion_aa(small_set, reverse):
     ok, msg = check_insertion(r)
     assert ok, msg
     assert r["polarity"] == ("reversed" if reverse else "correct")
+
+
+def test_a_scene_of_simple_fasteners_settles(tmp_path):
+    from quincaillerie import generate, resolve
+    from quincaillerie.sim.checks import build_test_scenes, settle_scene
+
+    parts = resolve("screw", "M6", 12, ["nut", "washer"])
+    res = generate(parts, str(tmp_path), "pile", count=30, detail="low", collider="simple", seed=2)
+    ok, msg, _ = settle_scene(res.scene)
+    assert ok, msg
+    # a nut does not hold on a screw by simple colliders: no such test scene is built
+    assert not any(kind == "nut_on_screw" for _, kind, _, _ in build_test_scenes(res.out_dir))
