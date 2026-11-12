@@ -8,13 +8,12 @@ One call writes, under ``<out>/<set name>/``:
   textures of the worn instances (``instances/``);
 * ``scene.usda``  every instance at rest on a floor collider, plus the assemblies (a nut threaded on
   its screw over a washer, a cell seated in its holder);
-* ``parts.csv``   one row per instance with every drawn value: the ground truth; ``summary.json``.
+* ``instances.csv``   one row per instance with every drawn and measured value, read back from
+  the files: the ground truth; ``manifest.json``.
 """
 
 from __future__ import annotations
 
-import csv
-import json
 import os
 from dataclasses import dataclass, field
 
@@ -24,6 +23,7 @@ from .batteries import write_cell, write_holder
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset_name
 from .fasteners import write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
+from .pack import write_pack
 from .scenes import add_ref, footprint, new_scene, place_seated, rest_pose, save, thread_height
 from .usd import quat_axis_angle, stamp_identity
 from .variation import ASPECTS, Sampler
@@ -148,7 +148,9 @@ def generate(
             name = f"{p.name}_{i:03d}" if vary else None
             info = write_part(p, assets, finish, draw(sampler, p, finish), name, detail)
             drawn = {k.removeprefix("variation:"): v for k, v in info.items() if k.startswith("variation:")}
-            stamp_identity(os.path.join(root, info["file"]), p.name, seed, aspects=vary, drawn=drawn if vary else {})
+            mass = info.get("mass_g")
+            measured = {"mass_kg": mass / 1e3 if mass is not None else None, "colliders": info.get("colliders")}
+            stamp_identity(os.path.join(root, info["file"]), p.name, seed, vary, drawn, measured)
             if not physics:
                 from pxr import Usd
 
@@ -162,13 +164,6 @@ def generate(
         res.scene = write_scene(
             os.path.join(root, "scene.usda"), parts, instances, root, count, finish, seed, physics, bool(vary)
         )
-    base = ["name", "instance_of", "kind", "size", "format", "length_mm", "mass_g", "colliders", "family", "file"]
-    var_keys = sorted({k for row in res.parts for k in row if k.startswith("variation:")})
-    with open(os.path.join(root, "parts.csv"), "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=base + var_keys, extrasaction="ignore")
-        w.writeheader()
-        for row in res.parts:
-            w.writerow({k: (round(v, 6) if isinstance(v, float) else v) for k, v in row.items()})
     summary = dict(
         set=set_name,
         parts=len(res.parts),
@@ -187,8 +182,10 @@ def generate(
         scene="scene.usda" if scene else None,
         physics=physics,
     )
-    with open(os.path.join(root, "summary.json"), "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=1)
+    # instances.csv (one row per instance, read back from the files) and manifest.json
+    own = ("kind", "size", "format", "length_mm", "family")
+    extra = {row["name"]: {k: row[k] for k in own if row.get(k) is not None} for row in res.parts}
+    write_pack(root, set_name, seed, vary, summary=summary, extra=extra)
     return res
 
 

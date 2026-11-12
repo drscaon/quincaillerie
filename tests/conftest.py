@@ -28,3 +28,11 @@ def contract_files(varied_set):
     from quincaillerie.contract import usd_files
 
     return usd_files([varied_set.out_dir])
+
+
+@pytest.fixture(scope="session")
+def pack_folder(varied_set):
+    """A pack freshly generated: varied instances, the material library and the scene."""
+    from pathlib import Path
+
+    return Path(varied_set.out_dir)

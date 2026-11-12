@@ -48,7 +48,8 @@ def inventory(set_dir):
         root = st.GetDefaultPrim()
 
         def get(a, r=root):
-            attr = r.GetAttribute(f"quincaillerie:{a}")
+            # the drawn values are in the suite's namespace (Primvaria contract)
+            attr = r.GetAttribute(f"primvaria:{a}" if a.startswith("variation:") else f"quincaillerie:{a}")
             return attr.Get() if attr else None
 
         out[root.GetName()] = dict(
@@ -62,7 +63,7 @@ def inventory(set_dir):
             attrs={
                 a.GetName().split(":", 1)[1]: a.Get()
                 for a in root.GetAttributes()
-                if a.GetName().startswith("quincaillerie:")
+                if a.GetName().startswith(("quincaillerie:", "primvaria:variation:"))
             },
         )
     return out
@@ -274,7 +275,7 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
     # a cell made shorter than nominal (within its tolerance) compresses the spring, or lifts the
     # clip, less: what this holder should do with this cell
     cstage = Usd.Stage.Open(cell_file)
-    dl = cstage.GetDefaultPrim().GetAttribute("quincaillerie:variation:length_dmm")
+    dl = cstage.GetDefaultPrim().GetAttribute("primvaria:variation:length_dmm")
     dl = dl.Get() if dl else 0.0
     Dn = holder_design(fmt)
     if pre_design is not None:

@@ -6,11 +6,28 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Pack files (Primvaria contract): `parts.csv` and `summary.json` are replaced by
+  `instances.csv` and `manifest.json`, the same in the four generators. The
+  table is read back from the OpenUSD files, one row per asset: identity,
+  aspects, `variation:<name>` and `measured:<name>` columns, then the
+  generator's own; the former summary is the manifest's `summary`.
+- The drawn values of an instance are written as `primvaria:variation:<name>`
+  attributes (Primvaria contract, variation model); the
+  `quincaillerie:variation:<name>` attributes are gone. The names are
+  unchanged.
+
 ### Added
 
+- What was measured on each instance is written in the file as
+  `primvaria:measured:<name>` (`mass_kg`, `colliders`).
+- `python -m quincaillerie.conformance` also checks every pack it finds: the table must
+  say what the files say. `pack.py` and `tests/test_pack.py` are shared by the
+  four generators.
 - Ground truth of the variation, in the file (Primvaria contract, variation
   model): `primvaria:variation:aspects`, the aspects that were switched on, and
-  one `primvaria:variation:<name>` per drawn value (the `variation:*` columns of `parts.csv`, under the same names: `clearance_mm`, `defect`, `rust`, `spring_factor`…).
+  one `primvaria:variation:<name>` per drawn value (`clearance_mm`, `defect`, `rust`, `spring_factor`…).
   `python -m quincaillerie.conformance` requires the aspects on every asset.
 - `CONTRIBUTING.md`, issue templates (bug report, part request),
   `SECURITY.md` and `CITATION.cff`.

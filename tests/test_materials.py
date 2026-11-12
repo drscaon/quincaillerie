@@ -20,5 +20,5 @@ def test_materialx_document_is_valid(small_set):
     pytest.importorskip("MaterialX")
     import json
 
-    with open(os.path.join(small_set.out_dir, "summary.json")) as f:
-        assert json.load(f)["materials"]["materialx_valid"] is True
+    with open(os.path.join(small_set.out_dir, "manifest.json")) as f:
+        assert json.load(f)["summary"]["materials"]["materialx_valid"] is True
