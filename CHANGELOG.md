@@ -8,6 +8,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Breaking changes
 
+- The thread clearance of a screw or a nut is drawn inside the usual fit, a 6g
+  screw in a 6H nut, computed from the public formulas of the ISO metric
+  thread tolerance system (`fits.py`), where it was drawn between 1.6 and 8 %
+  of the pitch. The same seed gives other clearances than before;
+  `--thread-play legacy` gives the former ones, exactly. Every other drawn
+  value is unchanged.
 - Pack files (Primvaria contract): `parts.csv` and `summary.json` are replaced by
   `instances.csv` and `manifest.json`, the same in the four generators. The
   table is read back from the OpenUSD files, one row per asset: identity,
@@ -20,6 +26,18 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `--thread-play` (`generate(..., thread_play=)`): `class` (default, drawn in
+  the 6g / 6H fit), `middle` (the middle of the fit for every instance,
+  whatever the seed) or `legacy`. The fit is recorded as `thread_class`, in
+  the files and in `instances.csv`.
+- Defect rate and jam rate (`docs/jam-rate.md`, `scripts/jam_experiment.py`,
+  data in `docs/jam_experiment.json`): on 40 M6 screws driven in MuJoCo, every
+  crushed thread jams a nut and no sound, bent or burred screw does, so the
+  jam rate is a third of `--defect-rate`. Tests protect the curve.
+  `sim.checks.through()` drives a nut from the head of a screw to its tip.
+- `examples/`: four short scripts, each explained by its own comments (a first
+  pack and its ground truth, one aspect switched off, reading the files with
+  OpenUSD alone, a nut screwed on in MuJoCo); a test runs each one.
 - `--collider simple` (`generate(..., collider="simple")`): fasteners collide
   as their envelope alone, 2 pieces for a screw, 12 for a nut and 8 for a
   washer, where a threaded M8 × 30 screw takes 837. For scenes with many parts
@@ -51,6 +69,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `python -m quincaillerie.conformance`: checks files against the contract (stage
   units, model hierarchy, identity). Run in the tests and, in CI, on every
   preset.
+
+### Changed
+
+- The README is less than half its former length; the detail moved, unchanged,
+  to `docs/`: `usage.md`, `openusd.md`, `physics.md`, `limits.md`,
+  `development.md`.
+  [primvaria.com/quincaillerie](https://primvaria.com/quincaillerie/) is built
+  from these files.
+- Continuous integration runs the checks shared by the four generators
+  (Primvaria's reusable workflow).
 
 ## [0.2.0b1] - 2026-11-11 (beta)
 
