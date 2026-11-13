@@ -1,0 +1,389 @@
+{
+ "size": "M6",
+ "length_mm": 16,
+ "nominal_head_to_tip_mm": 9.72,
+ "screws": [
+  {
+   "screw": "ISO4017_M6x16_004",
+   "defect": "bent",
+   "defect_size": 2.50145,
+   "clearance_mm": 0.06254,
+   "test": "head to tip",
+   "travel_mm": 10.006,
+   "wall_s": 54.2
+  },
+  {
+   "screw": "ISO4017_M6x16_005",
+   "defect": "bent",
+   "defect_size": 2.565607,
+   "clearance_mm": 0.061498,
+   "test": "head to tip",
+   "travel_mm": 9.414,
+   "wall_s": 50.7
+  },
+  {
+   "screw": "ISO4017_M6x16_007",
+   "defect": "bent",
+   "defect_size": 2.942091,
+   "clearance_mm": 0.043832,
+   "test": "head to tip",
+   "travel_mm": 9.702,
+   "wall_s": 50.4
+  },
+  {
+   "screw": "ISO4017_M6x16_010",
+   "defect": "bent",
+   "defect_size": 1.514548,
+   "clearance_mm": 0.054414,
+   "test": "head to tip",
+   "travel_mm": 9.754,
+   "wall_s": 52.1
+  },
+  {
+   "screw": "ISO4017_M6x16_013",
+   "defect": "bent",
+   "defect_size": 2.646169,
+   "clearance_mm": 0.032018,
+   "test": "head to tip",
+   "travel_mm": 9.719,
+   "wall_s": 55.2
+  },
+  {
+   "screw": "ISO4017_M6x16_028",
+   "defect": "bent",
+   "defect_size": 1.783124,
+   "clearance_mm": 0.04163,
+   "test": "head to tip",
+   "travel_mm": 9.543,
+   "wall_s": 54.5
+  },
+  {
+   "screw": "ISO4017_M6x16_029",
+   "defect": "bent",
+   "defect_size": 0.915131,
+   "clearance_mm": 0.02363,
+   "test": "head to tip",
+   "travel_mm": 9.634,
+   "wall_s": 53.3
+  },
+  {
+   "screw": "ISO4017_M6x16_001",
+   "defect": "burr",
+   "defect_size": 0.140031,
+   "clearance_mm": 0.062215,
+   "test": "head to tip",
+   "travel_mm": 8.381,
+   "wall_s": 50.7
+  },
+  {
+   "screw": "ISO4017_M6x16_002",
+   "defect": "burr",
+   "defect_size": 0.151008,
+   "clearance_mm": 0.025745,
+   "test": "head to tip",
+   "travel_mm": 8.291,
+   "wall_s": 54.4
+  },
+  {
+   "screw": "ISO4017_M6x16_003",
+   "defect": "burr",
+   "defect_size": 0.179191,
+   "clearance_mm": 0.050348,
+   "test": "head to tip",
+   "travel_mm": 8.559,
+   "wall_s": 54.3
+  },
+  {
+   "screw": "ISO4017_M6x16_009",
+   "defect": "burr",
+   "defect_size": 0.175148,
+   "clearance_mm": 0.033168,
+   "test": "head to tip",
+   "travel_mm": 8.051,
+   "wall_s": 50.1
+  },
+  {
+   "screw": "ISO4017_M6x16_011",
+   "defect": "burr",
+   "defect_size": 0.111577,
+   "clearance_mm": 0.047852,
+   "test": "head to tip",
+   "travel_mm": 8.743,
+   "wall_s": 55.0
+  },
+  {
+   "screw": "ISO4017_M6x16_014",
+   "defect": "burr",
+   "defect_size": 0.155458,
+   "clearance_mm": 0.04875,
+   "test": "head to tip",
+   "travel_mm": 9.049,
+   "wall_s": 55.9
+  },
+  {
+   "screw": "ISO4017_M6x16_016",
+   "defect": "burr",
+   "defect_size": 0.132808,
+   "clearance_mm": 0.053438,
+   "test": "head to tip",
+   "travel_mm": 9.048,
+   "wall_s": 57.3
+  },
+  {
+   "screw": "ISO4017_M6x16_017",
+   "defect": "burr",
+   "defect_size": 0.235973,
+   "clearance_mm": 0.02735,
+   "test": "head to tip",
+   "travel_mm": 8.325,
+   "wall_s": 55.9
+  },
+  {
+   "screw": "ISO4017_M6x16_018",
+   "defect": "burr",
+   "defect_size": 0.229611,
+   "clearance_mm": 0.041657,
+   "test": "head to tip",
+   "travel_mm": 8.428,
+   "wall_s": 55.8
+  },
+  {
+   "screw": "ISO4017_M6x16_019",
+   "defect": "burr",
+   "defect_size": 0.123578,
+   "clearance_mm": 0.048061,
+   "test": "head to tip",
+   "travel_mm": 7.979,
+   "wall_s": 52.9
+  },
+  {
+   "screw": "ISO4017_M6x16_022",
+   "defect": "burr",
+   "defect_size": 0.180779,
+   "clearance_mm": 0.031452,
+   "test": "head to tip",
+   "travel_mm": 8.343,
+   "wall_s": 53.8
+  },
+  {
+   "screw": "ISO4017_M6x16_025",
+   "defect": "burr",
+   "defect_size": 0.159702,
+   "clearance_mm": 0.046039,
+   "test": "head to tip",
+   "travel_mm": 8.765,
+   "wall_s": 59.7
+  },
+  {
+   "screw": "ISO4017_M6x16_000",
+   "defect": "crushed_thread",
+   "defect_size": 0.547023,
+   "clearance_mm": 0.021971,
+   "test": "into the zone",
+   "travel_mm": 1.634,
+   "sound_travel_mm": 2.945,
+   "stopped": true,
+   "wall_s": 33.7
+  },
+  {
+   "screw": "ISO4017_M6x16_006",
+   "defect": "crushed_thread",
+   "defect_size": 0.432521,
+   "clearance_mm": 0.050687,
+   "test": "into the zone",
+   "travel_mm": 2.097,
+   "sound_travel_mm": 2.96,
+   "stopped": true,
+   "wall_s": 33.1
+  },
+  {
+   "screw": "ISO4017_M6x16_008",
+   "defect": "crushed_thread",
+   "defect_size": 0.422938,
+   "clearance_mm": 0.033181,
+   "test": "into the zone",
+   "travel_mm": 0.863,
+   "sound_travel_mm": 3.008,
+   "stopped": true,
+   "wall_s": 32.9
+  },
+  {
+   "screw": "ISO4017_M6x16_012",
+   "defect": "crushed_thread",
+   "defect_size": 0.435172,
+   "clearance_mm": 0.062648,
+   "test": "into the zone",
+   "travel_mm": 1.398,
+   "sound_travel_mm": 2.911,
+   "stopped": true,
+   "wall_s": 33.8
+  },
+  {
+   "screw": "ISO4017_M6x16_015",
+   "defect": "crushed_thread",
+   "defect_size": 0.51562,
+   "clearance_mm": 0.039486,
+   "test": "into the zone",
+   "travel_mm": 2.097,
+   "sound_travel_mm": 2.96,
+   "stopped": true,
+   "wall_s": 32.3
+  },
+  {
+   "screw": "ISO4017_M6x16_020",
+   "defect": "crushed_thread",
+   "defect_size": 0.392831,
+   "clearance_mm": 0.02956,
+   "test": "into the zone",
+   "travel_mm": 1.542,
+   "sound_travel_mm": 3.036,
+   "stopped": true,
+   "wall_s": 33.4
+  },
+  {
+   "screw": "ISO4017_M6x16_021",
+   "defect": "crushed_thread",
+   "defect_size": 0.561298,
+   "clearance_mm": 0.031437,
+   "test": "into the zone",
+   "travel_mm": 2.136,
+   "sound_travel_mm": 3.008,
+   "stopped": true,
+   "wall_s": 32.1
+  },
+  {
+   "screw": "ISO4017_M6x16_023",
+   "defect": "crushed_thread",
+   "defect_size": 0.392415,
+   "clearance_mm": 0.036317,
+   "test": "into the zone",
+   "travel_mm": 0.966,
+   "sound_travel_mm": 3.031,
+   "stopped": true,
+   "wall_s": 32.7
+  },
+  {
+   "screw": "ISO4017_M6x16_024",
+   "defect": "crushed_thread",
+   "defect_size": 0.383975,
+   "clearance_mm": 0.025502,
+   "test": "into the zone",
+   "travel_mm": 2.139,
+   "sound_travel_mm": 3.008,
+   "stopped": true,
+   "wall_s": 35.8
+  },
+  {
+   "screw": "ISO4017_M6x16_026",
+   "defect": "crushed_thread",
+   "defect_size": 0.571719,
+   "clearance_mm": 0.041175,
+   "test": "into the zone",
+   "travel_mm": 2.056,
+   "sound_travel_mm": 2.96,
+   "stopped": true,
+   "wall_s": 38.6
+  },
+  {
+   "screw": "ISO4017_M6x16_027",
+   "defect": "crushed_thread",
+   "defect_size": 0.353196,
+   "clearance_mm": 0.027561,
+   "test": "into the zone",
+   "travel_mm": 1.745,
+   "sound_travel_mm": 3.003,
+   "stopped": true,
+   "wall_s": 35.1
+  },
+  {
+   "screw": "ISO4017_M6x16_000",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.042,
+   "test": "head to tip",
+   "travel_mm": 9.45,
+   "wall_s": 52.3
+  },
+  {
+   "screw": "ISO4017_M6x16_001",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.033348,
+   "test": "head to tip",
+   "travel_mm": 9.888,
+   "wall_s": 57.9
+  },
+  {
+   "screw": "ISO4017_M6x16_002",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.015539,
+   "test": "head to tip",
+   "travel_mm": 9.365,
+   "wall_s": 52.3
+  },
+  {
+   "screw": "ISO4017_M6x16_003",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.060082,
+   "test": "head to tip",
+   "travel_mm": 9.747,
+   "wall_s": 53.7
+  },
+  {
+   "screw": "ISO4017_M6x16_004",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.016183,
+   "test": "head to tip",
+   "travel_mm": 9.495,
+   "wall_s": 51.7
+  },
+  {
+   "screw": "ISO4017_M6x16_005",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.062877,
+   "test": "head to tip",
+   "travel_mm": 9.305,
+   "wall_s": 49.6
+  },
+  {
+   "screw": "ISO4017_M6x16_006",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.021514,
+   "test": "head to tip",
+   "travel_mm": 9.815,
+   "wall_s": 52.8
+  },
+  {
+   "screw": "ISO4017_M6x16_007",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.032909,
+   "test": "head to tip",
+   "travel_mm": 9.708,
+   "wall_s": 55.8
+  },
+  {
+   "screw": "ISO4017_M6x16_008",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.028375,
+   "test": "head to tip",
+   "travel_mm": 9.617,
+   "wall_s": 52.9
+  },
+  {
+   "screw": "ISO4017_M6x16_009",
+   "defect": "none",
+   "defect_size": 0.0,
+   "clearance_mm": 0.030741,
+   "test": "head to tip",
+   "travel_mm": 9.397,
+   "wall_s": 48.6
+  }
+ ]
+}

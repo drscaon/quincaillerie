@@ -80,6 +80,10 @@ the `finish` variant set of a worn part. `--nominal` gives the reference part.
 
 ![The same nut driven onto a sound M12 screw and onto one with crushed threads](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/jam.gif)
 
+Only crushed threads jam a nut: one screw in three with a defect, so the jam
+rate is a third of `--defect-rate` (5 % at the default 15 %). Measured on 40
+screws: [Defect rate and jam rate](https://github.com/drscaon/quincaillerie/blob/main/docs/jam-rate.md).
+
 *The defects are physical. The same nut, the same light torque (a hand on a
 nut driver), simulated in MuJoCo from the files: it runs down the sound
 screw (left) and stops at the crushed thread of the other (right).
