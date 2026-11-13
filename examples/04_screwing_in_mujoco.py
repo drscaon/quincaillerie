@@ -33,8 +33,9 @@ for run in screwing(screw["file"], nut["file"], SIZE, seconds=1.0):
     per_turn = abs(run["per_turn_mm"])
     good = abs(per_turn - pitch_mm) < 0.1 * pitch_mm
     ok &= good
+    verdict = "PASS" if good else "FAIL"
     print(
-        f"{run['label']:8s} {abs(run['turns']):.2f} turns, {per_turn:.3f} mm per turn (pitch: {pitch_mm} mm)  {'PASS' if good else 'FAIL'}"
+        f"{run['label']:8s} {abs(run['turns']):.2f} turns, {per_turn:.3f} mm per turn (pitch: {pitch_mm} mm)  {verdict}"
     )
 
 sys.exit(0 if ok else 1)
