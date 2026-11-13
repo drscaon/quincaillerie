@@ -42,7 +42,7 @@ bl_info = {
 
 USD_FILE = ""  # when run as a script from Blender's text editor
 SUBSTEP_HZ = 2000  # physics rate (substeps per second)
-MARGIN = 0.0001  # collision margin (m); a tenth of the PhysX contact offset when the file gives one
+MARGIN = 0.0001  # collision margin (m), at most; a tenth of the contact offset the asset asks for
 ITERATIONS = 40
 ANG_DAMPING = 0.1  # stands in for rolling resistance, which Bullet lacks
 CYLINDER_SIDES = 96
@@ -307,8 +307,13 @@ def setup_physics(stage, prim_map=None, scene=None):
                 continue
             co = new_object(f"{vis.name}_col_{c.GetName()}", V, F, M_body)
             _keep_world(co, vis)
-            off = c.GetAttribute("physxCollision:contactOffset")
-            margin = min(MARGIN, off.Get() / 10) if off and off.Get() else MARGIN
+            margin, owner = MARGIN, c  # the asset the collider belongs to says how close contacts start
+            while owner and not owner.IsPseudoRoot():
+                off = owner.GetAttribute("quincaillerie:contactOffset")
+                if off and off.Get():
+                    margin = min(MARGIN, off.Get() / 10)
+                    break
+                owner = owner.GetParent()
             crb = add_rb(co, "ACTIVE", margin)
             crb.collision_shape = "CONVEX_HULL"
             crb.mass = 1e-6

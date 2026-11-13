@@ -44,6 +44,8 @@ def inventory(set_dir):
     """{name: dict(kind, key, file, defect, ...)} for every asset under set_dir/assets, in name order."""
     out = {}
     for f in sorted(glob.glob(os.path.join(set_dir, "assets", "*.usd*"))):
+        if os.path.splitext(f)[0].endswith("_physx"):  # the PhysX layer of an asset, not an asset
+            continue
         st = Usd.Stage.Open(f)
         root = st.GetDefaultPrim()
 

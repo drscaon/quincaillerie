@@ -8,6 +8,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Breaking changes
 
+- The PhysX schemas and attributes (`PhysxRigidBodyAPI`, `PhysxCollisionAPI`)
+  are no longer in the files: they are a layer over each file,
+  `assets/<part>_physx.usda` and `scene_physx.usda` (which references the
+  layers of its parts), to open instead of the file in Isaac Sim (`physx.py`,
+  `python -m quincaillerie.physx` to check a set). The files hold plain
+  OpenUSD and `UsdPhysics` only. Each part says from which distance contacts
+  should be generated in `quincaillerie:contactOffset`, which the Blender
+  add-on reads for its margin (it read the PhysX attribute).
+- `usd.physx_collision`, `usd.physx_body` and `usd.physx_tune` are removed.
+
 - Pack files (Primvaria contract): `parts.csv` and `summary.json` are replaced by
   `instances.csv` and `manifest.json`, the same in the four generators. The
   table is read back from the OpenUSD files, one row per asset: identity,

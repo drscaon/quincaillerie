@@ -32,7 +32,7 @@ Part of the [Quincaillerie](../README.md) documentation.
 - **Blender springs start at rest.** See [Blender](physics.md#blender): a cell placed
   already seated is not pressed by the spring.
 - **Isaac Sim not tested here.** The files follow the standard `UsdPhysics`
-  schemas and carry PhysX attributes, but have not been loaded in Isaac Sim
+  schemas, with the PhysX settings in a layer over each file, but have not been loaded in Isaac Sim
   (no NVIDIA GPU); drive units and contact offsets may need adjusting there.
 
 ## Roadmap

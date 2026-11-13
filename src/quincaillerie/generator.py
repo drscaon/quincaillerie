@@ -258,4 +258,13 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
             x += w + 0.01
     if physics:  # the floor covers every row, however many instances
         add_floor(st, reach=(max(reach, x) + 0.05, y + 0.1))
-    return save(st)
+    path = save(st)
+    if physics:  # the scene's PhysX layer references the layer of each part (physx.py)
+        from .physx import write_overlay
+
+        write_overlay(path)
+    else:
+        stem, _ = os.path.splitext(path)
+        if os.path.exists(f"{stem}_physx.usda"):
+            os.remove(f"{stem}_physx.usda")
+    return path

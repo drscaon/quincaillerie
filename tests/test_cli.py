@@ -20,9 +20,15 @@ def test_list(capsys):
 
 def test_generate_and_blender_addon(tmp_path, capsys):
     assert main(["generate", "washer", "M5", "--with", "nut", "--no-scene", "--out", str(tmp_path)]) == 0
-    assert sorted(os.listdir(tmp_path / "ISO7089_M5" / "assets")) == ["ISO4032_M5_000.usdc", "ISO7089_M5_000.usda"]
+    assert sorted(os.listdir(tmp_path / "ISO7089_M5" / "assets")) == [
+        "ISO4032_M5_000.usdc",
+        "ISO4032_M5_000_physx.usda",  # what only PhysX reads: a layer over each file
+        "ISO7089_M5_000.usda",
+        "ISO7089_M5_000_physx.usda",
+    ]
     assert main(["generate", "nut", "M5", "--nominal", "--no-scene", "--out", str(tmp_path / "nominal")]) == 0
-    assert os.listdir(tmp_path / "nominal" / "ISO4032_M5" / "assets") == ["ISO4032_M5.usdc"]
+    nominal = sorted(os.listdir(tmp_path / "nominal" / "ISO4032_M5" / "assets"))
+    assert nominal == ["ISO4032_M5.usdc", "ISO4032_M5_physx.usda"]
     assert main(["generate", "screw", "M5", "--with", "holder", "--out", str(tmp_path)]) == 2
     script = tmp_path / "q.py"
     assert main(["blender-addon", "--out", str(script)]) == 0

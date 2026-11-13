@@ -19,7 +19,9 @@ asset, so it sits on a floor where it is placed; its seat is on top of its 2 mm 
 from __future__ import annotations
 
 import numpy as np
+from pxr import Sdf
 
+from . import physx
 from .catalog import CELLS
 from .usd import (
     VisualBuilder,
@@ -34,7 +36,6 @@ from .usd import (
     mesh,
     new_stage,
     physics_material,
-    physx_tune,
     prismatic_joint,
     q2m,
     quat_axis_angle,
@@ -53,7 +54,7 @@ G_STEEL = 79e9  # shear modulus of spring steel (Pa)
 ABS_DENSITY = 1050.0  # kg/m3
 FLOOR_T = 2.0  # mm, thickness of the holder floor (below the seat)
 FRICTION = 0.3
-CONTACT_OFFSET = 0.0005  # PhysX contact offset (m)
+CONTACT_OFFSET = 0.0005  # m: distance from which contacts are generated
 
 
 def m(*v):
@@ -212,6 +213,14 @@ def _crust(center, radius, seed, flatten_axis=0):
     if flatten_axis == 0:
         V = V[:, [2, 0, 1]]
     return V + np.asarray(center), F
+
+
+def _save(stage):
+    """Save the part and write its PhysX layer beside it."""
+    stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
+    fix_typeless(stage)
+    stage.GetRootLayer().Save()
+    physx.write_overlay(stage.GetRootLayer().realPath, position_iterations=16, max_depenetration=0.1)
 
 
 def write_cell(path, name, cv=None, root_name=None):
@@ -377,9 +386,7 @@ def write_cell(path, name, cv=None, root_name=None):
             **as_attrs(cv),
         ),
     )
-    physx_tune(stage, CONTACT_OFFSET, 16, 0.1)
-    fix_typeless(stage)
-    stage.GetRootLayer().Save()
+    _save(stage)
     return dict(name=root_name, kind="cell", format=name, mass_g=mass * 1e3, **as_attrs(cv))
 
 
@@ -611,7 +618,5 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
             **as_attrs(hv),
         ),
     )
-    physx_tune(stage, CONTACT_OFFSET, 16, 0.1)
-    fix_typeless(stage)
-    stage.GetRootLayer().Save()
+    _save(stage)
     return dict(name=root_name, kind="holder", format=name, family=kind, **as_attrs(hv))

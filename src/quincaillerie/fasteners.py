@@ -17,7 +17,9 @@ from __future__ import annotations
 import os
 
 import numpy as np
+from pxr import Sdf
 
+from . import physx
 from .catalog import METRIC, nut_name, screw_name, washer_name
 from .materials import FINISHES
 from .threads import iso_profile, mesh_mass_props, nut_mesh, segments, threaded_bolt_mesh
@@ -31,7 +33,6 @@ from .usd import (
     mate_frame,
     new_stage,
     physics_material,
-    physx_tune,
     revolve_profile,
     rigid_body,
     set_attrs,
@@ -41,7 +42,7 @@ from .usd import (
 from .variation import FastenerVariation, as_attrs
 
 MM = 1e-3
-CONTACT_OFFSET = 0.0001  # PhysX contact offset (m), below twice the thread clearance
+CONTACT_OFFSET = 0.0001  # m: distance from which contacts are generated, below twice the thread clearance
 SEG_DEG = 10.0  # helix angle covered by one convex collision piece
 DETAIL = {"low": (48, 8), "normal": (72, 14), "high": (96, 24)}  # visual mesh: sides, rings per pitch
 # Collision of a fastener. "thread": every turn of the helix as convex pieces, so a nut screws on
@@ -122,9 +123,11 @@ def _looks(stage, root, name, subsets, finish, v, path):
 
 
 def _save(stage):
-    physx_tune(stage, CONTACT_OFFSET, pos_iters=32, max_depen=0.05)
+    """Save the part and write its PhysX layer beside it (a thread needs many solver iterations)."""
+    stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
+    physx.write_overlay(stage.GetRootLayer().realPath, position_iterations=32, max_depenetration=0.05)
 
 
 def _zone(v, length, P):

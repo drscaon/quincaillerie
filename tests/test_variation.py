@@ -97,7 +97,7 @@ def test_bend_moves_the_tip():
 
 
 def test_varied_set_files_and_ground_truth(varied_set):
-    files = sorted(os.listdir(os.path.join(varied_set.out_dir, "assets")))
+    files = sorted(f for f in os.listdir(os.path.join(varied_set.out_dir, "assets")) if "_physx" not in f)
     assert len(files) == 20 and "ISO4017_M6x12_004.usdc" in files and "Holder_AA_004.usda" in files
     with open(os.path.join(varied_set.out_dir, "instances.csv")) as f:
         rows = list(csv.DictReader(f))
