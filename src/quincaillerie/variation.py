@@ -31,6 +31,12 @@ from . import fits
 from .catalog import METRIC
 
 ASPECTS = ("tolerance", "defect", "wear", "physics")
+# How the clearance of a thread is chosen when tolerances vary. The draw is made in every case, so
+# the other values of an instance are the same whatever the choice.
+#   class:  drawn across the fit class (6g screw, 6H nut), see fits.py;
+#   middle: the middle of the fit class for every instance: the same play whatever the seed;
+#   legacy: drawn between 1.6 and 8 % of the pitch, as before the fit classes (same seed, same value).
+THREAD_PLAY = ("class", "middle", "legacy")
 
 # density (kg/m3) by finish: the coatings are on steel, brass and stainless are solid alloys
 DENSITY = {"brass": 8500.0, "stainless_a2": 7930.0}
@@ -102,7 +108,12 @@ class Sampler:
     seed: int = 1
     vary: tuple = ASPECTS
     defect_rate: float = 0.15
+    thread_play: str = "class"  # how the thread clearance is chosen, see THREAD_PLAY
     _streams: dict = field(default_factory=dict, repr=False)
+
+    def __post_init__(self):
+        if self.thread_play not in THREAD_PLAY:
+            raise ValueError(f"unknown thread play {self.thread_play!r}; expected one of {', '.join(THREAD_PLAY)}")
 
     def rng(self, aspect, kind):
         key = (aspect, kind)
@@ -122,7 +133,10 @@ class Sampler:
         r = self.rng("tolerance", kind)
         if self.on("tolerance"):
             u = r.uniform(0.0, 1.0)  # where in its tolerance band: 0 tightest, 1 loosest
-            if kind in ("screw", "nut"):  # a 6g screw, a 6H nut (see fits.py); a washer has no thread
+            if self.thread_play == "legacy":
+                v.clearance_mm = float(np.clip((0.016 + 0.064 * u) * pitch_mm, 0.015, 0.10))
+            elif kind in ("screw", "nut"):  # a 6g screw, a 6H nut (see fits.py); a washer has no thread
+                u = 0.5 if self.thread_play == "middle" else u
                 v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u))
                 v.thread_class = fits.SCREW_CLASS if kind == "screw" else fits.NUT_CLASS
             v.across_flats_dmm = float(-r.uniform(0.0, 0.25))
