@@ -192,6 +192,11 @@ generate(parts, "output", count=100, defect_rate=0.2)  # -> output/ISO4017_M6x25
 generate(parts, "output", vary=("tolerance", "physics"))  # clean, undamaged, varied fits
 ```
 
+Four short scripts in [`examples/`](https://github.com/drscaon/quincaillerie/tree/main/examples)
+show the rest, each explained by its own comments: a first pack and its
+ground truth, one aspect switched off, reading the files with OpenUSD alone,
+and a nut screwed on in MuJoCo.
+
 ### Options of `quincaillerie generate`
 
 | Option | Default | Effect |
