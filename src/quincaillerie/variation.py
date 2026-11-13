@@ -6,7 +6,8 @@ on one perfect part break on real ones; perception models need the whole range. 
 from four independent aspects (one random stream each: turning one off leaves the others as they
 were):
 
-* tolerance: thread clearance (radial, per side, 1.6 to 8 % of the pitch), across flats, head and nut heights,
+* tolerance: thread clearance (radial, per side) within the 6g band for screws and the 6H band for nuts
+  (see ``fits.py``), across flats, head and nut heights,
   screw length, cell diameter and length within their tolerance bands, holder slot play;
 * defect (with probability ``defect_rate``): crushed thread crests that jam a nut, bent shank, burr
   at the tip; out-of-round or crushed nut thread; dished washer; dented cell can, corroded terminal;
@@ -26,7 +27,16 @@ from dataclasses import asdict, dataclass, field
 
 import numpy as np
 
+from . import fits
+from .catalog import METRIC
+
 ASPECTS = ("tolerance", "defect", "wear", "physics")
+# How the clearance of a thread is chosen when tolerances vary. The draw is made in every case, so
+# the other values of an instance are the same whatever the choice.
+#   class:  drawn across the fit class (6g screw, 6H nut), see fits.py;
+#   middle: the middle of the fit class for every instance: the same play whatever the seed;
+#   legacy: drawn between 1.6 and 8 % of the pitch, as before the fit classes (same seed, same value).
+THREAD_PLAY = ("class", "middle", "legacy")
 
 # density (kg/m3) by finish: the coatings are on steel, brass and stainless are solid alloys
 DENSITY = {"brass": 8500.0, "stainless_a2": 7930.0}
@@ -45,6 +55,7 @@ FRICTION = {
 @dataclass
 class FastenerVariation:
     clearance_mm: float = 0.05  # radial clearance of the thread, per side
+    thread_class: str = ""  # fit class the clearance was drawn in: 6g (screw), 6H (nut), "" (not drawn)
     across_flats_dmm: float = 0.0  # change of the hex across flats (mm, negative: smaller)
     height_dmm: float = 0.0  # change of head height (screw), nut height or washer thickness (mm)
     length_dmm: float = 0.0  # change of screw length (mm)
@@ -97,7 +108,12 @@ class Sampler:
     seed: int = 1
     vary: tuple = ASPECTS
     defect_rate: float = 0.15
+    thread_play: str = "class"  # how the thread clearance is chosen, see THREAD_PLAY
     _streams: dict = field(default_factory=dict, repr=False)
+
+    def __post_init__(self):
+        if self.thread_play not in THREAD_PLAY:
+            raise ValueError(f"unknown thread play {self.thread_play!r}; expected one of {', '.join(THREAD_PLAY)}")
 
     def rng(self, aspect, kind):
         key = (aspect, kind)
@@ -109,12 +125,20 @@ class Sampler:
         return aspect in self.vary
 
     # ------------------------------------------------------------------ fasteners
-    def fastener(self, kind, finish, pitch_mm):
+    def fastener(self, kind, finish, pitch_mm, diameter_mm=None):
+        """diameter_mm: nominal thread diameter; by default the coarse-pitch size with that pitch."""
+        if diameter_mm is None:
+            diameter_mm = next(m["d"] for m in METRIC.values() if m["P"] == pitch_mm)
         v = FastenerVariation(friction=FRICTION.get(finish, 0.15), density=DENSITY.get(finish, STEEL_DENSITY))
         r = self.rng("tolerance", kind)
         if self.on("tolerance"):
-            # from a tight fit to a loose one; ISO fit deviations grow with the pitch (0.02-0.10 mm at M8)
-            v.clearance_mm = float(np.clip(r.uniform(0.016, 0.08) * pitch_mm, 0.015, 0.10))
+            u = r.uniform(0.0, 1.0)  # where in its tolerance band: 0 tightest, 1 loosest
+            if self.thread_play == "legacy":
+                v.clearance_mm = float(np.clip((0.016 + 0.064 * u) * pitch_mm, 0.015, 0.10))
+            elif kind in ("screw", "nut"):  # a 6g screw, a 6H nut (see fits.py); a washer has no thread
+                u = 0.5 if self.thread_play == "middle" else u
+                v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u))
+                v.thread_class = fits.SCREW_CLASS if kind == "screw" else fits.NUT_CLASS
             v.across_flats_dmm = float(-r.uniform(0.0, 0.25))
             v.height_dmm = float(-r.uniform(0.0, 0.3))
             v.length_dmm = float(r.uniform(-0.4, 0.4))

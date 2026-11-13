@@ -106,7 +106,7 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
 def draw(sampler, part, finish):
     """The variation of the next instance of a part."""
     if part.kind in ("screw", "nut", "washer"):
-        return sampler.fastener(part.kind, finish, METRIC[part.key]["P"])
+        return sampler.fastener(part.kind, finish, METRIC[part.key]["P"], METRIC[part.key]["d"])
     kind = CELLS[part.key]["kind"]
     return sampler.cell(part.key, kind) if part.kind == "cell" else sampler.holder(part.key, kind)
 
@@ -124,13 +124,16 @@ def generate(
     defect_rate=0.15,
     detail="normal",
     collider="thread",
+    thread_play="class",
 ):
     """Write `count` instances of each part, the material library and a scene. Returns a Result.
 
     vary: the aspects that vary between instances (tolerance, defect, wear, physics); () writes one
     nominal file per part, placed `count` times in the scene. physics=False writes visual assets
     only: no rigid bodies, colliders, joints or physics scene. collider: "thread" (fasteners screw
-    and jam) or "simple" (their envelope alone, for large scenes; see fasteners.COLLIDERS)."""
+    and jam) or "simple" (their envelope alone, for large scenes; see fasteners.COLLIDERS).
+    thread_play: how the thread clearance is chosen: "class" (drawn in the 6g / 6H fit), "middle"
+    (the middle of the fit for every instance) or "legacy" (the range used before the fit classes)."""
     if finish not in FINISHES:
         raise ValueError(f"unknown finish {finish!r}; expected one of {', '.join(FINISHES)}")
     set_name = set_name or parts[0].name
@@ -142,7 +145,7 @@ def generate(
     vary = tuple(vary)
     if finish not in FINISHES:
         raise ValueError(f"unknown finish {finish!r}")
-    sampler = Sampler(seed=seed, vary=vary, defect_rate=defect_rate)
+    sampler = Sampler(seed=seed, vary=vary, defect_rate=defect_rate, thread_play=thread_play)
     instances = {}  # part -> [(name, info)]
     for p in parts:
         n = count if vary else 1
