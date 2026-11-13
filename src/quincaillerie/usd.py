@@ -2,7 +2,7 @@
 
 Conventions (same as the sister projects): Z up, metres, kilograms, one asset per file with its own
 default prim, /World as the default prim of scenes. Physics with the standard UsdPhysics schemas;
-PhysX attributes for Isaac Sim are added as applied API schemas, ignored by other engines.
+What only PhysX reads (Isaac Sim) is not written here: it is a layer over each file (physx.py).
 """
 
 from __future__ import annotations
@@ -535,38 +535,14 @@ class VisualBuilder:
         return m, subsets
 
 
-# ------------------------------------------------------------------ PhysX (Isaac Sim) tuning
-def physx_collision(prim, contact_offset, rest_offset=0.0):
-    """PhysxCollisionAPI attributes (read by Isaac Sim); harmless elsewhere."""
-    prim.AddAppliedSchema("PhysxCollisionAPI")
-    prim.CreateAttribute("physxCollision:contactOffset", Sdf.ValueTypeNames.Float).Set(float(contact_offset))
-    prim.CreateAttribute("physxCollision:restOffset", Sdf.ValueTypeNames.Float).Set(float(rest_offset))
-
-
-def physx_body(prim, pos_iters=16, vel_iters=4, max_depen=0.1, ccd=False):
-    prim.AddAppliedSchema("PhysxRigidBodyAPI")
-    prim.CreateAttribute("physxRigidBody:solverPositionIterationCount", Sdf.ValueTypeNames.Int).Set(int(pos_iters))
-    prim.CreateAttribute("physxRigidBody:solverVelocityIterationCount", Sdf.ValueTypeNames.Int).Set(int(vel_iters))
-    prim.CreateAttribute("physxRigidBody:maxDepenetrationVelocity", Sdf.ValueTypeNames.Float).Set(float(max_depen))
-    prim.CreateAttribute("physxRigidBody:enableCCD", Sdf.ValueTypeNames.Bool).Set(bool(ccd))
-
-
 def box_inertia(mass, size):
     a, b, c = size
     return (mass * (b * b + c * c) / 12, mass * (a * a + c * c) / 12, mass * (a * a + b * b) / 12)
 
 
-def physx_tune(stage, contact_offset, pos_iters=16, max_depen=0.1):
-    for p in stage.Traverse():
-        if p.HasAPI(UsdPhysics.CollisionAPI):
-            physx_collision(p, contact_offset, 0.0)
-        if p.HasAPI(UsdPhysics.RigidBodyAPI):
-            physx_body(p, pos_iters, 4, max_depen)
-
-
 def strip_physics(stage):
     """Remove every physics description from a stage: rigid bodies, masses, colliders, joints,
-    physics materials and PhysX attributes (for assets used as visuals only)."""
+    physics materials and the PhysX layer written beside the file (for assets used as visuals only)."""
     remove = []
     for p in stage.Traverse():
         if (
@@ -579,16 +555,17 @@ def strip_physics(stage):
         for api in (UsdPhysics.RigidBodyAPI, UsdPhysics.MassAPI):
             if p.HasAPI(api):
                 p.RemoveAPI(api)
-        for name in ("PhysxRigidBodyAPI", "PhysxCollisionAPI"):
-            if name in p.GetAppliedSchemas():
-                p.RemoveAppliedSchema(name)
         for a in p.GetAttributes():
-            if a.GetName().startswith(("physics:", "physxRigidBody:", "physxCollision:")):
+            if a.GetName().startswith("physics:") or a.GetName() == "quincaillerie:contactOffset":
                 p.RemoveProperty(a.GetName())
     for path in sorted(remove, key=lambda x: -len(str(x))):
         if stage.GetPrimAtPath(path):
             stage.RemovePrim(path)
     stage.GetRootLayer().Save()
+    layer = stage.GetRootLayer().realPath  # the PhysX layer written beside the file (physx.py)
+    stem, _ = os.path.splitext(layer)
+    if os.path.exists(f"{stem}_physx.usda"):
+        os.remove(f"{stem}_physx.usda")
 
 
 def stamp_identity(path, preset, seed, aspects=(), drawn=None, measured=None) -> None:

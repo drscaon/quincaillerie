@@ -27,6 +27,7 @@ jobs:
         quincaillerie generate screw M6 --length 16 --with nut,washer --count 3 --out ci-output
         quincaillerie generate cell 18650 --with holder --out ci-output
         python -m quincaillerie.validate ci-output
+        python -m quincaillerie.physx ci-output
         quincaillerie blender-addon --out ci-output/quincaillerie_physics.zip
       wheel-smoke: |
         /tmp/venv/bin/quincaillerie generate nut M5 --out /tmp/out

@@ -122,9 +122,10 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
 - **OpenUSD**: one file per part, one rigid body per moving part with *one*
   visual mesh (so every DCC imports one object per body), mass, centre of
   mass and principal inertia, convex collision shapes, physics materials,
-  joints with drives, mate frames (thread axis, drive, terminals, cell seat),
-  PhysX attributes for Isaac Sim. A shared material library in
-  UsdPreviewSurface and MaterialX.
+  joints with drives, mate frames (thread axis, drive, terminals, cell seat).
+  The files hold nothing specific to an engine: what only PhysX reads (Isaac
+  Sim) is a layer over each file, `<file>_physx.usda`. A shared material
+  library in UsdPreviewSurface and MaterialX.
 - **Checks** (`quincaillerie sim-test`, `quincaillerie blender-test`): the
   same scenes, read back from the files, in MuJoCo and in Blender.
 - **A Blender add-on** (`quincaillerie blender-addon`): rigid bodies and
@@ -141,7 +142,7 @@ stands, as on the [Primvaria engine matrix](https://primvaria.com/#engines):
 | OpenUSD validators (`usdchecker`) | **tested**: every part of the catalogue and varied instances, in CI |
 | Blender | **tested**: drop and assemblies through the add-on (`quincaillerie blender-test`) |
 | MuJoCo | **tested**: drop, screwing, jammed threads, insertion (`quincaillerie sim-test`) |
-| NVIDIA Isaac Sim (PhysX) | not tested yet (needs an NVIDIA RTX GPU); `UsdPhysics` and PhysX attributes |
+| NVIDIA Isaac Sim (PhysX) | not tested yet (needs an NVIDIA RTX GPU); `UsdPhysics`, PhysX settings in a layer over each file |
 
 ## Installation
 
@@ -204,6 +205,7 @@ and a nut screwed on in MuJoCo.
 | `assets/*.usdc`, `assets/*.usda` | one file per instance, `ISO4017_M8x30_007.usdc` (Blender: File > Import > USD) |
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
 | `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
+| `assets/*_physx.usda`, `scene_physx.usda` | the same files with the PhysX settings (Isaac Sim): a layer over each file, to open instead of it, see [PhysX layer](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md#physx-layer) |
 | `instances.csv` | one row per instance, read back from the files: its identity, **every drawn value** (`variation:<name>`) and **every measured value** (`measured:<name>`), then its kind, size or format: the ground truth |
 | `manifest.json` | what the pack is (contract, generator, version, preset, seed, aspects, files) and its summary: counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |

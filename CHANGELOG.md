@@ -8,6 +8,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Breaking changes
 
+- The PhysX schemas and attributes (`PhysxRigidBodyAPI`, `PhysxCollisionAPI`)
+  are no longer in the files: they are a layer over each file,
+  `assets/<part>_physx.usda` and `scene_physx.usda` (which references the
+  layers of its parts), to open instead of the file in Isaac Sim (`physx.py`,
+  `python -m quincaillerie.physx` to check a set). The files hold plain
+  OpenUSD and `UsdPhysics` only. Each part says from which distance contacts
+  should be generated in `quincaillerie:contactOffset`, which the Blender
+  add-on reads for its margin (it read the PhysX attribute).
+- `usd.physx_collision`, `usd.physx_body` and `usd.physx_tune` are removed.
 - The thread clearance of a screw or a nut is drawn inside the usual fit, a 6g
   screw in a 6H nut, computed from the public formulas of the ISO metric
   thread tolerance system (`fits.py`), where it was drawn between 1.6 and 8 %

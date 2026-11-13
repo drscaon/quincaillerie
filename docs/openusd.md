@@ -22,9 +22,31 @@ Z up, metres, kilograms; each asset's root prim is its default prim.
 ```
 
 The underside of a holder is at z = 0 of the asset: it sits on a floor where
-it is placed. Angular drives use UsdPhysics units (per degree). Every
-collider has `PhysxCollisionAPI` offsets and every body `PhysxRigidBodyAPI`
-iterations, read by Isaac Sim and ignored elsewhere.
+it is placed. Angular drives use UsdPhysics units (per degree). The root of
+each part says from which distance contacts should be generated, in metres
+(`quincaillerie:contactOffset`: 0.1 mm for a threaded part, below twice the
+thread clearance; 0.5 mm for cells and holders). It is a request to the
+engine, not an engine setting: the Blender add-on takes a tenth of it as its
+collision margin, and the PhysX layer copies it.
+
+## PhysX layer
+
+The files hold plain OpenUSD (`UsdGeom`, `UsdShade`, `UsdPhysics`) and
+nothing specific to an engine. What only PhysX reads is written beside each
+file as a layer over it: `assets/<part>_physx.usda` and `scene_physx.usda`.
+
+| On | Schema | Fasteners | Cells and holders |
+|---|---|---|---|
+| every rigid body | `PhysxRigidBodyAPI` | 32 position and 4 velocity solver iterations, depenetration velocity capped at 0.05 m/s, no CCD | 16 and 4 iterations, 0.1 m/s, no CCD |
+| every collider but the ground | `PhysxCollisionAPI` | contact offset 0.1 mm, rest offset 0 | contact offset 0.5 mm, rest offset 0 |
+
+A layer has its file as its only sublayer and holds `over`s only, so opening
+it (Isaac Sim: File > Open) gives the file with these settings, and the file
+alone is still complete for every other engine. The scene's layer repeats
+nothing: it references the layer of each part on top of the part.
+`python -m quincaillerie.physx <folder>` checks the layers of a set; the
+OpenUSD validators run on them in CI. Not simulated: see
+[Limits](limits.md#limits).
 
 ## Ground and physics scene (the same in every Primvaria project)
 
