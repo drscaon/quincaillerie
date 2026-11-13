@@ -206,7 +206,7 @@ and a nut screwed on in MuJoCo.
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
 | `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
 | `assets/*_physx.usda`, `scene_physx.usda` | the same files with the PhysX settings (Isaac Sim): a layer over each file, to open instead of it, see [PhysX layer](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md#physx-layer) |
-| `instances.csv` | one row per instance, read back from the files: its identity, **every drawn value** (`variation:<name>`) and **every measured value** (`measured:<name>`), then its kind, size or format: the ground truth |
+| `instances.csv` | one row per instance, read back from the files: its identity, its classes (the [semantic labels](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md) renderers turn into segmentation masks), **every drawn value** (`variation:<name>`) and **every measured value** (`measured:<name>`), then its kind, size or format: the ground truth |
 | `manifest.json` | what the pack is (contract, generator, version, preset, seed, aspects, files) and its summary: counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |
 
