@@ -307,13 +307,13 @@ def setup_physics(stage, prim_map=None, scene=None):
                 continue
             co = new_object(f"{vis.name}_col_{c.GetName()}", V, F, M_body)
             _keep_world(co, vis)
-            margin, owner = MARGIN, c  # the asset the collider belongs to says how close contacts start
-            while owner and not owner.IsPseudoRoot():
-                off = owner.GetAttribute("quincaillerie:contactOffset")
+            margin, asset = MARGIN, c  # the asset the collider belongs to says how close contacts start
+            while asset and not asset.IsPseudoRoot():
+                off = asset.GetAttribute("quincaillerie:contactOffset")
                 if off and off.Get():
                     margin = min(MARGIN, off.Get() / 10)
                     break
-                owner = owner.GetParent()
+                asset = asset.GetParent()
             crb = add_rb(co, "ACTIVE", margin)
             crb.collision_shape = "CONVEX_HULL"
             crb.mass = 1e-6
