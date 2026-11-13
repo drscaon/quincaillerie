@@ -545,6 +545,17 @@ def jam(screw, nut, size, sound_screw, max_turns=3.0, rate=2.0):
     )
 
 
+def through(screw, nut, size, rate=2.0):
+    """A sound nut driven with a light torque from the head of a screw to its tip, no gravity.
+
+    screw, nut: inventory entries. Returns the distance travelled along the screw (mm). On a sound
+    screw the nut runs the whole thread and stops turning usefully once it leaves the tip."""
+    P = METRIC[size]["P"] * MM
+    zn = 2 * P
+    turns = (screw["attrs"]["length"] - nut["attrs"]["height"] - zn) / P + 1
+    return abs(_drive(screw["file"], nut["file"], size, zn, False, turns, rate) - zn) / MM
+
+
 # ------------------------------------------------------------------ the whole suite
 def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, defects=False, scene=False):
     rows = []

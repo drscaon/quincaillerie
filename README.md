@@ -86,6 +86,10 @@ screw (left) and stops at the crushed thread of the other (right).
 `quincaillerie sim-test --defects` checks this for every crushed screw of a
 batch.*
 
+Only crushed threads jam a nut: one screw in three with a defect, so the jam
+rate is a third of `--defect-rate` (5 % at the default 15 %). Measured on 40
+screws: [Defect rate and jam rate](https://github.com/drscaon/quincaillerie/blob/main/docs/jam-rate.md).
+
 ## The physics, in motion
 
 | Dropped in Blender | Screwed in MuJoCo | Inserted in MuJoCo |
