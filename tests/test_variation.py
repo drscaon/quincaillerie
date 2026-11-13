@@ -7,6 +7,7 @@ import os
 import numpy as np
 from pxr import Usd, UsdGeom, UsdPhysics
 
+from quincaillerie import fits
 from quincaillerie.fasteners import _bend, _widen
 from quincaillerie.threads import iso_profile, segments
 from quincaillerie.variation import ASPECTS, FastenerVariation, Sampler
@@ -30,10 +31,53 @@ def test_same_seed_same_instances_and_independent_aspects():
 def test_ranges():
     vs = _draw(seed=1, defect_rate=0.5) + _draw(seed=2, defect_rate=0.5)
     cl = [v.clearance_mm for v in vs]
-    assert 0.02 <= min(cl) and max(cl) <= 0.10
+    lo, hi = fits.clearance_range_mm("screw", 1.25, 8.0)
+    assert lo <= min(cl) and max(cl) <= hi
+    assert all(v.thread_class == "6g" for v in vs)
     assert 0.2 < sum(v.defect != "none" for v in vs) / len(vs) < 0.8
     nominal = Sampler(vary=()).fastener("screw", "brass", 1.25)
     assert nominal.defect == "none" and nominal.clearance_mm == 0.05 and nominal.density == 8500.0
+    assert nominal.thread_class == ""  # nothing drawn
+
+
+# Limits of the 6g / 6H fit for coarse threads, in µm: (allowance of g, screw band, nut band), as
+# printed in public handbooks. The module computes them from the formulas, unrounded.
+PUBLISHED = {
+    "M3": (20, 75, 100),
+    "M4": (22, 90, 118),
+    "M5": (24, 95, 125),
+    "M6": (26, 112, 150),
+    "M8": (28, 118, 160),
+    "M10": (32, 132, 180),
+    "M12": (34, 150, 200),
+}
+
+
+def test_fit_formulas_agree_with_the_published_limits():
+    from quincaillerie.catalog import METRIC
+
+    for size, (es, td2, td2_nut) in PUBLISHED.items():
+        p, d = METRIC[size]["P"], METRIC[size]["d"]
+        assert abs(fits.allowance_g_mm(p) * 1000 - es) <= 1.0, size
+        assert abs(fits.screw_band_mm(p, d) * 1000 - td2) <= 0.05 * td2, size
+        assert abs(fits.nut_band_mm(p, d) * 1000 - td2_nut) <= 0.05 * td2_nut, size
+
+
+def test_every_drawn_clearance_is_inside_its_fit_class():
+    from quincaillerie.catalog import METRIC
+
+    for size, m in METRIC.items():
+        for kind, cls in (("screw", "6g"), ("nut", "6H")):
+            s = Sampler(seed=3)
+            vs = [s.fastener(kind, "zinc_clear", m["P"], m["d"]) for _ in range(200)]
+            lo, hi = fits.clearance_range_mm(kind, m["P"], m["d"])
+            cl = [v.clearance_mm for v in vs]
+            assert lo <= min(cl) and max(cl) <= hi, (size, kind)
+            assert max(cl) - min(cl) > 0.9 * (hi - lo), (size, kind)  # the band is used whole
+            assert {v.thread_class for v in vs} == {cls}
+            assert lo >= fits.SIM_FLOOR_MM
+    washer = Sampler(seed=3).fastener("washer", "zinc_clear", 1.25, 8.0)
+    assert washer.thread_class == "" and washer.clearance_mm == 0.05
 
 
 def test_crushed_thread_interferes_with_the_mating_thread():

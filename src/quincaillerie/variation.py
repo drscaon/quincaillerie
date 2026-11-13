@@ -6,7 +6,8 @@ on one perfect part break on real ones; perception models need the whole range. 
 from four independent aspects (one random stream each: turning one off leaves the others as they
 were):
 
-* tolerance: thread clearance (radial, per side, 1.6 to 8 % of the pitch), across flats, head and nut heights,
+* tolerance: thread clearance (radial, per side) within the 6g band for screws and the 6H band for nuts
+  (see ``fits.py``), across flats, head and nut heights,
   screw length, cell diameter and length within their tolerance bands, holder slot play;
 * defect (with probability ``defect_rate``): crushed thread crests that jam a nut, bent shank, burr
   at the tip; out-of-round or crushed nut thread; dished washer; dented cell can, corroded terminal;
@@ -25,6 +26,9 @@ import zlib
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
+
+from . import fits
+from .catalog import METRIC
 
 ASPECTS = ("tolerance", "defect", "wear", "physics")
 
@@ -45,6 +49,7 @@ FRICTION = {
 @dataclass
 class FastenerVariation:
     clearance_mm: float = 0.05  # radial clearance of the thread, per side
+    thread_class: str = ""  # fit class the clearance was drawn in: 6g (screw), 6H (nut), "" (not drawn)
     across_flats_dmm: float = 0.0  # change of the hex across flats (mm, negative: smaller)
     height_dmm: float = 0.0  # change of head height (screw), nut height or washer thickness (mm)
     length_dmm: float = 0.0  # change of screw length (mm)
@@ -109,12 +114,17 @@ class Sampler:
         return aspect in self.vary
 
     # ------------------------------------------------------------------ fasteners
-    def fastener(self, kind, finish, pitch_mm):
+    def fastener(self, kind, finish, pitch_mm, diameter_mm=None):
+        """diameter_mm: nominal thread diameter; by default the coarse-pitch size with that pitch."""
+        if diameter_mm is None:
+            diameter_mm = next(m["d"] for m in METRIC.values() if m["P"] == pitch_mm)
         v = FastenerVariation(friction=FRICTION.get(finish, 0.15), density=DENSITY.get(finish, STEEL_DENSITY))
         r = self.rng("tolerance", kind)
         if self.on("tolerance"):
-            # from a tight fit to a loose one; ISO fit deviations grow with the pitch (0.02-0.10 mm at M8)
-            v.clearance_mm = float(np.clip(r.uniform(0.016, 0.08) * pitch_mm, 0.015, 0.10))
+            u = r.uniform(0.0, 1.0)  # where in its tolerance band: 0 tightest, 1 loosest
+            if kind in ("screw", "nut"):  # a 6g screw, a 6H nut (see fits.py); a washer has no thread
+                v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u))
+                v.thread_class = fits.SCREW_CLASS if kind == "screw" else fits.NUT_CLASS
             v.across_flats_dmm = float(-r.uniform(0.0, 0.25))
             v.height_dmm = float(-r.uniform(0.0, 0.3))
             v.length_dmm = float(r.uniform(-0.4, 0.4))

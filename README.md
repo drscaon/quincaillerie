@@ -67,7 +67,7 @@ picture, a different thread fit, alloy density, friction and spring for each.*
 
 | Aspect | Fasteners | Cells | Holders |
 |---|---|---|---|
-| **tolerance** | thread clearance 1.6–8 % of the pitch per side (tight to loose fit; 0.02–0.10 mm at M8), across flats, head and nut height, length | diameter and length under nominal, within the IEC bands | side play of the cradle (0–0.6 mm) |
+| **tolerance** | thread clearance per side within the fit class: 6g for screws, 6H for nuts (at M8: 0.015–0.075 mm and 0.015–0.080 mm, see [Thread fit](#thread-fit)), across flats, head and nut height, length | diameter and length under nominal, within the IEC bands | side play of the cradle (0–0.6 mm) |
 | **defect** (`--defect-rate`, 15 %) | crushed thread (crests pushed sideways over 40–140°: jams a nut), bent shank (0.8–3°), burr at the tip; oval or crushed nut; dished washer | dented can, corroded terminal (crust) | |
 | **wear** | new, used, oily, rusty, dirty: rust, oil, grime and scratches baked into the instance's own textures; friction follows (rust ×1.8 at most, oil ×0.6) | scuffed and faded label, grime | grey or black ABS |
 | **physics** | density of the alloy (brass and stainless are solid alloys, the rest plated steel), friction | mass ±3 %, friction | spring stiffness ±8 %, tired springs (preload down to 70 %), clip torque ±10 %, friction |
@@ -435,6 +435,32 @@ The pack's `instances.csv` is read back from the OpenUSD files, one row per
 asset with the same names (`variation:<name>`, `measured:<name>`), and
 `manifest.json` says what the pack is; both have the same shape in the four
 generators, and the command above fails when the table and the files disagree.
+
+## Thread fit
+
+The play of each thread is drawn inside the usual commercial fit, a 6g screw
+in a 6H nut, and recorded as `clearance_mm` and `thread_class`. The limits
+are computed from the public formulas of the ISO metric thread tolerance
+system ([`fits.py`](https://github.com/drscaon/quincaillerie/blob/main/src/quincaillerie/fits.py)),
+not copied from the standard's tables; they land within 5 % of the values
+printed in handbooks, which a test checks for M3 to M12.
+
+| Size | Screw 6g, clearance per side (mm) | Nut 6H, clearance per side (mm) |
+|---|---|---|
+| M3 | 0.015–0.049 | 0.015–0.052 |
+| M4 | 0.015–0.056 | 0.015–0.059 |
+| M5 | 0.015–0.059 | 0.015–0.062 |
+| M6 | 0.015–0.068 | 0.015–0.073 |
+| M8 | 0.015–0.075 | 0.015–0.080 |
+| M10 | 0.016–0.081 | 0.015–0.086 |
+| M12 | 0.017–0.091 | 0.015–0.098 |
+
+Two simplifications. The draw is uniform across the band, where a real
+production run clusters around its middle. And no part is tighter than
+0.015 mm per side, so that the collision pieces can slide: a real 6H nut may
+have no play of its own, and the tightest 6g screw has 0.010 to 0.017 mm.
+Across flats, heights and lengths are still drawn in plausible ranges, not
+from a tolerance class.
 
 ## Limits
 

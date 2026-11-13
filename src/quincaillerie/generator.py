@@ -106,7 +106,7 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
 def draw(sampler, part, finish):
     """The variation of the next instance of a part."""
     if part.kind in ("screw", "nut", "washer"):
-        return sampler.fastener(part.kind, finish, METRIC[part.key]["P"])
+        return sampler.fastener(part.kind, finish, METRIC[part.key]["P"], METRIC[part.key]["d"])
     kind = CELLS[part.key]["kind"]
     return sampler.cell(part.key, kind) if part.kind == "cell" else sampler.holder(part.key, kind)
 
