@@ -158,3 +158,37 @@ def test_every_instance_carries_its_draws(varied_set, small_set):
     drawn = variation(st.GetDefaultPrim())
     assert drawn["aspects"] == [] and drawn["defect"] == "none"  # nominal values, still recorded
     assert not st.GetDefaultPrim().GetAuthoredPropertiesInNamespace("quincaillerie:variation")
+
+
+def test_thread_play_middle_gives_the_same_clearance_whatever_the_seed():
+    mid = fits.clearance_mm("screw", 1.25, 8.0, 0.5)
+    drawn = [Sampler(seed=seed, thread_play="middle").fastener("screw", "zinc_clear", 1.25, 8.0) for seed in range(8)]
+    assert {v.clearance_mm for v in drawn} == {mid}
+    assert {v.thread_class for v in drawn} == {"6g"}
+    assert len({v.length_dmm for v in drawn}) == 8  # the other tolerances still vary
+
+
+def test_thread_play_changes_the_clearance_and_nothing_else():
+    from dataclasses import asdict
+
+    def rest(play):
+        s = Sampler(seed=7, defect_rate=0.5, thread_play=play)
+        rows = [asdict(s.fastener("nut", "zinc_clear", 1.0, 6.0)) for _ in range(30)]
+        return [{k: v for k, v in r.items() if k not in ("clearance_mm", "thread_class")} for r in rows]
+
+    assert rest("class") == rest("middle") == rest("legacy")
+
+
+def test_thread_play_legacy_is_the_range_used_before_the_fit_classes():
+    s = Sampler(seed=1, thread_play="legacy")
+    vs = [s.fastener("screw", "zinc_clear", 1.25, 8.0) for _ in range(200)]
+    assert all(0.016 * 1.25 <= v.clearance_mm <= 0.08 * 1.25 for v in vs)
+    assert max(v.clearance_mm for v in vs) > fits.clearance_range_mm("screw", 1.25, 8.0)[1]  # looser than 6g
+    assert {v.thread_class for v in vs} == {""}
+
+
+def test_unknown_thread_play_is_refused():
+    import pytest
+
+    with pytest.raises(ValueError, match="thread play"):
+        Sampler(thread_play="tight")

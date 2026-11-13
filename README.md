@@ -197,6 +197,7 @@ generate(parts, "output", vary=("tolerance", "physics"))  # clean, undamaged, va
 | `--with KINDS` | | related elements: `nut,washer` (screw), `screw,washer` (nut), `holder` (cell), `cell` (holder) |
 | `--count N` | 1 | distinct instances of each part, each with its own drawn variation, all in the scene |
 | `--defect-rate R` | 0.15 | share of instances with a defect |
+| `--thread-play` | `class` | thread clearance: `class` (drawn in the 6g / 6H fit), `middle` (the middle of the fit for every instance, whatever the seed) or `legacy` (the range used before the fit classes: 1.6–8 % of the pitch), see [Thread fit](#thread-fit) |
 | `--no-vary ASPECTS` | | aspects that stay nominal: `tolerance`, `defect`, `wear`, `physics` |
 | `--nominal` | | no variation: the reference part (`--count` copies in the scene) |
 | `--detail` | `normal` | visual mesh resolution, `low`, `normal` or `high` (1.4, 3.4 and 7.5 MB for an M8 × 30 screw) |
@@ -454,6 +455,13 @@ printed in handbooks, which a test checks for M3 to M12.
 | M8 | 0.015–0.075 | 0.015–0.080 |
 | M10 | 0.016–0.081 | 0.015–0.086 |
 | M12 | 0.017–0.091 | 0.015–0.098 |
+
+`--thread-play` chooses how: `class` (default) draws across the band;
+`middle` gives every instance the middle of its band, so the play no longer
+depends on the seed; `legacy` draws in the range used before the fit classes
+(1.6–8 % of the pitch) and gives, for a seed, exactly the clearances of 0.2.0b1
+and earlier. The choice moves the clearance only: every other
+drawn value of an instance stays the same.
 
 Two simplifications. The draw is uniform across the band, where a real
 production run clusters around its middle. And no part is tighter than

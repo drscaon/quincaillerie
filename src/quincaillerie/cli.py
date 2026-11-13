@@ -10,7 +10,7 @@ from . import __version__
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
 from .fasteners import COLLIDERS
 from .materials import FINISHES
-from .variation import ASPECTS
+from .variation import ASPECTS, THREAD_PLAY
 
 
 def cmd_list(args):
@@ -62,6 +62,7 @@ def cmd_generate(args):
         defect_rate=args.defect_rate,
         detail=args.detail,
         collider=args.collider,
+        thread_play=args.thread_play,
     )
     print(f"{len(res.parts)} assets in {res.out_dir}/assets ({time.time() - t0:.1f}s)")
     if len(res.parts) > 12:  # a summary, not every line
@@ -137,6 +138,13 @@ def build_parser():
         "--no-vary", metavar="ASPECTS", help="aspects that stay nominal, comma-separated: " + ",".join(ASPECTS)
     )
     g.add_argument("--defect-rate", type=float, default=0.15, help="share of instances with a defect (default 0.15)")
+    g.add_argument(
+        "--thread-play",
+        choices=THREAD_PLAY,
+        default="class",
+        help="thread clearance: class (default; drawn in the 6g / 6H fit), middle (the middle of the fit for "
+        "every instance, whatever the seed) or legacy (the range used before the fit classes)",
+    )
     g.add_argument("--detail", choices=["low", "normal", "high"], default="normal", help="visual mesh resolution")
     g.add_argument(
         "--collider",
