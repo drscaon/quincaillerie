@@ -6,8 +6,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.3.0b1] - 2026-11-13 (beta)
-
 ### Breaking changes
 
 - The thread clearance of a screw or a nut is drawn inside the usual fit, a 6g
