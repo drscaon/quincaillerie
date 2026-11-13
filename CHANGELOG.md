@@ -35,6 +35,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `python -m quincaillerie.conformance` refuses engine data in a file (schemas and
+  attributes of PhysX or OmniPhysics belong in an engine layer, contract
+  section 9) and checks that an engine layer lies over the file it is named
+  after and over nothing else. `contract.py` and `tests/test_contract.py`
+  stay the same in the four generators.
 - `--thread-play` (`generate(..., thread_play=)`): `class` (default, drawn in
   the 6g / 6H fit), `middle` (the middle of the fit for every instance,
   whatever the seed) or `legacy`. The fit is recorded as `thread_class`, in
