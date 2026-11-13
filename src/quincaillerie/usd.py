@@ -12,7 +12,7 @@ import os
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
 
-from .contract import write_identity, write_measured, write_variation
+from .contract import labels, write_identity, write_labels, write_measured, write_variation
 
 NS = "quincaillerie"
 
@@ -576,6 +576,7 @@ def stamp_identity(path, preset, seed, aspects=(), drawn=None, measured=None) ->
     stage = Usd.Stage.Open(str(path))
     root = stage.GetDefaultPrim()
     write_identity(root, name=root.GetName(), preset=preset, seed=seed, identifier=f"./{os.path.basename(str(path))}")
+    write_labels(root, (*labels(root)[:1], preset))  # the kind of part, then the catalogue entry
     write_variation(root, aspects, drawn or {})
     write_measured(root, measured or {})
     stage.GetRootLayer().Save()

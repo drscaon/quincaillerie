@@ -35,6 +35,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Semantic labels on every asset, with OpenUSD's `UsdSemantics.LabelsAPI`:
+  `semantics:labels:class` (the kind of part (`screw`, `nut`, `washer`, `cell`, `holder`) and the catalogue entry (`ISO4017_M8x30`)) and
+  `semantics:labels:instance` (the asset's name). `instances.csv` gains a
+  `classes` column and `manifest.json` lists the classes of the pack; the
+  conformance check requires the labels (`contract.write_labels`,
+  `contract.labels`).
 - `python -m quincaillerie.conformance` refuses engine data in a file (schemas and
   attributes of PhysX or OmniPhysics belong in an engine layer, contract
   section 9) and checks that an engine layer lies over the file it is named
