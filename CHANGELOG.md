@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0b1] - 2026-11-13 (beta)
+
 ### Breaking changes
 
 - The PhysX schemas and attributes (`PhysxRigidBodyAPI`, `PhysxCollisionAPI`)
@@ -92,6 +94,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The README's table of outputs says that `instances.csv` holds each asset's classes, with a link to the
+  semantic labels.
 - The README is less than half its former length; the detail moved, unchanged,
   to `docs/`: `usage.md`, `openusd.md`, `physics.md`, `limits.md`,
   `development.md`.
