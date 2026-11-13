@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from pxr import Usd, UsdGeom, UsdPhysics
+from pxr import Usd, UsdGeom, UsdPhysics, UsdSemantics
 
 from .batteries import FLOOR_T, holder_design
 from .catalog import CELLS, METRIC
@@ -52,6 +52,8 @@ def add_ref(st, prim_name, asset_file, pos, quat=(1, 0, 0, 0), finish=None):
     scene_dir = os.path.dirname(os.path.abspath(st.GetRootLayer().realPath))
     rel = os.path.relpath(os.path.abspath(asset_file), scene_dir).replace(os.sep, "/")
     x.GetPrim().GetReferences().AddReference(rel if rel.startswith(".") else f"./{rel}")
+    # in a scene the instance is the prim that places the part (its classes come from the part)
+    UsdSemantics.LabelsAPI.Apply(x.GetPrim(), "instance").CreateLabelsAttr([prim_name])
     place(x, pos, quat)
     if finish:
         vs = x.GetPrim().GetVariantSets().GetVariantSet("finish")

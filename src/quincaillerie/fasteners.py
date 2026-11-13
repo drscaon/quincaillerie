@@ -21,6 +21,7 @@ from pxr import Sdf
 
 from . import physx
 from .catalog import METRIC, nut_name, screw_name, washer_name
+from .contract import write_labels
 from .materials import FINISHES
 from .threads import iso_profile, mesh_mass_props, nut_mesh, segments, threaded_bolt_mesh
 from .usd import (
@@ -122,8 +123,11 @@ def _looks(stage, root, name, subsets, finish, v, path):
     finish_variants(stage, root, [subsets["finish"]], FINISHES, "as_generated" if extra else finish, extra)
 
 
-def _save(stage):
-    """Save the part and write its PhysX layer beside it (a thread needs many solver iterations)."""
+def _save(stage, kind):
+    """Label the part, save it and write its PhysX layer beside it (a thread needs many solver
+    iterations)."""
+    root = stage.GetDefaultPrim()
+    write_labels(root, (kind, root.GetAttribute("primvaria:preset").Get()))
     stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
@@ -249,7 +253,7 @@ def write_screw(
         (0, 1, 0, 0),
         dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=k),
     )
-    _save(stage)
+    _save(stage, "screw")
     return dict(
         name=name,
         kind="screw",
@@ -335,7 +339,7 @@ def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="n
         (1, 0, 0, 0),
         dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=H),
     )
-    _save(stage)
+    _save(stage, "nut")
     return dict(name=name, kind="nut", size=size, mass_g=m * 1e3, colliders=len(pieces), **as_attrs(v))
 
 
@@ -409,5 +413,5 @@ def write_washer(
         ),
     )
     mate_frame(stage, f"{R}/MateFrame_bore", (0, 0, 0), (1, 0, 0, 0), dict(role="bore", diameter=d1, axis="+Z"))
-    _save(stage)
+    _save(stage, "washer")
     return dict(name=name, kind="washer", size=size, mass_g=m * 1e3, colliders=sectors, **as_attrs(v))

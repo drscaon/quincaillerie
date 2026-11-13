@@ -23,6 +23,7 @@ from pxr import Sdf
 
 from . import physx
 from .catalog import CELLS
+from .contract import write_labels
 from .usd import (
     VisualBuilder,
     box_inertia,
@@ -215,8 +216,10 @@ def _crust(center, radius, seed, flatten_axis=0):
     return V + np.asarray(center), F
 
 
-def _save(stage):
-    """Save the part and write its PhysX layer beside it."""
+def _save(stage, kind):
+    """Label the part, save it and write its PhysX layer beside it."""
+    root = stage.GetDefaultPrim()
+    write_labels(root, (kind, root.GetAttribute("primvaria:preset").Get()))
     stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
@@ -386,7 +389,7 @@ def write_cell(path, name, cv=None, root_name=None):
             **as_attrs(cv),
         ),
     )
-    _save(stage)
+    _save(stage, "cell")
     return dict(name=root_name, kind="cell", format=name, mass_g=mass * 1e3, **as_attrs(cv))
 
 
@@ -618,5 +621,5 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
             **as_attrs(hv),
         ),
     )
-    _save(stage)
+    _save(stage, "holder")
     return dict(name=root_name, kind="holder", format=name, family=kind, **as_attrs(hv))

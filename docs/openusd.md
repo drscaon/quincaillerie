@@ -112,3 +112,9 @@ The pack's `instances.csv` is read back from the OpenUSD files, one row per
 asset with the same names (`variation:<name>`, `measured:<name>`), and
 `manifest.json` says what the pack is; both have the same shape in the four
 generators, and the command above fails when the table and the files disagree.
+
+Each part also says what it is with OpenUSD's own semantic labels
+(`UsdSemantics.LabelsAPI`), which renderers such as Isaac Sim turn into
+segmentation masks: `semantics:labels:class` holds the kind of part (`screw`, `nut`, `washer`, `cell`, `holder`) and the catalogue entry (`ISO4017_M8x30`), and
+`semantics:labels:instance` the asset's name. In a scene, the instance label is the name of the prim that places the part. The classes are a
+column of `instances.csv` and are listed in `manifest.json`.
