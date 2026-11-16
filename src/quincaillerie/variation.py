@@ -142,6 +142,8 @@ class Sampler:
             v.across_flats_dmm = float(-r.uniform(0.0, 0.25))
             v.height_dmm = float(-r.uniform(0.0, 0.3))
             v.length_dmm = float(r.uniform(-0.4, 0.4))
+            if kind == "washer":  # a washer's thickness tolerance is tighter than a head's: 0.3 times
+                v.height_dmm = 0.3 * v.height_dmm
         r = self.rng("defect", kind)
         if self.on("defect") and r.random() < self.defect_rate:
             choices = {
@@ -159,6 +161,8 @@ class Sampler:
                 "oval": float(r.uniform(0.04, 0.12)),  # mm of ovality
                 "dished": float(r.uniform(0.15, 0.5)),  # mm of cone height
             }[v.defect]
+            if v.defect in ("bent", "oval", "dished"):  # a bend, an ovality, a dish: no place, no angle
+                v.defect_z = v.defect_angle_deg = None
         r = self.rng("wear", kind)
         if self.on("wear"):
             state = r.choice(["new", "used", "oily", "rusty", "dirty"], p=[0.35, 0.25, 0.15, 0.15, 0.10])
@@ -175,6 +179,14 @@ class Sampler:
         if self.on("physics"):
             v.density = float(v.density * r.normal(1.0, 0.005))
             v.friction = float(np.clip(v.friction * r.normal(1.0, 0.08), 0.06, 0.5))
+        # what a part does not have is not recorded (the values are still drawn, so that the
+        # other values of the stream stay the same): a nut's length is its height, a washer has
+        # no hex, no length and no thread
+        if kind == "nut":
+            v.length_dmm = None
+        elif kind == "washer":
+            v.across_flats_dmm = v.length_dmm = v.clearance_mm = v.thread_class = None
+            v.defect_z = v.defect_angle_deg = None  # its one defect, a dish, has neither
         return v
 
     # ------------------------------------------------------------------ cells and holders
@@ -190,6 +202,14 @@ class Sampler:
             v.defect_angle_deg = float(r.uniform(0, 360))
             v.defect_z = float(r.uniform(0.2, 0.8))
             v.defect_size = float(r.uniform(0.3, 1.0))
+            # a dent has a place along the can, an angle and a depth; the corrosion crust sits on
+            # a terminal, at its angle on a round cell, with its size: what does not apply is not recorded
+            if v.defect == "corroded_terminal":
+                v.defect_z = None
+        if kind in ("coin", "nine_volt"):  # the crust has its place on these: no place along the cell
+            v.defect_z = None
+        if kind == "nine_volt":  # nor an angle
+            v.defect_angle_deg = None
         r = self.rng("wear", "cell")
         if self.on("wear"):
             v.seed = int(r.integers(0, 2**31))
@@ -220,5 +240,8 @@ class Sampler:
 
 
 def as_attrs(v):
-    """Flat {variation:name: value} for the USD attributes and the CSV."""
-    return {f"variation:{k}": (round(x, 6) if isinstance(x, float) else x) for k, x in asdict(v).items()}
+    """Flat {variation:name: value} for the USD attributes and the CSV; a value of None is a value
+    the part does not have, and is left out."""
+    return {
+        f"variation:{k}": (round(x, 6) if isinstance(x, float) else x) for k, x in asdict(v).items() if x is not None
+    }

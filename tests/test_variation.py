@@ -77,7 +77,7 @@ def test_every_drawn_clearance_is_inside_its_fit_class():
             assert {v.thread_class for v in vs} == {cls}
             assert lo >= fits.SIM_FLOOR_MM
     washer = Sampler(seed=3).fastener("washer", "zinc_clear", 1.25, 8.0)
-    assert washer.thread_class == "" and washer.clearance_mm == 0.05
+    assert washer.thread_class is None and washer.clearance_mm is None  # a washer has no thread
 
 
 def test_crushed_thread_interferes_with_the_mating_thread():

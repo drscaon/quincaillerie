@@ -13,8 +13,9 @@ A distribution is a tuple:
 * ("relative", distribution): the value divided by the finish's nominal density follows it;
 * ("bounded", low, high, how): derived from other draws, as said in how, and kept within [low, high].
 
-Each part lists (column, aspect, distribution, when). when is "" or "defect" (only for an instance
-that drew a defect, at the rate given by --defect-rate, 0.15 by default). The values are those of
+Each part lists (column, aspect, distribution, when). when is "", "defect" (only for an instance
+that drew a defect, at the rate given by --defect-rate, 0.15 by default) or the name of one defect
+(only for an instance with that defect). The values are those of
 the default options: --thread-play class, every aspect on.
 """
 
@@ -42,10 +43,14 @@ FRICTION = (
     0.5,
     "finish friction × (1 + 0.8 rust + 0.3 dirt − 0.4 oil), kept within 0.08 to 0.45, then × normal(1, 0.08)",
 )
-DEFECT_PLACE = [
-    ("defect_z", "defect", ("uniform", 0.15, 0.85), "defect"),
-    ("defect_angle_deg", "defect", ("uniform", 40.0, 140.0), "defect"),
-]
+
+
+def place(defects):
+    """The place and angular extent of the defects that have them."""
+    return [
+        ("defect_z", "defect", ("uniform", 0.15, 0.85), defects),
+        ("defect_angle_deg", "defect", ("uniform", 40.0, 140.0), defects),
+    ]
 
 
 def defect(kinds):
@@ -60,7 +65,7 @@ DECLARED = {
         ("height_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
         ("length_dmm", "tolerance", ("uniform", -0.4, 0.4), ""),
         ("defect", "defect", defect(["crushed_thread", "bent", "burr"]), ""),
-        *DEFECT_PLACE,
+        *place("crushed_thread|burr"),
         (
             "defect_size",
             "defect",
@@ -84,9 +89,8 @@ DECLARED = {
         ("thread_class", "tolerance", ("constant", "6H"), ""),
         ("across_flats_dmm", "tolerance", ("uniform", -0.25, 0.0), ""),
         ("height_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
-        ("length_dmm", "tolerance", ("uniform", -0.4, 0.4), ""),
         ("defect", "defect", defect(["crushed_thread", "oval"]), ""),
-        *DEFECT_PLACE,
+        *place("crushed_thread"),
         (
             "defect_size",
             "defect",
@@ -98,13 +102,8 @@ DECLARED = {
         ("friction", "wear, physics", FRICTION, ""),
     ],
     "washer": [
-        ("clearance_mm", "tolerance", ("constant", 0.05), ""),
-        ("thread_class", "tolerance", ("constant", ""), ""),
-        ("across_flats_dmm", "tolerance", ("uniform", -0.25, 0.0), ""),
-        ("height_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
-        ("length_dmm", "tolerance", ("uniform", -0.4, 0.4), ""),
+        ("height_dmm", "tolerance", ("uniform", -0.09, 0.0), ""),
         ("defect", "defect", defect(["dished"]), ""),
-        *DEFECT_PLACE,
         ("defect_size", "defect", ("uniform", 0.15, 0.5), "defect"),
         *WEAR,
         ("density", "physics", ("relative", ("normal", 1.0, 0.005)), ""),
@@ -115,7 +114,7 @@ DECLARED = {
         ("length_dmm", "tolerance", ("uniform", -0.8, 0.0), ""),
         ("defect", "defect", ("choice", {"none": NONE_SHARE, "dent": RATE / 2, "corroded_terminal": RATE / 2}), ""),
         ("defect_angle_deg", "defect", ("uniform", 0.0, 360.0), "defect"),
-        ("defect_z", "defect", ("uniform", 0.2, 0.8), "defect"),
+        ("defect_z", "defect", ("uniform", 0.2, 0.8), "dent"),
         ("defect_size", "defect", ("uniform", 0.3, 1.0), "defect"),
         ("label_wear", "wear", ("beta", 1.2, 3.0), ""),
         ("dirt", "wear", ("beta", 1.0, 4.0), ""),
@@ -128,7 +127,6 @@ DECLARED = {
         ("length_dmm", "tolerance", ("uniform", -0.2, 0.0), ""),
         ("defect", "defect", ("choice", {"none": NONE_SHARE, "corroded_terminal": RATE}), ""),
         ("defect_angle_deg", "defect", ("uniform", 0.0, 360.0), "defect"),
-        ("defect_z", "defect", ("uniform", 0.2, 0.8), "defect"),
         ("defect_size", "defect", ("uniform", 0.3, 1.0), "defect"),
         ("label_wear", "wear", ("beta", 1.2, 3.0), ""),
         ("dirt", "wear", ("beta", 1.0, 4.0), ""),
@@ -148,18 +146,22 @@ DECLARED = {
 }
 
 
-# Recorded values that do not change the part as recorded, found while writing this declaration
-# (16 November 2026). Listed on the page so that the ground truth does not claim more than the part.
-NOT_APPLIED = {
-    ("nut", "length_dmm"): "recorded, not applied: a nut has no length",
-    ("washer", "across_flats_dmm"): "recorded, not applied: a washer has no hex",
-    ("washer", "length_dmm"): "recorded, not applied: a washer has no length",
-    ("washer", "height_dmm"): "applied at 0.3 times the recorded value",
-    ("cell (cylinder)", "defect_z"): "applied to a dent only, and to the visual mesh only",
-    ("cell (cylinder)", "defect_angle_deg"): "applied to a dent only, and to the visual mesh only",
-    ("cell (cylinder)", "defect_size"): "applied to a dent only, and to the visual mesh only",
-    ("cell (coin)", "defect_z"): "recorded, not applied: the crust sits at the seal",
-    ("cell (coin)", "defect_size"): "recorded, not applied: the crust has a fixed size",
+# What a defect does to a cell, for the page: the dent is in the colliders and the visual mesh,
+# the corrosion crust has its own collider (QUI-10).
+EFFECT = {
+    ("screw", "defect_z"): (
+        "a crushed thread: where along the shank, and where around it starts; a burr: where around the tip it starts"
+    ),
+    ("screw", "defect_angle_deg"): "how far around the thread the crush or the burr extends",
+    ("screw", "defect_size"): "how deep the crush is, how far the shank bends, how high the burr stands",
+    ("nut", "defect_z"): "where along the bore the crushed thread is, and where around it starts",
+    ("nut", "defect_angle_deg"): "how far around the bore the crush extends",
+    ("washer", "defect_size"): "the height of the cone at the rim",
+    ("cell (cylinder)", "defect_z"): "where the dent is along the can",
+    ("cell (cylinder)", "defect_angle_deg"): "the angle of the dent, or of the crust on the minus face",
+    ("cell (cylinder)", "defect_size"): "the dent's depth in mm, or the crust's size relative to its mean",
+    ("cell (coin)", "defect_angle_deg"): "where the crust is around the seal",
+    ("cell (coin)", "defect_size"): "the crust's size relative to its mean",
 }
 
 
@@ -207,9 +209,10 @@ def table() -> str:
     for part, rows in DECLARED.items():
         out += [f"### {part}", "", "| Column | Aspect | Drawn as |", "|---|---|---|"]
         for column, aspect, dist, when in rows:
-            note = " (instances with a defect)" if when == "defect" else ""
-            if (part, column) in NOT_APPLIED:
-                note += f". **{NOT_APPLIED[part, column]}**"
+            names = " or ".join(f"`{w}`" for w in when.split("|"))
+            note = {"": "", "defect": " (instances with a defect)"}.get(when, f" (instances with {names})")
+            if (part, column) in EFFECT:
+                note += f": {EFFECT[part, column]}"
             out.append(f"| `variation:{column}` | {aspect} | {describe(dist)}{note} |")
         out.append("")
     return "\n".join(out)

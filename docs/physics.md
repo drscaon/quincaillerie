@@ -67,7 +67,11 @@ runs every check on MuJoCo 4), and Blender 5.2 (`bpy`):
 A varied batch, `quincaillerie generate all --count 5 --defect-rate 0.2
 --seed 11` (205 instances, 33 of them with a defect: 9 crushed threads, 11
 dished washers, 2 bent screws, 2 burrs, 1 oval nut, 2 dented cans, 6 corroded
-terminals), then `sim-test --defects` and `blender-test`:
+terminals), then `sim-test --defects` and `blender-test` (results of
+0.3.0b1; since then a dent and a crust are in the colliders, and the seating
+and insertion checks take the sound cells, as the screwing check takes the
+sound threads: `tests/test_physical_defects.py` checks the defects in
+MuJoCo):
 
 | Check | MuJoCo | Blender (add-on) |
 |---|---|---|

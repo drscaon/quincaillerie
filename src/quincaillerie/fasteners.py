@@ -366,7 +366,7 @@ def write_washer(
         sectors = 8
     v = v or FastenerVariation()
     d1, d2, h = (x * MM for x in METRIC[size]["washer"])
-    h += v.height_dmm * MM * 0.3  # thickness tolerance is tighter than a head's
+    h += v.height_dmm * MM  # the variation already holds the tighter thickness tolerance
     name = name or washer_name(size)
     R = f"/{name}"
     stage, root = new_stage(path, name)

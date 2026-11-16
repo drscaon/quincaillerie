@@ -11,9 +11,10 @@ Part of the [Quincaillerie](../README.md) documentation.
   are fully threaded (no plain shank) and have no chamfer under the head.
 - **Plausible variation, not measured distributions.** The ranges (fits,
   defect sizes, wear, spring scatter) are realistic orders of magnitude, not
-  statistics of a production line. Dents and corrosion crusts are visual
-  only; crushed threads, bends, burrs, oval nuts and dished washers change
-  the collision too.
+  statistics of a production line. Every defect changes the collision as
+  well as the looks: crushed threads, bends, burrs, oval nuts, dished
+  washers, dented cans (the can's collider is then in convex pieces) and
+  corrosion crusts (a collider of their own).
 - **Collision in pieces.** A thread is ≈ 1000 convex pieces: exact enough to
   screw, heavy for large scenes (a scene of 100 screws is 100 000 shapes).
   Engines that size their contact buffers in advance feel it first: loaded in

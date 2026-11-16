@@ -32,7 +32,8 @@ def draws(part):
         rows = [asdict(sampler.cell("AA", kind)) for _ in range(N)]
     else:
         rows = [asdict(sampler.holder("AA", "cradle")) for _ in range(N)]
-    return {key: np.array([row[key] for row in rows]) for key in rows[0]}
+    # a value the part does not have is None, and is not recorded (variation.as_attrs)
+    return {key: np.array([row[key] for row in rows], dtype=object) for key in rows[0]}
 
 
 def cdf(dist, x, left=False):
@@ -116,13 +117,18 @@ def test_drawn_as_declared(part):
     columns = draws(part)
     rows = declared.DECLARED[part]
     names = {row[0] for row in rows}
-    undeclared = sorted(set(columns) - names)
+    recorded = {k for k, v in columns.items() if any(x is not None for x in v)}
+    undeclared = sorted(recorded - names)
     assert not undeclared, f"{part}: drawn but not declared: {undeclared}"
     defective = columns["defect"] != "none" if "defect" in columns else np.ones(N, bool)
     for column, _aspect, dist, when in rows:
-        keep = defective if when == "defect" else np.ones(N, bool)
+        keep = {"": np.ones(N, bool), "defect": defective}.get(when)
+        keep = np.isin(columns["defect"].astype(str), when.split("|")) if keep is None else keep
         others = {**{k: v[keep] for k, v in columns.items()}, "kind": part}
-        check(column, dist, columns[column][keep], others)
+        values = columns[column][keep]
+        assert all(x is not None for x in values), f"{part}: {column} is not recorded where it is declared"
+        values = values.astype(str) if isinstance(values[0], str) else values.astype(float)
+        check(column, dist, values, others)
 
 
 def test_documentation_is_the_declaration():
