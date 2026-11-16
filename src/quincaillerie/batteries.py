@@ -30,6 +30,7 @@ from .usd import (
     box_mesh,
     collider_cube,
     collider_cylinder,
+    collider_hull,
     finish_variants,
     fix_typeless,
     lib_material,
@@ -205,6 +206,32 @@ def _dent(V, axis_x, x0, ang0, depth, r):
     return V
 
 
+# the crust's size is defect_size times its mean size (the mean of defect_size, 0.65, gives the
+# size the crust had before it was drawn)
+CRUST_MEAN = 0.65
+
+
+def _dented_can(x_lo, x_hi, r, x0, ang0, depth, sectors=48, step=0.2):
+    """Convex pieces of a can along x, dented as _dent dents the visual mesh: pie wedges around the
+    axis, sliced finely where the dent is, so that the colliders carry the dent (lengths in m)."""
+    pieces = []
+    span = 3 * 0.35 * r  # the dent's weight is below 1e-4 beyond three widths
+    lo, hi = max(x_lo, x0 - span), min(x_hi, x0 + span)
+    fine = list(np.arange(lo, hi, step * r)) + [hi]
+    for i in range(sectors):
+        a0, a1 = 2 * np.pi * i / sectors, 2 * np.pi * (i + 1) / sectors
+        da = (0.5 * (a0 + a1) - ang0 + np.pi) % (2 * np.pi) - np.pi
+        cuts = [x_lo, *fine, x_hi] if abs(da) < span / r and hi > lo else [x_lo, x_hi]
+        cuts = sorted(set(cuts))
+        for xa, xb in zip(cuts[:-1], cuts[1:], strict=False):
+            pts = [[x, 0.0, 0.0] for x in (xa, xb)]
+            for a in np.linspace(a0, a1, 3):
+                for x in np.linspace(xa, xb, 3):
+                    pts.append([x, r * np.cos(a), r * np.sin(a)])
+            pieces.append(_dent(pts, True, x0, ang0, depth, r))
+    return pieces
+
+
 def _crust(center, radius, seed, flatten_axis=0):
     """An irregular blob of corrosion product (white-green crystals) on a terminal."""
     rng = np.random.default_rng(seed)
@@ -260,14 +287,24 @@ def write_cell(path, name, cv=None, root_name=None):
         for mat, prof, along in parts:
             V, F = revolve_profile(np.asarray(prof) * MM, 96 if cv.defect != "dent" else 160, axis="x")
             uv = uv_cylindrical(V, F, "x", along=along) if along else uv_cylindrical(V, F, "x", vscale=100.0)
-            if cv.defect == "dent":  # visual: a few tenths of a millimetre do not change how it rolls
+            if cv.defect == "dent":  # in the visual mesh and in the colliders below
                 x0 = (cv.defect_z - 0.5) * (L - 6) * MM
                 V = _dent(V, True, x0, np.radians(cv.defect_angle_deg), cv.defect_size * MM, r * MM)
             vb.add(V, F, mat, uv, 40)
-        if cv.defect == "corroded_terminal":
-            V, F = _crust(m(-L / 2 - 0.2, 0.25 * r, 0.1 * r), 0.3 * r * MM, cv.seed)
+        if cv.defect == "corroded_terminal":  # on the minus face, at its angle, with its size; it collides
+            a = np.radians(cv.defect_angle_deg)
+            size = 0.3 * r * cv.defect_size / CRUST_MEAN
+            V, F = _crust(m(-L / 2 - 0.2, 0.27 * r * np.cos(a), 0.27 * r * np.sin(a)), size * MM, cv.seed)
             vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
-        collider_cylinder(stage, f"{R}/Collision/can", m(-nh / 2, 0, 0), r * MM, (L - nh) / 2 * MM, "X", pmat=pm)
+            collider_hull(stage, f"{R}/Collision/corrosion", V, pmat=pm)
+        if cv.defect == "dent":
+            x0 = (cv.defect_z - 0.5) * (L - 6) * MM
+            ang, depth = np.radians(cv.defect_angle_deg), cv.defect_size * MM
+            pieces = _dented_can(-L / 2 * MM, (L / 2 - nh) * MM, r * MM, x0, ang, depth)
+            for i, pts in enumerate(pieces):
+                collider_hull(stage, f"{R}/Collision/can_{i:03d}", pts, pmat=pm)
+        else:
+            collider_cylinder(stage, f"{R}/Collision/can", m(-nh / 2, 0, 0), r * MM, (L - nh) / 2 * MM, "X", pmat=pm)
         collider_cylinder(stage, f"{R}/Collision/nub", m(L / 2 - nh / 2, 0, 0), nr * MM, nh / 2 * MM, "X", pmat=pm)
         rr, LL = r * MM, L * MM
         rigid_body(
@@ -297,9 +334,10 @@ def write_cell(path, name, cv=None, root_name=None):
             V = V + np.array(m(L / 2, yy, 0))
             vb.add(V, F, "nickel_bright", uv_box(V, F, 200.0), 40)
             collider_cylinder(stage, f"{R}/Collision/{nm}", m(L / 2 + 1.5, yy, 0), rr * MM, 1.5 * MM, "X", pmat=pm)
-        if cv.defect == "corroded_terminal":
-            V, F = _crust(m(L / 2 + 1.0, -6.35 + 3.0, 1.5), 2.2 * MM, cv.seed)
+        if cv.defect == "corroded_terminal":  # between the snaps, with its size; it collides
+            V, F = _crust(m(L / 2 + 1.0, -6.35 + 3.0, 1.5), 2.2 * cv.defect_size / CRUST_MEAN * MM, cv.seed)
             vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
+            collider_hull(stage, f"{R}/Collision/corrosion", V, pmat=pm)
         Lm, Wm, Tm = L * MM, W * MM, T * MM
         rigid_body(
             root,
@@ -334,8 +372,10 @@ def write_cell(path, name, cv=None, root_name=None):
         vb.add(V, F, "stainless_a2", uv_planar(V, F, cr * MM), 40)
         if cv.defect == "corroded_terminal":  # crystals at the seal, between the two faces
             a = np.radians(cv.defect_angle_deg)
-            V, F = _crust(m(r * np.cos(a), r * np.sin(a), -h / 2 + cap_h + 0.3), 0.18 * r * MM, cv.seed, 2)
+            size = 0.18 * r * cv.defect_size / CRUST_MEAN
+            V, F = _crust(m(r * np.cos(a), r * np.sin(a), -h / 2 + cap_h + 0.3), size * MM, cv.seed, 2)
             vb.add(V, F, "corrosion", uv_box(V, F, 300.0), 60)
+            collider_hull(stage, f"{R}/Collision/corrosion", V, pmat=pm)
         collider_cylinder(stage, f"{R}/Collision/can", m(0, 0, cap_h / 2), r * MM, (h - cap_h) / 2 * MM, "Z", pmat=pm)
         collider_cylinder(stage, f"{R}/Collision/cap", m(0, 0, -(h - cap_h) / 2), cr * MM, cap_h / 2 * MM, "Z", pmat=pm)
         rr, hh = r * MM, h * MM

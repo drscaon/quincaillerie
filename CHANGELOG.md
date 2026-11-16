@@ -6,6 +6,32 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed values
+
+What an instance records is now what its geometry and colliders use (QUI-10).
+The same seed gives the same parts, except for the cells' defects:
+
+- A washer records the thickness change it really has (0.3 times what it
+  recorded before); its geometry is unchanged.
+- No longer recorded, as the part does not have them: a nut's `length_dmm`; a
+  washer's `across_flats_dmm`, `length_dmm`, `clearance_mm`, `thread_class`,
+  `defect_z` and `defect_angle_deg`; `defect_z` and `defect_angle_deg` of a
+  bent screw and of an oval nut; `defect_z` of a corroded cell and of every
+  coin and 9 V cell; `defect_angle_deg` of a 9 V cell.
+- A corrosion crust takes its drawn size (`defect_size`, the same mean as
+  before) and, on a round cell, its drawn angle.
+
+### Changed
+
+- A dented cell's can collider follows the dent (convex pieces, fine where
+  the dent is), and a corrosion crust has its own collider: both change how
+  the cell rests and seats. `tests/test_physical_defects.py` checks it in
+  MuJoCo: a ball rests lower in a dent, a cell stood on its crust falls over.
+- The seating and insertion checks take the sound cells, as the screwing
+  check takes the sound threads.
+- `docs/variation.md` lists no exception any more; the examples show a dash
+  for a value a part does not have.
+
 ### Added
 
 - `docs/variation.md`: how every drawn value is drawn, part by part, written

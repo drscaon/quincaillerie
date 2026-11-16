@@ -86,7 +86,7 @@ def build_test_scenes(set_dir, pairs=2):
     """Write the gravity test scenes of a set; returns [(name, kind, path, info)].
 
     Every part is dropped; up to `pairs` nut-on-screw pairs per size (instances without defects:
-    a damaged thread is tested by the jam check); every holder; every cell seated in a holder."""
+    a damaged thread is tested by the jam check); every holder; every sound cell seated in a holder."""
     inv = inventory(set_dir)
     sdir = os.path.join(set_dir, "sim_test", "scenes")
     os.makedirs(sdir, exist_ok=True)
@@ -123,7 +123,9 @@ def build_test_scenes(set_dir, pairs=2):
             out.append((tag, "nut_on_screw", save(st), dict(size=size, z_nut=turns * P, pitch=P, screw=sn, nut=nn)))
     for fmt in CELLS:
         holders = [(n, a) for n, a in inv.items() if a["kind"] == "holder" and a["key"] == fmt]
-        cells = [(n, a) for n, a in inv.items() if a["kind"] == "cell" and a["key"] == fmt]
+        # sound cells: a dent or a corrosion crust is in the colliders and changes how a cell seats
+        # (tests/test_physical_defects.py), as a crushed thread changes how a nut turns
+        cells = _sound([(n, a) for n, a in inv.items() if a["kind"] == "cell" and a["key"] == fmt])
         for hn, ha in holders:
             tag = f"holder_{hn.removeprefix('Holder_')}"
             st = new(tag)
@@ -580,7 +582,7 @@ def sim_test(set_dir, insertions=True, screw=False, verbose=True, only=None, def
 
     if insertions:
         for fmt in CELLS:
-            for (hn, ha), (_, ca) in zip(of("holder", fmt), of("cell", fmt), strict=False):
+            for (hn, ha), (_, ca) in zip(of("holder", fmt), of("cell", fmt, sound=True), strict=False):
                 tag = f"insertion_{hn.removeprefix('Holder_')}"
                 if only and only not in tag:
                     continue

@@ -16,10 +16,12 @@ Notes:
 
 - The tests draw an M8 part in `zinc_clear`. A stainless (`stainless_a2`) or
   brass part never rusts, so its `rust` is always 0.
-- Where a recorded value does not change the part as recorded, the table
-  says so in bold. These were found while writing this page; whether every
-  other value changes the part is checked by the physical tests
-  ([physics.md](physics.md)), not here.
+- Every recorded value is the value the part's geometry and colliders use:
+  a value a part does not have (a nut's length, a washer's hex) is not
+  recorded, and a cell's dent and corrosion crust are in its colliders
+  (`tests/test_physical_defects.py` checks both in MuJoCo). Whether each
+  value changes how a part behaves is checked by the physical tests
+  ([physics.md](physics.md)).
 - These ranges are plausible, not measured: see [limits.md](limits.md).
 
 <!-- declared: begin -->
@@ -34,9 +36,9 @@ Notes:
 | `variation:height_dmm` | tolerance | uniform, -0.3 to 0 |
 | `variation:length_dmm` | tolerance | uniform, -0.4 to 0.4 |
 | `variation:defect` | defect | `none` 85 %; `crushed_thread` 5 %; `bent` 5 %; `burr` 5 % |
-| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with a defect) |
-| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with a defect) |
-| `variation:defect_size` | defect | `crushed_thread`: uniform, 0.3 to 0.6; `bent`: uniform, 0.8 to 3; `burr`: uniform, 0.1 to 0.25 (instances with a defect) |
+| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with `crushed_thread` or `burr`): a crushed thread: where along the shank, and where around it starts; a burr: where around the tip it starts |
+| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with `crushed_thread` or `burr`): how far around the thread the crush or the burr extends |
+| `variation:defect_size` | defect | `crushed_thread`: uniform, 0.3 to 0.6; `bent`: uniform, 0.8 to 3; `burr`: uniform, 0.1 to 0.25 (instances with a defect): how deep the crush is, how far the shank bends, how high the burr stands |
 | `variation:scratches` | wear | 35 %: uniform, 0 to 0.15; 65 %: uniform, 0.2 to 0.8 |
 | `variation:rust` | wear | 85 %: always `0`; 15 %: uniform, 0.2 to 0.9 |
 | `variation:oil` | wear | 85 %: always `0`; 15 %: uniform, 0.4 to 1 |
@@ -53,10 +55,9 @@ Notes:
 | `variation:thread_class` | tolerance | always `6H` |
 | `variation:across_flats_dmm` | tolerance | uniform, -0.25 to 0 |
 | `variation:height_dmm` | tolerance | uniform, -0.3 to 0 |
-| `variation:length_dmm` | tolerance | uniform, -0.4 to 0.4. **recorded, not applied: a nut has no length** |
 | `variation:defect` | defect | `none` 85 %; `crushed_thread` 7.5 %; `oval` 7.5 % |
-| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with a defect) |
-| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with a defect) |
+| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with `crushed_thread`): where along the bore the crushed thread is, and where around it starts |
+| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with `crushed_thread`): how far around the bore the crush extends |
 | `variation:defect_size` | defect | `crushed_thread`: uniform, 0.3 to 0.6; `oval`: uniform, 0.04 to 0.12 (instances with a defect) |
 | `variation:scratches` | wear | 35 %: uniform, 0 to 0.15; 65 %: uniform, 0.2 to 0.8 |
 | `variation:rust` | wear | 85 %: always `0`; 15 %: uniform, 0.2 to 0.9 |
@@ -70,15 +71,9 @@ Notes:
 
 | Column | Aspect | Drawn as |
 |---|---|---|
-| `variation:clearance_mm` | tolerance | always `0.05` |
-| `variation:thread_class` | tolerance | always `` |
-| `variation:across_flats_dmm` | tolerance | uniform, -0.25 to 0. **recorded, not applied: a washer has no hex** |
-| `variation:height_dmm` | tolerance | uniform, -0.3 to 0. **applied at 0.3 times the recorded value** |
-| `variation:length_dmm` | tolerance | uniform, -0.4 to 0.4. **recorded, not applied: a washer has no length** |
+| `variation:height_dmm` | tolerance | uniform, -0.09 to 0 |
 | `variation:defect` | defect | `none` 85 %; `dished` 15 % |
-| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with a defect) |
-| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with a defect) |
-| `variation:defect_size` | defect | uniform, 0.15 to 0.5 (instances with a defect) |
+| `variation:defect_size` | defect | uniform, 0.15 to 0.5 (instances with a defect): the height of the cone at the rim |
 | `variation:scratches` | wear | 35 %: uniform, 0 to 0.15; 65 %: uniform, 0.2 to 0.8 |
 | `variation:rust` | wear | 85 %: always `0`; 15 %: uniform, 0.2 to 0.9 |
 | `variation:oil` | wear | 85 %: always `0`; 15 %: uniform, 0.4 to 1 |
@@ -94,9 +89,9 @@ Notes:
 | `variation:diameter_dmm` | tolerance | uniform, -0.5 to 0 |
 | `variation:length_dmm` | tolerance | uniform, -0.8 to 0 |
 | `variation:defect` | defect | `none` 85 %; `dent` 7.5 %; `corroded_terminal` 7.5 % |
-| `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect). **applied to a dent only, and to the visual mesh only** |
-| `variation:defect_z` | defect | uniform, 0.2 to 0.8 (instances with a defect). **applied to a dent only, and to the visual mesh only** |
-| `variation:defect_size` | defect | uniform, 0.3 to 1 (instances with a defect). **applied to a dent only, and to the visual mesh only** |
+| `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect): the angle of the dent, or of the crust on the minus face |
+| `variation:defect_z` | defect | uniform, 0.2 to 0.8 (instances with `dent`): where the dent is along the can |
+| `variation:defect_size` | defect | uniform, 0.3 to 1 (instances with a defect): the dent's depth in mm, or the crust's size relative to its mean |
 | `variation:label_wear` | wear | beta(1.2, 3) |
 | `variation:dirt` | wear | beta(1, 4) |
 | `variation:seed` | wear | integer, 0 to 2³¹ − 1 |
@@ -110,9 +105,8 @@ Notes:
 | `variation:diameter_dmm` | tolerance | uniform, -0.3 to 0 |
 | `variation:length_dmm` | tolerance | uniform, -0.2 to 0 |
 | `variation:defect` | defect | `none` 85 %; `corroded_terminal` 15 % |
-| `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect) |
-| `variation:defect_z` | defect | uniform, 0.2 to 0.8 (instances with a defect). **recorded, not applied: the crust sits at the seal** |
-| `variation:defect_size` | defect | uniform, 0.3 to 1 (instances with a defect). **recorded, not applied: the crust has a fixed size** |
+| `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect): where the crust is around the seal |
+| `variation:defect_size` | defect | uniform, 0.3 to 1 (instances with a defect): the crust's size relative to its mean |
 | `variation:label_wear` | wear | beta(1.2, 3) |
 | `variation:dirt` | wear | beta(1, 4) |
 | `variation:seed` | wear | integer, 0 to 2³¹ − 1 |

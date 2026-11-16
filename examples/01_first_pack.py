@@ -35,12 +35,13 @@ summary = read_manifest(folder)["summary"]
 print(f"parts: {summary['by_kind']}, defects: {summary['defects']}")
 
 # instances.csv is the ground truth of each instance: what was drawn for it
-# (variation:*) and what was measured once generated (measured:*).
+# (variation:*) and what was measured once generated (measured:*). A value the
+# part does not have is left empty: a washer has no thread, so no fit and no
+# clearance.
 print(f"\n{'instance':20s} {'kind':7s} {'fit':>4s} {'clearance':>10s} {'defect':>15s} {'rust':>5s} {'mass':>8s}")
 for row in read_table(folder):
-    clearance_um = float(row["variation:clearance_mm"]) * 1000
+    clearance = row["variation:clearance_mm"]
+    clearance = f"{float(clearance) * 1000:7.0f} um" if clearance else "      -   "
     mass_g = float(row["measured:mass_kg"]) * 1000
     fit, defect, rust = row["variation:thread_class"] or "-", row["variation:defect"], float(row["variation:rust"])
-    print(
-        f"{row['name']:20s} {row['kind']:7s} {fit:>4s} {clearance_um:7.0f} um {defect:>15s} {rust:5.2f} {mass_g:6.2f} g"
-    )
+    print(f"{row['name']:20s} {row['kind']:7s} {fit:>4s} {clearance} {defect:>15s} {rust:5.2f} {mass_g:6.2f} g")
