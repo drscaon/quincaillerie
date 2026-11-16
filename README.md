@@ -237,6 +237,7 @@ Conventions and continuous integration: [Development](https://github.com/drscaon
 |---|---|
 | [Usage in depth](https://github.com/drscaon/quincaillerie/blob/main/docs/usage.md) | Every option of `quincaillerie generate` and the catalogue of sizes and cell formats. |
 | [OpenUSD layout and contract](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md) | How a part is laid out in its file, the ground and physics scene, OpenUSD compliance, and what the Primvaria contract writes on every instance. |
+| [What each instance draws](https://github.com/drscaon/quincaillerie/blob/main/docs/variation.md) | Every drawn value, part by part: its range or distribution, checked by a test against what the generator really draws. |
 | [Physics: fits, colliders and checks](https://github.com/drscaon/quincaillerie/blob/main/docs/physics.md) | The thread fit classes, thread and simple colliders, the Blender add-on, and the MuJoCo and Blender checks with their results. |
 | [Defect rate and jam rate](https://github.com/drscaon/quincaillerie/blob/main/docs/jam-rate.md) | Which defects stop a nut, measured on 40 screws in MuJoCo, and the resulting curve. |
 | [Limits and roadmap](https://github.com/drscaon/quincaillerie/blob/main/docs/limits.md) | Everything Quincaillerie does not do or has not verified, stated plainly, and what comes next. |
