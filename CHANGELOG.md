@@ -8,6 +8,14 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `docs/variation.md`: how every drawn value is drawn, part by part, written
+  from `quincaillerie/declared.py`; `tests/test_distributions.py` draws
+  thousands of instances and checks that each column is declared, stays in its
+  range and follows its distribution (PRV-34). The page also lists the
+  recorded values that do not change the part as recorded (a nut's
+  `length_dmm`, a washer's `across_flats_dmm` and `length_dmm`, a washer's
+  `height_dmm` applied at 0.3 times its value, and the defect placement of
+  cells, applied to a dent only).
 - Reproducibility references (`tests/test_golden.py`, shared by the four
   generators): four cases of fixed preset, seed and options whose pack tables
   must give the same drawn and measured values on every Python and platform
