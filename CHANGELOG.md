@@ -29,6 +29,9 @@ The same seed gives the same parts, except for the cells' defects:
   MuJoCo: a ball rests lower in a dent, a cell stood on its crust falls over.
 - The seating and insertion checks take the sound cells, as the screwing
   check takes the sound threads.
+- `scripts/defect_demo.py` renders the three comparisons with MuJoCo on the CPU
+  (sound and defective side by side: a nut on a crushed thread, a ball in a
+  dent, a cell on its crust) into a video and an image.
 - `docs/variation.md` lists no exception any more; the examples show a dash
   for a value a part does not have.
 
