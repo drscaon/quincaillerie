@@ -1,0 +1,71 @@
+{
+ "package": "quincaillerie",
+ "cases": [
+  {
+   "name": "screw_m8_with_nut_washer",
+   "args": [
+    "generate",
+    "screw",
+    "M8",
+    "--with",
+    "nut,washer",
+    "--count",
+    "3",
+    "--collider",
+    "simple",
+    "--seed",
+    "7"
+   ]
+  },
+  {
+   "name": "nut_m6_defects_middle",
+   "args": [
+    "generate",
+    "nut",
+    "M6",
+    "--count",
+    "3",
+    "--defect-rate",
+    "1",
+    "--thread-play",
+    "middle",
+    "--collider",
+    "simple",
+    "--seed",
+    "3"
+   ]
+  },
+  {
+   "name": "cell_aa_with_holder",
+   "args": [
+    "generate",
+    "cell",
+    "AA",
+    "--with",
+    "holder",
+    "--count",
+    "2",
+    "--seed",
+    "5"
+   ]
+  },
+  {
+   "name": "screw_m8_wear_off",
+   "args": [
+    "generate",
+    "screw",
+    "M8",
+    "--with",
+    "nut,washer",
+    "--count",
+    "3",
+    "--collider",
+    "simple",
+    "--no-vary",
+    "wear",
+    "--seed",
+    "7"
+   ]
+  }
+ ]
+}
