@@ -30,6 +30,24 @@ The README images are made by [`scripts/`](https://github.com/drscaon/quincaille
 `docs/images/social_preview.png`, to upload in the repository's Settings >
 General > Social preview), `physics_gifs.py` (the animations).
 
+### Reproducibility references
+
+`tests/test_golden.py` (shared, byte for byte, by the four generators of the
+suite) runs each case of `tests/golden/cases.json` through the command line
+and compares every pack table it writes (`instances.csv`: the drawn and the
+measured values) with the reference stored in `tests/golden/<case>.json`. It
+runs on every Python and platform of the CI, so the same version, preset,
+seed and options must give the same values on Linux, macOS and Windows.
+Numbers agree to a relative 1e-7; text exactly. The generator's version is
+the only column left out.
+
+A failure means the values changed. When the change is wanted, regenerate the
+references and say so in the changelog, under *Changed values*:
+
+```bash
+PRIMVARIA_GOLDEN_UPDATE=1 pytest tests/test_golden.py
+```
+
 ### Continuous integration
 
 | Workflow | When | What |
