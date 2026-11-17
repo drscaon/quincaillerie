@@ -37,6 +37,10 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Added
 
+- The conformance check (shared by the four generators) checks that an asset
+  is whole on its own (contract, section 4): every relationship or connection
+  inside an asset root (a material binding, a physics material, a joint's
+  bodies) points inside it, in every variant (PRV-40).
 - The conformance check (`contract.conformance`, `python -m quincaillerie.conformance`,
   shared by the four generators) checks sections 7 and 8 of the contract: a
   variant set and its variants are named in `snake_case`, have a default
@@ -61,6 +65,10 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Fixed
 
+- The MuJoCo converter (`sim.mujoco_model.convert`) reads a body that only
+  gives its mass, as a Granulaire grain does: MuJoCo works out its inertia
+  from its colliders, instead of the schema's zero fallbacks, which MuJoCo
+  refused (PRV-40).
 - `generate --no-vary` refuses an unknown aspect, instead of ignoring it and
   letting every aspect vary (PRV-35).
 

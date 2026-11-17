@@ -161,11 +161,21 @@ def convert(
         di = ma.GetDiagonalInertiaAttr().Get()
         pa = ma.GetPrincipalAxesAttr().Get()
         pq = (pa.GetReal(), *pa.GetImaginary()) if pa is not None else (1, 0, 0, 0)
-        inertial = (
-            f'<inertial pos="{f(com)}" mass="{mass:.9g}" diaginertia="{f(di)}" quat="{f(pq)}"/>'
-            if di is not None
-            else f'<inertial pos="{f(com)}" mass="{mass:.9g}" diaginertia="1e-9 1e-9 1e-9"/>'
-        )
+        if not any(pq):  # not authored: the schema's fallback is a zero quaternion
+            pq = (1, 0, 0, 0)
+        own = geoms[b.GetPath()]
+        if not ma.GetDiagonalInertiaAttr().HasAuthoredValue():  # the schema's fallback: 0 0 0
+            di = None
+        if not ma.GetCenterOfMassAttr().HasAuthoredValue():  # the fallback is -inf: from the colliders
+            com = np.zeros(3)
+        if di is not None:
+            inertial = f'<inertial pos="{f(com)}" mass="{mass:.9g}" diaginertia="{f(di)}" quat="{f(pq)}"/>'
+        elif own:  # only a mass (a Granulaire grain): MuJoCo works the inertia out from the colliders
+            inertial = ""
+            own = [g.replace("<geom ", f'<geom mass="{mass / len(own):.9g}" ', 1) for g in own]
+        else:
+            inertial = f'<inertial pos="{f(com)}" mass="{mass:.9g}" diaginertia="1e-9 1e-9 1e-9"/>'
+
         kin = UsdPhysics.RigidBodyAPI(b).GetKinematicEnabledAttr().Get()
         jx = ""
         if b.GetPath() in joints:
@@ -197,7 +207,7 @@ def convert(
         elif not kin and b.GetPath() not in parent:
             jx = "<freejoint/>"
         kids = "".join(emit(cb, M) for cb in children.get(b.GetPath(), []))
-        inside = jx + inertial + "".join(geoms[b.GetPath()]) + kids
+        inside = jx + inertial + "".join(own) + kids
         return f'<body name="{b.GetName()}" pos="{f(t)}" quat="{f(_m2q(R))}">{inside}</body>'
 
     out = [emit(b, None) for b in children.get(None, [])]
