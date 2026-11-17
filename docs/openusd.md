@@ -12,7 +12,7 @@ Z up, metres, kilograms; each asset's root prim is its default prim.
 /ISO4017_M8x30                 Xform, RigidBodyAPI, MassAPI, quincaillerie:* attributes, variant set "finish"
   /Visual/ISO4017_M8x30_mesh   one mesh, GeomSubset per material
   /Collision/core, head, thread_0000 …   Cylinder / convexHull meshes, purpose guide
-  /MateFrame_thread, /MateFrame_drive    +Z = screwing axis; hex drive across flats
+  /MateFrame_thread, /MateFrame_drive    on the mating plane, +Z = the way the screw (or head) goes in
   /Looks, /PhysicsMaterials
 
 /Holder_AA
@@ -20,6 +20,20 @@ Z up, metres, kilograms; each asset's root prim is its default prim.
   /spring_plate                RigidBodyAPI, Visual, Collision/minus_plate
   /Joints/spring               PrismaticJoint base -> spring_plate, linear drive = the coil spring (N/m)
 ```
+
+Mate frames follow the contract (section 8): the origin on the mating plane,
++Z the way the part that goes in moves, and two parts mate when their frames
+coincide. `tests/test_mate_frames.py` measures each one on the part's geometry.
+
+| Frame | On | Origin | +Z |
+|---|---|---|---|
+| `MateFrame_thread` | screw, nut | the face under the head; the nut's face against it | along the shank: the screw goes through the nut |
+| `MateFrame_drive` | screw, nut | where a socket's mouth is when it holds the whole hex | towards the socket: the head, or nut, goes in as deep as `quincaillerie:engagement` |
+| `MateFrame_plus`, `MateFrame_minus` | cell | the terminal's tip | out of the cell: the way the terminal presses on its contact |
+| `MateFrame_seat` | holder, cell | the holder's bed under the seated cell's centre; where the cell touches it | down into the bed; +X towards the + contact |
+
+A cell whose seat frame coincides with its holder's is in the pose the seated
+check simulates.
 
 The underside of a holder is at z = 0 of the asset: it sits on a floor where
 it is placed. Angular drives use UsdPhysics units (per degree). The root of

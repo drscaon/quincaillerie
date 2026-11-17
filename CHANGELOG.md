@@ -37,6 +37,15 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Added
 
+- The conformance check (`contract.conformance`, `python -m quincaillerie.conformance`,
+  shared by the four generators) checks sections 7 and 8 of the contract: a
+  variant set and its variants are named in `snake_case`, have a default
+  selection, and the set is one section 7 lists, with its meaning, for the
+  asset's generator (`contract.VARIANT_SETS`); no variant changes what identifies the asset (its `assetInfo`,
+  `primvaria:*` identity and semantic labels), each variant being selected in
+  turn on a copy of the stage; a mate frame is an `Xform` named `MateFrame` or
+  `MateFrame_<feature>`, inside an asset, in every variant; nothing is written
+  under `primvaria:mate:*`, which is not in the contract yet (PRV-35).
 - `docs/variation.md`: how every drawn value is drawn, part by part, written
   from `quincaillerie/declared.py`; `tests/test_distributions.py` draws
   thousands of instances and checks that each column is declared, stays in its
@@ -54,6 +63,21 @@ The same seed gives the same parts, except for the cells' defects:
 
 - `generate --no-vary` refuses an unknown aspect, instead of ignoring it and
   letting every aspect vary (PRV-35).
+
+### Breaking changes
+
+- Mate frames follow the contract's section 8, measured by the new
+  `tests/test_mate_frames.py` (PRV-35):
+  - `MateFrame_drive` of a screw and of a nut is where a socket's mouth is
+    when it holds the whole hex (under the head, under the nut), so the hex
+    goes in along +Z by `quincaillerie:engagement`; it was on the end face.
+  - A cylindrical cell's and a 9 V battery's `MateFrame_plus` and
+    `MateFrame_minus` point +Z out of the battery, along its axis; they
+    pointed up. A coin cell's already did.
+  - A holder's `MateFrame_seat` is on its bed, +Z down into it, instead of at
+    the seated cell's centre; every cell has its own `MateFrame_seat`, where
+    it touches the bed. When the two coincide, the cell is in the pose the
+    seated check simulates. The `cellCentre` attribute is gone.
 
 ## [0.3.0b1] - 2026-11-13 (beta)
 
