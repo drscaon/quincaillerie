@@ -35,9 +35,11 @@ coincide. `tests/test_mate_frames.py` measures each one on the part's geometry.
 A cell whose seat frame coincides with its holder's is in the pose the seated
 check simulates.
 
-The underside of a holder is at z = 0 of the asset: it sits on a floor where
-it is placed. Angular drives use UsdPhysics units (per degree). The root of
-each part says from which distance contacts should be generated, in metres
+Every part's underside is at z = 0 of its file (contract, section 3): it sits
+on a floor where it is placed. A screw stands on its head, a cylindrical cell
+lies with its axis along x, a coin cell and a holder lie flat.
+
+Angular drives use UsdPhysics units (per degree). The root of each part says from which distance contacts should be generated, in metres
 (`quincaillerie:contactOffset`: 0.1 mm for a threaded part, below twice the
 thread clearance; 0.5 mm for cells and holders). It is a request to the
 engine, not an engine setting: the Blender add-on takes a tenth of it as its

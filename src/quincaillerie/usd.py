@@ -477,6 +477,54 @@ def finish_variants(stage, root, mesh_paths, finishes, default, extra=None):
     vs.SetVariantSelection(default)
 
 
+def rest_on_floor(stage) -> float:
+    """Move a part's contents up or down so that its underside is at z = 0 of the asset (contract,
+    section 3): referenced onto a floor at z = 0, it rests on it. Returns the height moved (m).
+
+    Every child of the root is moved, its geometry included (a mesh with no transform of its own
+    gets its points moved), and the root's centre of mass with it; the root's own pose is the
+    asset's placement and is left alone."""
+    root = stage.GetDefaultPrim()
+    purposes = [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.proxy, UsdGeom.Tokens.guide]
+    box = UsdGeom.BBoxCache(Usd.TimeCode.Default(), purposes).ComputeUntransformedBound(root).ComputeAlignedRange()
+    dz = -box.GetMin()[2]
+    if box.IsEmpty() or abs(dz) < 1e-9:  # within a nanometre: already there
+        return 0.0
+
+    def move(prim):
+        if prim.IsA(UsdShade.Material) or prim.IsA(UsdShade.Shader):
+            return
+        xf = UsdGeom.Xformable(prim) if prim.IsA(UsdGeom.Xformable) else None
+        if xf is None:  # a scope: what it holds moves
+            for child in prim.GetChildren():
+                move(child)
+            return
+        ops = xf.GetOrderedXformOps()
+        if ops and ops[0].GetOpType() == UsdGeom.XformOp.TypeTranslate:
+            ops[0].Set(ops[0].Get() + Gf.Vec3d(0, 0, dz))
+        elif prim.IsA(UsdGeom.Mesh) and not ops:
+            mesh = UsdGeom.Mesh(prim)
+            pts = mesh.GetPointsAttr().Get()
+            mesh.GetPointsAttr().Set(Vt.Vec3fArray([Gf.Vec3f(p[0], p[1], p[2] + dz) for p in pts]))
+            ext = mesh.GetExtentAttr().Get()
+            if ext:
+                mesh.GetExtentAttr().Set(Vt.Vec3fArray([Gf.Vec3f(e[0], e[1], e[2] + dz) for e in ext]))
+        elif not ops and prim.GetChildren():  # an Xform with no transform: its children move
+            for child in prim.GetChildren():
+                move(child)
+        else:  # a transform that does not start with a translation: one goes before it
+            t = xf.AddTranslateOp(UsdGeom.XformOp.PrecisionDouble, "rest")
+            t.Set(Gf.Vec3d(0, 0, dz))
+            xf.SetXformOpOrder([t, *ops])
+
+    for child in root.GetChildren():
+        move(child)
+    com = UsdPhysics.MassAPI(root).GetCenterOfMassAttr()
+    if com.HasAuthoredValue():
+        com.Set(com.Get() + Gf.Vec3f(0, 0, dz))
+    return float(dz)
+
+
 def fix_typeless(stage):
     """Give every intermediate prim a type: Scope for Looks/PhysicsMaterials/Joints, Xform otherwise,
     so that every DCC (Blender included) keeps the transform hierarchy."""

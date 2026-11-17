@@ -30,7 +30,7 @@ from pxr import Usd, UsdGeom, UsdPhysics
 
 from ..batteries import FLOOR_T, holder_design, insertion_keys, key_pose
 from ..catalog import CELLS, METRIC
-from ..scenes import add_ref, drop_pose, new_scene, save, seated_overrides
+from ..scenes import add_ref, centre_height, drop_pose, new_scene, origin_for, save, seated_overrides, under_head
 from ..usd import place, q2m, qmul
 from .mujoco_model import convert, scene
 
@@ -113,14 +113,15 @@ def build_test_scenes(set_dir, pairs=2):
             if j >= pairs:
                 break
             t = METRIC[size]
-            P, k, L = t["P"] * MM, t["k"] * MM, sa["length"]
+            P, L = t["P"] * MM, sa["length"]
             turns = max(2, int(round(0.4 * L / P)))
-            z = 0.02 + k
+            head = under_head(sa["file"])  # the screw stands on its head, 2 cm up
             tag = f"nut_on_screw_{size}" + (f"_{j}" if len(screws) > 1 else "")
             st = new(tag)
-            add_ref(st, "screw", sa["file"], (0, 0, z))
-            add_ref(st, "nut", na["file"], (0, 0, z + turns * P))
-            out.append((tag, "nut_on_screw", save(st), dict(size=size, z_nut=turns * P, pitch=P, screw=sn, nut=nn)))
+            add_ref(st, "screw", sa["file"], (0, 0, 0.02))
+            add_ref(st, "nut", na["file"], (0, 0, 0.02 + head + turns * P))
+            info = dict(size=size, z_nut=head + turns * P, pitch=P, screw=sn, nut=nn)  # in the screw's frame
+            out.append((tag, "nut_on_screw", save(st), info))
     for fmt in CELLS:
         holders = [(n, a) for n, a in inv.items() if a["kind"] == "holder" and a["key"] == fmt]
         # sound cells: a dent or a corrosion crust is in the colliders and changes how a cell seats
@@ -316,8 +317,10 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
     K = insertion_keys(fmt)
     q_rev = np.array(REV[D["kind"]]) if reverse else np.array([1.0, 0, 0, 0])
     keys = K["keys"]
+    lift = centre_height(cell_file)  # the keys place the cell's centre; its file's origin is under it
     c0, q0 = key_pose(fmt, keys[0][1], keys[0][2])
     q0 = np.array(qmul(q0, q_rev))
+    c0 = origin_for(c0, q0, lift)
     holder = ("holder", holder_file, (0, 0, 0), (1, 0, 0, 0), {"kinematic": True})  # held in place
     st = scene(None, [holder, ("cell", cell_file, tuple(c0), tuple(q0), {})])
     xml = convert(
@@ -345,7 +348,8 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
             u = 0 if b[0] == a[0] else np.clip((t - a[0]) / (b[0] - a[0]), 0, 1)
             u = 0.5 - 0.5 * np.cos(np.pi * u)
             cc, qq = key_pose(fmt, np.array(a[1]) + (np.array(b[1]) - np.array(a[1])) * u, a[2] + (b[2] - a[2]) * u)
-            d.mocap_pos[hand], d.mocap_quat[hand] = cc, qmul(qq, q_rev)
+            qq = qmul(qq, q_rev)
+            d.mocap_pos[hand], d.mocap_quat[hand] = origin_for(cc, qq, lift), qq
         else:
             d.eq_active[eq] = 0
         mujoco.mj_step(m, d)
@@ -360,12 +364,12 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
         for x, y in ((n1, n2), (n2, n1)):
             touch.setdefault(x, {})
             touch[x][y] = touch[x].get(y, 0.0) + abs(f6[0])
-    centre = d.qpos[qa : qa + 3] / MM
-    centre[2] -= FLOOR_T
-    speed = np.linalg.norm(d.qvel[va : va + 3]) / MM
     R = np.zeros(9)
     mujoco.mju_quat2Mat(R, d.qpos[qa + 3 : qa + 7])
     R = R.reshape(3, 3)
+    centre = (d.qpos[qa : qa + 3] + R @ np.array([0, 0, lift])) / MM
+    centre[2] -= FLOOR_T
+    speed = np.linalg.norm(d.qvel[va : va + 3]) / MM
     res = dict(format=fmt, reverse=reverse, centre_mm=centre.tolist(), speed_mm_s=float(speed), wall=time.time() - t0)
     if D["kind"] in ("cradle", "nine_volt"):
         tilt = float(np.degrees(np.arcsin(min(1, abs(R[2, 0])))))
@@ -450,7 +454,7 @@ def screwing(screw_file, nut_file, size, seconds=3.0):
         None,
         [
             ("bolt", screw_file, (0, 0, 0), (1, 0, 0, 0), {"kinematic": True}),
-            ("nut", nut_file, (0, 0, 4 * P), (1, 0, 0, 0), {}),
+            ("nut", nut_file, (0, 0, under_head(screw_file) + 4 * P), (1, 0, 0, 0), {}),  # 4 pitches up
         ],
     )
     dt = 1e-4

@@ -31,7 +31,7 @@ import numpy as np
 from quincaillerie import catalog_parts, generate
 from quincaillerie.batteries import holder_design, insertion_keys, key_pose
 from quincaillerie.catalog import METRIC
-from quincaillerie.scenes import add_ref, new_scene, save, seated_overrides
+from quincaillerie.scenes import add_ref, centre_height, new_scene, origin_for, save, seated_overrides
 from quincaillerie.usd import place, q2m, qmul, quat_axis_angle
 
 HERE = Path(__file__).resolve().parent
@@ -65,7 +65,7 @@ def drop_scene(assets: Path, path: Path):
         screw = next(p for p in os.listdir(assets) if p.startswith(f"ISO4017_{size}x"))
         n = int(np.ceil(h / P)) + 3
         for part, f, local, fin in (
-            ("screw", screw, ((0, 0, k), (1, 0, 0, 0)), "zinc_clear"),
+            ("screw", screw, ((0, 0, 0), (1, 0, 0, 0)), "zinc_clear"),  # its underside at z = 0
             ("washer", f"ISO7089_{size}.usda", ((0, 0, k), (1, 0, 0, 0)), "zinc_yellow"),
             ("nut", f"ISO4032_{size}.usdc", ((0, 0, k + n * P), (1, 0, 0, 0)), "zinc_clear"),
         ):
@@ -120,7 +120,7 @@ def screwing_animation(assets: Path, path: Path, out_json: Path, size="M10", tur
     screw = next(p for p in os.listdir(assets) if p.startswith(f"ISO4017_{size}x"))
     L = float(screw.split("x")[1].split(".")[0]) * MM
     st = new_scene(path)
-    add_ref(st, "screw", assets / screw, (0, 0, k))
+    add_ref(st, "screw", assets / screw, (0, 0, 0))  # standing on its head: its underside at z = 0
     n0 = int(round((L - 3 * P) / P))
     add_ref(st, "washer", assets / f"ISO7089_{size}.usda", (0, 0, k), (1, 0, 0, 0), "zinc_yellow")
     add_ref(st, "nut", assets / f"ISO4032_{size}.usdc", (0, 0, k + n0 * P))
@@ -164,7 +164,9 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
         add_ref(st, f"holder_{fmt}", assets / f"Holder_{fmt}.usda", (x, 0, 0))
         K = insertion_keys(fmt)
         keys = K["keys"]
+        lift = centre_height(assets / f"Cell_{fmt}.usda")  # the keys place the centre, over the origin
         c0, q0 = key_pose(fmt, keys[0][1], keys[0][2])
+        c0 = origin_for(c0, q0, lift)
         add_ref(st, f"cell_{fmt}", assets / f"Cell_{fmt}.usda", tuple(np.asarray(c0) + (x, 0, 0)), q0)
         sim = scene(
             None,
@@ -186,14 +188,14 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
         eq = m.equality("grip").id
         mujoco.mj_forward(m, d)
 
-        def control(m, d, t, keys=keys, K=K, fmt=fmt, hand=hand, eq=eq):
+        def control(m, d, t, keys=keys, K=K, fmt=fmt, hand=hand, eq=eq, lift=lift):
             if t < K["t_release"]:
                 i = max(j for j in range(len(keys)) if keys[j][0] <= t)
                 a, b = keys[i], keys[min(i + 1, len(keys) - 1)]
                 u = 0 if b[0] == a[0] else np.clip((t - a[0]) / (b[0] - a[0]), 0, 1)
                 u = 0.5 - 0.5 * np.cos(np.pi * u)
                 cc, qq = key_pose(fmt, np.array(a[1]) + (np.array(b[1]) - np.array(a[1])) * u, a[2] + (b[2] - a[2]) * u)
-                d.mocap_pos[hand], d.mocap_quat[hand] = cc, qq
+                d.mocap_pos[hand], d.mocap_quat[hand] = origin_for(cc, qq, lift), qq
             else:
                 d.eq_active[eq] = 0
 

@@ -21,7 +21,7 @@ import numpy as np
 from quincaillerie import catalog_parts, generate
 from quincaillerie.catalog import CELLS, METRIC, SIZES
 from quincaillerie.materials import FINISHES
-from quincaillerie.scenes import add_ref, new_scene, place_seated, save
+from quincaillerie.scenes import add_ref, new_scene, origin_for, place_seated, save
 from quincaillerie.usd import place, qmul, quat_axis_angle
 
 HERE = Path(__file__).resolve().parent
@@ -62,7 +62,7 @@ def fasteners_scene(assets, path):
         fin = FINISHES[i % len(FINISHES)]
         k, P, h = t["k"] * MM, t["P"] * MM, t["washer"][2] * MM
         L = [p for p in os.listdir(assets) if p.startswith(f"ISO4017_{s}x")][0]
-        add_ref(st, f"screw_{s}", assets / L, (x, 0.012, k), quat_axis_angle((0, 0, 1), 0.3 * i), fin)
+        add_ref(st, f"screw_{s}", assets / L, (x, 0.012, 0), quat_axis_angle((0, 0, 1), 0.3 * i), fin)
         add_ref(st, f"washer_{s}", assets / f"ISO7089_{s}.usda", (x, 0.012, k), (1, 0, 0, 0), fin)
         phi = 0.5 + 0.4 * i  # a nut turned by phi sits P phi / 2 pi higher on a right-hand thread
         n = int(np.ceil(h / P)) + 2 + i % 3
@@ -111,18 +111,17 @@ def cells_scene(assets, path):
         c = CELLS[n]
         r = c["d"] / 2 * MM
         q = qmul(quat_axis_angle((0, 0, 1), -1.35 + 0.15 * i), up)
-        add_ref(st, f"cell_{n}", assets / f"Cell_{n}.usda", (x + r, -0.080 + 0.004 * (i % 2), c["L"] / 2 * MM), q)
+        centre = (x + r, -0.080 + 0.004 * (i % 2), c["L"] / 2 * MM)
+        add_ref(st, f"cell_{n}", assets / f"Cell_{n}.usda", origin_for(centre, q, r), q)
         x += c["d"] * MM + 0.008
     add_ref(
         st,
         "cell_9V",
         assets / "Cell_9V.usda",
-        (x + 0.012, -0.078, 0.0485 / 2),
+        origin_for((x + 0.012, -0.078, 0.0485 / 2), qmul(quat_axis_angle((0, 0, 1), -0.35), up), 0.0175 / 2),
         qmul(quat_axis_angle((0, 0, 1), -0.35), up),
     )
-    add_ref(
-        st, "cell_CR2032", assets / "Cell_CR2032.usda", (x + 0.045, -0.090, 0.0016), quat_axis_angle((0, 0, 1), 0.4)
-    )
+    add_ref(st, "cell_CR2032", assets / "Cell_CR2032.usda", (x + 0.045, -0.090, 0.0), quat_axis_angle((0, 0, 1), 0.4))
     add_ref(st, "cell_LR44", assets / "Cell_LR44.usda", (x + 0.052, -0.065, 0.0027), quat_axis_angle((0, 0, 1), 0.1))
     flip = qmul(quat_axis_angle((0, 0, 1), 1.2), quat_axis_angle((1, 0, 0), np.pi))
     add_ref(st, "cell_CR2032_b", assets / "Cell_CR2032.usda", (x + 0.072, -0.085, 0.0016), flip)
@@ -148,7 +147,7 @@ def showcase_scene(assets, path):
         x = -0.152 + 0.027 * i
         k, P, h = t["k"] * MM, t["P"] * MM, t["washer"][2] * MM
         screw = next(p for p in os.listdir(assets) if p.startswith(f"ISO4017_{s}x"))
-        add_ref(st, f"screw_{s}", assets / screw, (x, 0.02, k), quat_axis_angle((0, 0, 1), 0.4 * i), fin)
+        add_ref(st, f"screw_{s}", assets / screw, (x, 0.02, 0), quat_axis_angle((0, 0, 1), 0.4 * i), fin)
         add_ref(st, f"washer_{s}", assets / f"ISO7089_{s}.usda", (x, 0.02, k), (1, 0, 0, 0), fin)
         phi = 0.6 + 0.5 * i
         n = int(np.ceil(h / P)) + 2 + i % 2
