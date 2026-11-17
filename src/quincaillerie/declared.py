@@ -10,6 +10,8 @@ A distribution is a tuple:
 * ("mix", [(probability, distribution), ...]): one component, chosen with its probability;
 * ("by", column, {value: distribution}): depends on the value drawn for another column;
 * ("band",): uniform over the thread's tolerance band of fits.py (6g screw, 6H nut);
+* ("cited",): uniform over the tolerance the size's standard, or the format's datasheet, allows
+  (variation.tolerance_range; the sources are in docs/sources.md);
 * ("relative", distribution): the value divided by the finish's nominal density follows it;
 * ("bounded", low, high, how): derived from other draws, as said in how, and kept within [low, high].
 
@@ -61,9 +63,9 @@ DECLARED = {
     "screw": [
         ("clearance_mm", "tolerance", ("band",), ""),
         ("thread_class", "tolerance", ("constant", "6g"), ""),
-        ("across_flats_dmm", "tolerance", ("uniform", -0.25, 0.0), ""),
-        ("height_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
-        ("length_dmm", "tolerance", ("uniform", -0.4, 0.4), ""),
+        ("across_flats_dmm", "tolerance", ("cited",), ""),
+        ("height_dmm", "tolerance", ("cited",), ""),
+        ("length_dmm", "tolerance", ("cited",), ""),
         ("defect", "defect", defect(["crushed_thread", "bent", "burr"]), ""),
         *place("crushed_thread|burr"),
         (
@@ -87,8 +89,8 @@ DECLARED = {
     "nut": [
         ("clearance_mm", "tolerance", ("band",), ""),
         ("thread_class", "tolerance", ("constant", "6H"), ""),
-        ("across_flats_dmm", "tolerance", ("uniform", -0.25, 0.0), ""),
-        ("height_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
+        ("across_flats_dmm", "tolerance", ("cited",), ""),
+        ("height_dmm", "tolerance", ("cited",), ""),
         ("defect", "defect", defect(["crushed_thread", "oval"]), ""),
         *place("crushed_thread"),
         (
@@ -102,7 +104,7 @@ DECLARED = {
         ("friction", "wear, physics", FRICTION, ""),
     ],
     "washer": [
-        ("height_dmm", "tolerance", ("uniform", -0.09, 0.0), ""),
+        ("height_dmm", "tolerance", ("cited",), ""),
         ("defect", "defect", defect(["dished"]), ""),
         ("defect_size", "defect", ("uniform", 0.15, 0.5), "defect"),
         *WEAR,
@@ -110,8 +112,8 @@ DECLARED = {
         ("friction", "wear, physics", FRICTION, ""),
     ],
     "cell (cylinder)": [
-        ("diameter_dmm", "tolerance", ("uniform", -0.5, 0.0), ""),
-        ("length_dmm", "tolerance", ("uniform", -0.8, 0.0), ""),
+        ("diameter_dmm", "tolerance", ("cited",), ""),
+        ("length_dmm", "tolerance", ("cited",), ""),
         ("defect", "defect", ("choice", {"none": NONE_SHARE, "dent": RATE / 2, "corroded_terminal": RATE / 2}), ""),
         ("defect_angle_deg", "defect", ("uniform", 0.0, 360.0), "defect"),
         ("defect_z", "defect", ("uniform", 0.2, 0.8), "dent"),
@@ -123,8 +125,8 @@ DECLARED = {
         ("friction", "physics", ("clipped", 0.3, 0.04, 0.18, 0.45), ""),
     ],
     "cell (coin)": [
-        ("diameter_dmm", "tolerance", ("uniform", -0.3, 0.0), ""),
-        ("length_dmm", "tolerance", ("uniform", -0.2, 0.0), ""),
+        ("diameter_dmm", "tolerance", ("cited",), ""),
+        ("length_dmm", "tolerance", ("cited",), ""),
         ("defect", "defect", ("choice", {"none": NONE_SHARE, "corroded_terminal": RATE}), ""),
         ("defect_angle_deg", "defect", ("uniform", 0.0, 360.0), "defect"),
         ("defect_size", "defect", ("uniform", 0.3, 1.0), "defect"),
@@ -196,6 +198,8 @@ def describe(dist) -> str:
         return "; ".join(f"`{v}`: {describe(d)}" for v, d in args[1].items())
     if kind == "band":
         return "uniform over the tolerance band of the fit class (`fits.py`)"
+    if kind == "cited":
+        return "uniform over the tolerance its standard or datasheet allows ([sources](sources.md))"
     if kind == "relative":
         return "divided by the finish's density: " + describe(args[0])
     if kind == "bounded":

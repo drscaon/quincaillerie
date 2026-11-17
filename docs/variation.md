@@ -32,9 +32,9 @@ Notes:
 |---|---|---|
 | `variation:clearance_mm` | tolerance | uniform over the tolerance band of the fit class (`fits.py`) |
 | `variation:thread_class` | tolerance | always `6g` |
-| `variation:across_flats_dmm` | tolerance | uniform, -0.25 to 0 |
-| `variation:height_dmm` | tolerance | uniform, -0.3 to 0 |
-| `variation:length_dmm` | tolerance | uniform, -0.4 to 0.4 |
+| `variation:across_flats_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:height_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:length_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
 | `variation:defect` | defect | `none` 85 %; `crushed_thread` 5 %; `bent` 5 %; `burr` 5 % |
 | `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with `crushed_thread` or `burr`): a crushed thread: where along the shank, and where around it starts; a burr: where around the tip it starts |
 | `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with `crushed_thread` or `burr`): how far around the thread the crush or the burr extends |
@@ -53,8 +53,8 @@ Notes:
 |---|---|---|
 | `variation:clearance_mm` | tolerance | uniform over the tolerance band of the fit class (`fits.py`) |
 | `variation:thread_class` | tolerance | always `6H` |
-| `variation:across_flats_dmm` | tolerance | uniform, -0.25 to 0 |
-| `variation:height_dmm` | tolerance | uniform, -0.3 to 0 |
+| `variation:across_flats_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:height_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
 | `variation:defect` | defect | `none` 85 %; `crushed_thread` 7.5 %; `oval` 7.5 % |
 | `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with `crushed_thread`): where along the bore the crushed thread is, and where around it starts |
 | `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with `crushed_thread`): how far around the bore the crush extends |
@@ -71,7 +71,7 @@ Notes:
 
 | Column | Aspect | Drawn as |
 |---|---|---|
-| `variation:height_dmm` | tolerance | uniform, -0.09 to 0 |
+| `variation:height_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
 | `variation:defect` | defect | `none` 85 %; `dished` 15 % |
 | `variation:defect_size` | defect | uniform, 0.15 to 0.5 (instances with a defect): the height of the cone at the rim |
 | `variation:scratches` | wear | 35 %: uniform, 0 to 0.15; 65 %: uniform, 0.2 to 0.8 |
@@ -86,8 +86,8 @@ Notes:
 
 | Column | Aspect | Drawn as |
 |---|---|---|
-| `variation:diameter_dmm` | tolerance | uniform, -0.5 to 0 |
-| `variation:length_dmm` | tolerance | uniform, -0.8 to 0 |
+| `variation:diameter_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:length_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
 | `variation:defect` | defect | `none` 85 %; `dent` 7.5 %; `corroded_terminal` 7.5 % |
 | `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect): the angle of the dent, or of the crust on the minus face |
 | `variation:defect_z` | defect | uniform, 0.2 to 0.8 (instances with `dent`): where the dent is along the can |
@@ -102,8 +102,8 @@ Notes:
 
 | Column | Aspect | Drawn as |
 |---|---|---|
-| `variation:diameter_dmm` | tolerance | uniform, -0.3 to 0 |
-| `variation:length_dmm` | tolerance | uniform, -0.2 to 0 |
+| `variation:diameter_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:length_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
 | `variation:defect` | defect | `none` 85 %; `corroded_terminal` 15 % |
 | `variation:defect_angle_deg` | defect | uniform, 0 to 360 (instances with a defect): where the crust is around the seal |
 | `variation:defect_size` | defect | uniform, 0.3 to 1 (instances with a defect): the crust's size relative to its mean |

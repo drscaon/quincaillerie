@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass, field
 import numpy as np
 
 from . import fits
-from .catalog import METRIC
+from .catalog import CELL_MIN, CELLS, DEFAULT_LENGTH, METRIC, TOLERANCES, length_tolerance
 
 ASPECTS = ("tolerance", "defect", "wear", "physics")
 # How the clearance of a thread is chosen when tolerances vary. The draw is made in every case, so
@@ -50,6 +50,32 @@ FRICTION = {
     "steel_plain": 0.17,
     "brass": 0.18,
 }
+
+
+def tolerance_range(kind: str, column: str, key: str, length_mm: float | None = None) -> tuple[float, float]:
+    """(lowest, highest) change from the nominal size (mm) that the cited tolerance allows, for a
+    column of a part of that size (M8) or format (AA): see TOLERANCES and CELL_MIN in catalog.py,
+    and their sources in docs/sources.md."""
+    if kind in ("screw", "nut", "washer"):
+        t, m = TOLERANCES[key], METRIC[key]
+        if column == "across_flats_dmm":
+            return t["s_min"] - m["s"], 0.0
+        if column == "height_dmm":
+            if kind == "screw":
+                return t["k_min"] - m["k"], t["k_max"] - m["k"]
+            if kind == "nut":
+                return t["m_min"] - m["m"], 0.0
+            return t["washer_h"][0] - m["washer"][2], t["washer_h"][1] - m["washer"][2]
+        if column == "length_dmm":
+            tol = length_tolerance(length_mm or DEFAULT_LENGTH[key])
+            return -tol, tol
+    else:
+        c, low = CELLS[key], CELL_MIN[key]
+        if column == "diameter_dmm":  # the width and the thickness of a 9 V battery: the same tolerance
+            return (low["W_min"] - c["W"], 0.0) if c["kind"] == "nine_volt" else (low["d_min"] - c["d"], 0.0)
+        if column == "length_dmm":
+            return (low["h_min"] - c["h"], 0.0) if c["kind"] == "coin" else (low["L_min"] - c["L"], 0.0)
+    raise ValueError(f"no cited tolerance for {column} of a {kind}")
 
 
 @dataclass
@@ -125,10 +151,17 @@ class Sampler:
         return aspect in self.vary
 
     # ------------------------------------------------------------------ fasteners
-    def fastener(self, kind, finish, pitch_mm, diameter_mm=None):
-        """diameter_mm: nominal thread diameter; by default the coarse-pitch size with that pitch."""
+    def fastener(self, kind, finish, pitch_mm, diameter_mm=None, length_mm=None):
+        """diameter_mm: nominal thread diameter; by default the coarse-pitch size with that pitch.
+        length_mm: a screw's nominal length, which sets its length tolerance (default: the size's)."""
         if diameter_mm is None:
             diameter_mm = next(m["d"] for m in METRIC.values() if m["P"] == pitch_mm)
+        size = next(key for key, m in METRIC.items() if m["d"] == diameter_mm)
+
+        def within(column, u):  # the fraction u of the size's cited tolerance
+            lo, hi = tolerance_range(kind, column, size, length_mm)
+            return float(lo + u * (hi - lo))
+
         v = FastenerVariation(friction=FRICTION.get(finish, 0.15), density=DENSITY.get(finish, STEEL_DENSITY))
         r = self.rng("tolerance", kind)
         if self.on("tolerance"):
@@ -139,11 +172,11 @@ class Sampler:
                 u = 0.5 if self.thread_play == "middle" else u
                 v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u))
                 v.thread_class = fits.SCREW_CLASS if kind == "screw" else fits.NUT_CLASS
-            v.across_flats_dmm = float(-r.uniform(0.0, 0.25))
-            v.height_dmm = float(-r.uniform(0.0, 0.3))
-            v.length_dmm = float(r.uniform(-0.4, 0.4))
-            if kind == "washer":  # a washer's thickness tolerance is tighter than a head's: 0.3 times
-                v.height_dmm = 0.3 * v.height_dmm
+            # across the size's tolerances, from the standards' tables (catalog.TOLERANCES)
+            v.across_flats_dmm = within("across_flats_dmm", r.uniform(0.0, 1.0))
+            v.height_dmm = within("height_dmm", r.uniform(0.0, 1.0))
+            u = r.uniform(0.0, 1.0)  # drawn for every part: the next draws stay the same
+            v.length_dmm = within("length_dmm", u) if kind == "screw" else 0.0
         r = self.rng("defect", kind)
         if self.on("defect") and r.random() < self.defect_rate:
             choices = {
@@ -194,8 +227,11 @@ class Sampler:
         v = CellVariation()
         r = self.rng("tolerance", "cell")
         if self.on("tolerance"):
-            v.diameter_dmm = float(-r.uniform(0.0, 0.5 if kind != "coin" else 0.3))  # cells are made under nominal
-            v.length_dmm = float(-r.uniform(0.0, 0.8 if kind != "coin" else 0.2))
+            # between the datasheet's maximum (the nominal size) and its minimum (catalog.CELL_MIN)
+            lo, _ = tolerance_range("cell", "diameter_dmm", fmt)
+            v.diameter_dmm = float(lo * r.uniform(0.0, 1.0))
+            lo, _ = tolerance_range("cell", "length_dmm", fmt)
+            v.length_dmm = float(lo * r.uniform(0.0, 1.0))
         r = self.rng("defect", "cell")
         if self.on("defect") and r.random() < self.defect_rate:
             v.defect = str(r.choice(["dent", "corroded_terminal"] if kind == "cradle" else ["corroded_terminal"]))

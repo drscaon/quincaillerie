@@ -6,12 +6,16 @@ Part of the [Quincaillerie](../README.md) documentation.
 
 ## Limits
 
-- **Nominal, not measured.** Fastener dimensions come from public tables,
-  not from the standards; cell masses and spring forces are typical. Screws
-  are fully threaded (no plain shank) and have no chamfer under the head.
-- **Plausible variation, not measured distributions.** The ranges (fits,
-  defect sizes, wear, spring scatter) are realistic orders of magnitude, not
-  statistics of a production line. Every defect changes the collision as
+- **Nominal, not measured.** Fastener dimensions come from public tables of
+  the standards, not from the standards; cell dimensions and masses from one
+  manufacturer's datasheet each; the holders' contact forces and spring
+  preloads are estimates ([sources](sources.md) says which value comes from
+  where). Screws are fully threaded (no plain shank) and have no chamfer
+  under the head.
+- **Plausible variation, not measured distributions.** Tolerances are drawn
+  uniformly within the limits their sources give; the rest (defect sizes,
+  wear, spring scatter) are realistic orders of magnitude. None is a
+  statistic of a production line. Every defect changes the collision as
   well as the looks: crushed threads, bends, burrs, oval nuts, dished
   washers, dented cans (the can's collider is then in convex pieces) and
   corrosion crusts (a collider of their own).

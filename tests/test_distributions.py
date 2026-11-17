@@ -14,11 +14,12 @@ import pytest
 from scipy import stats
 
 from quincaillerie import declared, fits
-from quincaillerie.variation import DENSITY, STEEL_DENSITY, Sampler
+from quincaillerie.variation import DENSITY, STEEL_DENSITY, Sampler, tolerance_range
 
 N = 4000
 P_MIN = 1e-3
 PITCH, DIAMETER, FINISH = 1.25, 8.0, "zinc_clear"  # an M8 part in a plated steel finish
+SIZE = {"cell (cylinder)": "AA", "cell (coin)": "CR2032"}  # the format each cell part is drawn in
 DOC = Path(__file__).parents[1] / "docs" / "variation.md"
 
 
@@ -29,7 +30,7 @@ def draws(part):
         rows = [asdict(sampler.fastener(part, FINISH, PITCH, DIAMETER)) for _ in range(N)]
     elif part.startswith("cell"):
         kind = "coin" if "coin" in part else "cradle"
-        rows = [asdict(sampler.cell("AA", kind)) for _ in range(N)]
+        rows = [asdict(sampler.cell(SIZE[part], kind)) for _ in range(N)]
     else:
         rows = [asdict(sampler.holder("AA", "cradle")) for _ in range(N)]
     # a value the part does not have is None, and is not recorded (variation.as_attrs)
@@ -95,6 +96,11 @@ def check(column, dist, values, others):
         return
     if kind == "band":
         lo, hi = fits.clearance_range_mm(others["kind"], PITCH, DIAMETER)
+        check(column, ("uniform", 0.0, 1.0), (values - lo) / (hi - lo), others)
+        return
+    if kind == "cited":
+        part = others["kind"]
+        lo, hi = tolerance_range(part, column, "M8" if part in ("screw", "nut", "washer") else SIZE[part])
         check(column, ("uniform", 0.0, 1.0), (values - lo) / (hi - lo), others)
         return
     if kind == "relative":

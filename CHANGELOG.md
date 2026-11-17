@@ -8,6 +8,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed values
 
+- Values brought within their sources (PRV-33): an 18650 cell is 18.4 ×
+  65.0 mm, 43.8 g (was 18.0 mm, 46 g, above the datasheet's maximum); a
+  21700, 21.22 × 70.3 mm, 66.8 g (was 21.0 × 70.0, 68 g); a D cell 139 g
+  (was 135); a C cell 66.2 g; a CR123A 16.5 g; a CR2032 3.0 g; a 9 V
+  battery 45.6 g. Holders follow their cells' sizes.
+- Tolerances drawn within each size's or format's own (`catalog.TOLERANCES`,
+  `catalog.CELL_MIN`), from the same sources, instead of one range for
+  all: across flats from s min to s (was 0 to −0.25 mm, beyond the
+  standard for M3 to M6); head height from k min to k max (was 0 to
+  −0.3 mm, beyond it for every size); nut height from m min to m; washer
+  thickness within h's limits; screw length within its length class (was
+  ±0.4 mm, beyond it for lengths up to 16 mm); a cell's diameter and length
+  down to the datasheet's minimum (was 0.5 and 0.8 mm, beyond it for the
+  18650). The same seed gives the same parts otherwise.
 What an instance records is now what its geometry and colliders use (QUI-10).
 The same seed gives the same parts, except for the cells' defects:
 
@@ -37,6 +51,12 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Added
 
+- `docs/sources.md` and `quincaillerie/sources.py`: every physical value
+  names its source (a public table of ISO 4017, ISO 4032, ISO 7089; the
+  manufacturer's datasheet of each cell; a handbook for densities, thread
+  friction, fits and the spring wire), or is marked as an estimate with what
+  it rests on. `tests/test_sources.py` fails on a value without a source,
+  outside the range its source gives, or drawn outside it (PRV-33).
 - The conformance check (shared by the four generators) checks that an asset
   is whole on its own (contract, section 4): every relationship or connection
   inside an asset root (a material binding, a physics material, a joint's
