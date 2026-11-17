@@ -155,7 +155,7 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
     """Cells carried into their holders by a hand and released (MuJoCo), two holders side by side."""
     import mujoco
 
-    from quincaillerie.sim.checks import GRIP, HAND, OPTIONS
+    from quincaillerie.sim.checks import GRIP, HAND, OPTIONS, grip_site
     from quincaillerie.sim.mujoco_model import convert, scene
 
     st = new_scene(path)
@@ -166,13 +166,13 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
         keys = K["keys"]
         lift = centre_height(assets / f"Cell_{fmt}.usda")  # the keys place the centre, over the origin
         c0, q0 = key_pose(fmt, keys[0][1], keys[0][2])
-        c0 = origin_for(c0, q0, lift)
-        add_ref(st, f"cell_{fmt}", assets / f"Cell_{fmt}.usda", tuple(np.asarray(c0) + (x, 0, 0)), q0)
+        o0 = origin_for(c0, q0, lift)  # where the cell's file goes for its centre to be at c0
+        add_ref(st, f"cell_{fmt}", assets / f"Cell_{fmt}.usda", tuple(np.asarray(o0) + (x, 0, 0)), q0)
         sim = scene(
             None,
             [
                 ("holder", str(assets / f"Holder_{fmt}.usda"), (0, 0, 0), (1, 0, 0, 0), {"kinematic": True}),
-                ("cell", str(assets / f"Cell_{fmt}.usda"), tuple(c0), tuple(q0), {}),
+                ("cell", str(assets / f"Cell_{fmt}.usda"), tuple(o0), tuple(q0), {}),
             ],
         )
         xml = convert(
@@ -182,6 +182,7 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
             extra_world=HAND.format(pos=" ".join(map(str, c0)), quat=" ".join(map(str, q0))),
             extra_xml=GRIP,
         )
+        xml = grip_site(xml, lift)
         m = mujoco.MjModel.from_xml_string(xml)
         d = mujoco.MjData(m)
         hand = m.body_mocapid[m.body("hand").id]
@@ -195,7 +196,7 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
                 u = 0 if b[0] == a[0] else np.clip((t - a[0]) / (b[0] - a[0]), 0, 1)
                 u = 0.5 - 0.5 * np.cos(np.pi * u)
                 cc, qq = key_pose(fmt, np.array(a[1]) + (np.array(b[1]) - np.array(a[1])) * u, a[2] + (b[2] - a[2]) * u)
-                d.mocap_pos[hand], d.mocap_quat[hand] = origin_for(cc, qq, lift), qq
+                d.mocap_pos[hand], d.mocap_quat[hand] = cc, qq
             else:
                 d.eq_active[eq] = 0
 

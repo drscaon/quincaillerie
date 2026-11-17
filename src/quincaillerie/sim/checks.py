@@ -23,6 +23,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import time
 
 import numpy as np
@@ -282,8 +283,16 @@ def settle_scene(path, seconds=1.0, dt=5e-4):
 
 
 # ------------------------------------------------------------------ insertion
-HAND = '<body name="hand" mocap="true" pos="{pos}" quat="{quat}"/>'
-GRIP = '<equality><weld name="grip" body1="hand" body2="cell" relpose="0 0 0 1 0 0 0" solref="0.004 1"/></equality>'
+HAND = '<body name="hand" mocap="true" pos="{pos}" quat="{quat}"><site name="grip_hand"/></body>'
+# the hand holds the cell by its centre (a site, from grip_site), above the cell's origin, its underside
+GRIP = '<equality><weld name="grip" site1="grip_hand" site2="grip_cell" solref="0.004 1"/></equality>'
+
+
+def grip_site(xml: str, lift: float, body: str = "cell") -> str:
+    """The MJCF with a site at the centre of ``body``, ``lift`` above its origin, for the hand."""
+    return re.sub(rf'(<body name="{body}"[^>]*>)', rf'\g<1><site name="grip_cell" pos="0 0 {lift:.9g}"/>', xml, count=1)
+
+
 TAU = 0.002  # N.m for an M8 (scaled with d^3): turns a sound nut, not a crushed thread
 REV = {"cradle": (0, 0, 0, 1.0), "nine_volt": (0, 1.0, 0, 0), "coin": (0, 1.0, 0, 0)}  # 180 deg about z, x, x
 
@@ -320,9 +329,9 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
     lift = centre_height(cell_file)  # the keys place the cell's centre; its file's origin is under it
     c0, q0 = key_pose(fmt, keys[0][1], keys[0][2])
     q0 = np.array(qmul(q0, q_rev))
-    c0 = origin_for(c0, q0, lift)
+    o0 = origin_for(c0, q0, lift)  # where the cell's file goes for its centre to be at c0
     holder = ("holder", holder_file, (0, 0, 0), (1, 0, 0, 0), {"kinematic": True})  # held in place
-    st = scene(None, [holder, ("cell", cell_file, tuple(c0), tuple(q0), {})])
+    st = scene(None, [holder, ("cell", cell_file, tuple(o0), tuple(q0), {})])
     xml = convert(
         st,
         options=OPTIONS.format(dt=0.0005),
@@ -330,6 +339,7 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
         extra_world=HAND.format(pos=" ".join(map(str, c0)), quat=" ".join(map(str, q0))),
         extra_xml=GRIP,
     )
+    xml = grip_site(xml, lift)
     m = mujoco.MjModel.from_xml_string(xml)
     d = mujoco.MjData(m)
     cell = m.body("cell").id
@@ -349,7 +359,7 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
             u = 0.5 - 0.5 * np.cos(np.pi * u)
             cc, qq = key_pose(fmt, np.array(a[1]) + (np.array(b[1]) - np.array(a[1])) * u, a[2] + (b[2] - a[2]) * u)
             qq = qmul(qq, q_rev)
-            d.mocap_pos[hand], d.mocap_quat[hand] = origin_for(cc, qq, lift), qq
+            d.mocap_pos[hand], d.mocap_quat[hand] = cc, qq
         else:
             d.eq_active[eq] = 0
         mujoco.mj_step(m, d)
