@@ -13,6 +13,19 @@ from .materials import FINISHES
 from .variation import ASPECTS, THREAD_PLAY
 
 
+def _aspects(names):
+    """The type of --no-vary: a comma-separated list of aspect names, each one known."""
+
+    def parse(text: str) -> tuple:
+        got = tuple(t.strip() for t in text.split(",") if t.strip())
+        unknown = [t for t in got if t not in names]
+        if unknown:
+            raise argparse.ArgumentTypeError(f"unknown aspect {', '.join(unknown)}: expected some of {','.join(names)}")
+        return got
+
+    return parse
+
+
 def cmd_list(args):
     print("Fasteners (metric coarse thread), sizes:", " ".join(SIZES))
     head = ("size", "pitch", "hex s", "head k", "nut m", "washer d1 x d2 x h")
@@ -58,7 +71,7 @@ def cmd_generate(args):
         seed=args.seed,
         scene=not args.no_scene,
         physics=not args.no_physics,
-        vary=() if args.nominal else tuple(a for a in ASPECTS if a not in (args.no_vary or "").split(",")),
+        vary=() if args.nominal else tuple(a for a in ASPECTS if a not in args.no_vary),
         defect_rate=args.defect_rate,
         detail=args.detail,
         collider=args.collider,
@@ -135,7 +148,11 @@ def build_parser():
         "--nominal", action="store_true", help="no variation: the nominal part (--count copies in the scene)"
     )
     g.add_argument(
-        "--no-vary", metavar="ASPECTS", help="aspects that stay nominal, comma-separated: " + ",".join(ASPECTS)
+        "--no-vary",
+        metavar="ASPECTS",
+        type=_aspects(ASPECTS),
+        default=(),
+        help="aspects that stay nominal, comma-separated: " + ",".join(ASPECTS),
     )
     g.add_argument("--defect-rate", type=float, default=0.15, help="share of instances with a defect (default 0.15)")
     g.add_argument(
