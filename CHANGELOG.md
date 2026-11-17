@@ -50,6 +50,11 @@ The same seed gives the same parts, except for the cells' defects:
   must give the same drawn and measured values on every Python and platform
   of the CI. Contract, section 6, rule 1 (PRV-32).
 
+### Fixed
+
+- `generate --no-vary` refuses an unknown aspect, instead of ignoring it and
+  letting every aspect vary (PRV-35).
+
 ## [0.3.0b1] - 2026-11-13 (beta)
 
 ### Breaking changes
