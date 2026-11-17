@@ -41,6 +41,7 @@ from .usd import (
     prismatic_joint,
     q2m,
     quat_axis_angle,
+    rest_on_floor,
     revolute_joint,
     revolve_profile,
     rigid_body,
@@ -248,6 +249,7 @@ def _save(stage, kind):
     root = stage.GetDefaultPrim()
     write_labels(root, (kind, root.GetAttribute("primvaria:preset").Get()))
     stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
+    rest_on_floor(stage)  # its underside at z = 0 of the asset (contract, section 3)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
     physx.write_overlay(stage.GetRootLayer().realPath, position_iterations=16, max_depenetration=0.1)
@@ -317,7 +319,7 @@ def write_cell(path, name, cv=None, root_name=None):
         q_plus, q_minus = (np.sqrt(0.5), 0, np.sqrt(0.5), 0), (np.sqrt(0.5), 0, -np.sqrt(0.5), 0)
         mate_frame(stage, f"{R}/MateFrame_plus", m(L / 2, 0, 0), q_plus, dict(role="terminal", polarity="+"))
         mate_frame(stage, f"{R}/MateFrame_minus", m(-L / 2, 0, 0), q_minus, dict(role="terminal", polarity="-"))
-        seat_z = -r
+        seat_z = -(r + 0.02)  # the label, 0.02 mm proud of the can, is what rests on the bed
         dims = dict(diameter=c["d"] * MM, length=L * MM)
     elif kind == "nine_volt":
         L, W, T = c["L"], c["W"], c["T"]

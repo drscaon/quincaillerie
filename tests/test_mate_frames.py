@@ -110,7 +110,7 @@ def test_a_cell_whose_seat_frame_coincides_with_the_holders_is_seated(parts, fmt
     assert np.allclose(pose.ExtractTranslation(), position, atol=1e-9)
     rotation = pose.ExtractRotationQuat()
     assert Gf.Quatd(*quat).GetImaginary() == pytest.approx(rotation.GetImaginary(), abs=1e-9)
-    assert pose.ExtractTranslation()[2] > FLOOR_T * MM  # above the floor, on the bed
+    assert pose.ExtractTranslation()[2] == pytest.approx(FLOOR_T * MM)  # its underside on the bed
 
 
 def test_a_varied_cell_rests_on_the_bed_by_its_own_size(varied_set):

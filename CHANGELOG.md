@@ -74,6 +74,16 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Breaking changes
 
+- Every part's underside is at z = 0 of its file, as contract section 3
+  says (PRV-40): screws stand on their heads (they were moved up by their
+  head height), cylindrical cells, 9 V batteries and coin cells lie on their
+  undersides (they were centred on their origin). Nuts, washers and holders
+  already were. Referenced onto a floor at z = 0, a part now rests on it
+  instead of starting inside it. The geometry, colliders, mate frames and
+  centre of mass moved together; the values recorded are unchanged.
+  `rest_pose` is now the identity for every part, `seated_overrides` puts a
+  cell's underside on the bed, and the scenes and checks place nuts and
+  washers by each screw's own head height (`scenes.under_head`).
 - Mate frames follow the contract's section 8, measured by the new
   `tests/test_mate_frames.py` (PRV-35):
   - `MateFrame_drive` of a screw and of a nut is where a socket's mouth is

@@ -24,7 +24,17 @@ from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset
 from .fasteners import write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .pack import write_pack
-from .scenes import add_floor, add_ref, footprint, new_scene, place_seated, rest_pose, save, thread_height
+from .scenes import (
+    add_floor,
+    add_ref,
+    footprint,
+    new_scene,
+    place_seated,
+    rest_pose,
+    save,
+    thread_height,
+    under_head,
+)
 from .usd import quat_axis_angle, stamp_identity
 from .variation import ASPECTS, Sampler
 
@@ -237,8 +247,8 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
     for p in parts:
         if p.kind == "screw" and ("nut", p.key) in by:
             t = METRIC[p.key]
-            k = t["k"] * 1e-3
-            add_ref(st, f"assembly_{p.name}", sound(p), (x, y, k), (1, 0, 0, 0))
+            k = under_head(sound(p))  # the screw stands on its head; its own head height
+            add_ref(st, f"assembly_{p.name}", sound(p), (x, y, 0), (1, 0, 0, 0))
             h = 0.0
             if ("washer", p.key) in by:
                 pw = by[("washer", p.key)]

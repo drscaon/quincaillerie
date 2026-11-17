@@ -34,6 +34,7 @@ from .usd import (
     mate_frame,
     new_stage,
     physics_material,
+    rest_on_floor,
     revolve_profile,
     rigid_body,
     set_attrs,
@@ -129,6 +130,7 @@ def _save(stage, kind):
     root = stage.GetDefaultPrim()
     write_labels(root, (kind, root.GetAttribute("primvaria:preset").Get()))
     stage.GetDefaultPrim().CreateAttribute(physx.ASKED, Sdf.ValueTypeNames.Float).Set(CONTACT_OFFSET)
+    rest_on_floor(stage)  # its underside at z = 0 of the asset (contract, section 3)
     fix_typeless(stage)
     stage.GetRootLayer().Save()
     physx.write_overlay(stage.GetRootLayer().realPath, position_iterations=32, max_depenetration=0.05)
@@ -161,7 +163,9 @@ def _bend(points, angle_deg, length):
 def write_screw(
     path, size="M8", length=None, finish="zinc_clear", v=None, name=None, detail="normal", collider="thread"
 ):
-    """Fully threaded hex head screw. Head from z=-k to 0, shank from 0 to the length, axis +Z.
+    """Fully threaded hex head screw, axis +Z. Built with the head from z=-k to 0 and the shank
+    from 0 to the length, then moved up by k when saved: in the file it stands on its head, its
+    underside at z = 0 (contract, section 3).
 
     collider: "thread" (the helix, in convex pieces) or "simple" (a cylinder at the major diameter)."""
     simple = _collider(collider) == "simple"

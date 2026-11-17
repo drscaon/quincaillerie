@@ -64,16 +64,34 @@ def add_ref(st, prim_name, asset_file, pos, quat=(1, 0, 0, 0), finish=None):
 # ------------------------------------------------------------------ rest poses on a floor at z = 0
 def rest_pose(kind, key):
     """(position offset, quaternion) of a part resting on the floor, before a translation in x, y."""
-    if kind == "screw":
-        return (0, 0, METRIC[key]["k"] * MM), (1, 0, 0, 0)  # standing on its head
-    if kind in ("nut", "washer", "holder"):
-        return (0, 0, 0), (1, 0, 0, 0)
-    c = CELLS[key]
-    if c["kind"] == "cradle":
-        return (0, 0, c["d"] / 2 * MM), (1, 0, 0, 0)  # lying, axis along x
-    if c["kind"] == "nine_volt":
-        return (0, 0, c["T"] / 2 * MM), (1, 0, 0, 0)
-    return (0, 0, c["h"] / 2 * MM), (1, 0, 0, 0)  # coin, + face up
+    # every part's underside is at z = 0 of its file (contract, section 3): a screw stands on its
+    # head, a cylindrical cell lies with its axis along x, a coin cell + face up, as written
+    return (0, 0, 0), (1, 0, 0, 0)
+
+
+def centre_height(part_file) -> float:
+    """Height (m) of a part's centre above its underside, which is z = 0 of its file."""
+    stage = Usd.Stage.Open(str(part_file))
+    purposes = [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.guide]
+    box = UsdGeom.BBoxCache(Usd.TimeCode.Default(), purposes).ComputeUntransformedBound(stage.GetDefaultPrim())
+    rng = box.ComputeAlignedRange()
+    return (rng.GetMin()[2] + rng.GetMax()[2]) / 2
+
+
+def under_head(screw_file) -> float:
+    """Height (m) of the face under a screw's head above its underside: where its MateFrame_thread
+    is, what a washer or a nut on it rests against."""
+    stage = Usd.Stage.Open(str(screw_file))
+    frame = stage.GetDefaultPrim().GetChild("MateFrame_thread")
+    return UsdGeom.XformCache().GetLocalToWorldTransform(frame).ExtractTranslation()[2]
+
+
+def origin_for(centre, quat, height):
+    """Where to place a part whose centre, ``height`` above its origin, goes to ``centre`` turned
+    by ``quat`` (w, x, y, z)."""
+    from .usd import q2m
+
+    return np.asarray(centre, float) - q2m(quat) @ np.array([0, 0, height])
 
 
 def footprint(kind, key, length=None):
@@ -100,15 +118,14 @@ def seated_overrides(fmt):
 
     Returns (cell position, cell quaternion, {moving-contact prim name: (position, quaternion)})."""
     D = holder_design(fmt)
-    c = CELLS[fmt]
     z0 = FLOOR_T * MM
     if D["axis"] == "x":
         hh = D["half_h"]
-        cell = ((0, 0, (hh * MM) + z0), (1, 0, 0, 0))
+        cell = ((0, 0, z0), (1, 0, 0, 0))  # on the bed: the cell's underside is at z = 0 of its file
         plate = ((D["x_seat"] * MM, 0, hh * MM + z0), (1, 0, 0, 0))  # spring compressed by the preload
         return cell[0], cell[1], {"spring_plate": plate}
     q = D["q_seat"]  # the cell lifts the clip by q_seat (rad) about +Y
-    cell = ((0, 0, c["h"] / 2 * MM + z0), (1, 0, 0, 0))
+    cell = ((0, 0, z0), (1, 0, 0, 0))
     clip = ((D["xp"] * MM, 0, D["zp"] * MM + z0), (np.cos(q / 2), 0, np.sin(q / 2), 0))
     return cell[0], cell[1], {"clip": clip}
 

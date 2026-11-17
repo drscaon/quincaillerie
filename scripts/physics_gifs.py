@@ -31,7 +31,7 @@ import numpy as np
 from quincaillerie import catalog_parts, generate
 from quincaillerie.batteries import holder_design, insertion_keys, key_pose
 from quincaillerie.catalog import METRIC
-from quincaillerie.scenes import add_ref, new_scene, save, seated_overrides
+from quincaillerie.scenes import add_ref, centre_height, new_scene, origin_for, save, seated_overrides
 from quincaillerie.usd import place, q2m, qmul, quat_axis_angle
 
 HERE = Path(__file__).resolve().parent
@@ -65,7 +65,7 @@ def drop_scene(assets: Path, path: Path):
         screw = next(p for p in os.listdir(assets) if p.startswith(f"ISO4017_{size}x"))
         n = int(np.ceil(h / P)) + 3
         for part, f, local, fin in (
-            ("screw", screw, ((0, 0, k), (1, 0, 0, 0)), "zinc_clear"),
+            ("screw", screw, ((0, 0, 0), (1, 0, 0, 0)), "zinc_clear"),  # its underside at z = 0
             ("washer", f"ISO7089_{size}.usda", ((0, 0, k), (1, 0, 0, 0)), "zinc_yellow"),
             ("nut", f"ISO4032_{size}.usdc", ((0, 0, k + n * P), (1, 0, 0, 0)), "zinc_clear"),
         ):
@@ -120,7 +120,7 @@ def screwing_animation(assets: Path, path: Path, out_json: Path, size="M10", tur
     screw = next(p for p in os.listdir(assets) if p.startswith(f"ISO4017_{size}x"))
     L = float(screw.split("x")[1].split(".")[0]) * MM
     st = new_scene(path)
-    add_ref(st, "screw", assets / screw, (0, 0, k))
+    add_ref(st, "screw", assets / screw, (0, 0, 0))  # standing on its head: its underside at z = 0
     n0 = int(round((L - 3 * P) / P))
     add_ref(st, "washer", assets / f"ISO7089_{size}.usda", (0, 0, k), (1, 0, 0, 0), "zinc_yellow")
     add_ref(st, "nut", assets / f"ISO4032_{size}.usdc", (0, 0, k + n0 * P))
@@ -155,7 +155,7 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
     """Cells carried into their holders by a hand and released (MuJoCo), two holders side by side."""
     import mujoco
 
-    from quincaillerie.sim.checks import GRIP, HAND, OPTIONS
+    from quincaillerie.sim.checks import GRIP, HAND, OPTIONS, grip_site
     from quincaillerie.sim.mujoco_model import convert, scene
 
     st = new_scene(path)
@@ -164,13 +164,15 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
         add_ref(st, f"holder_{fmt}", assets / f"Holder_{fmt}.usda", (x, 0, 0))
         K = insertion_keys(fmt)
         keys = K["keys"]
+        lift = centre_height(assets / f"Cell_{fmt}.usda")  # the keys place the centre, over the origin
         c0, q0 = key_pose(fmt, keys[0][1], keys[0][2])
-        add_ref(st, f"cell_{fmt}", assets / f"Cell_{fmt}.usda", tuple(np.asarray(c0) + (x, 0, 0)), q0)
+        o0 = origin_for(c0, q0, lift)  # where the cell's file goes for its centre to be at c0
+        add_ref(st, f"cell_{fmt}", assets / f"Cell_{fmt}.usda", tuple(np.asarray(o0) + (x, 0, 0)), q0)
         sim = scene(
             None,
             [
                 ("holder", str(assets / f"Holder_{fmt}.usda"), (0, 0, 0), (1, 0, 0, 0), {"kinematic": True}),
-                ("cell", str(assets / f"Cell_{fmt}.usda"), tuple(c0), tuple(q0), {}),
+                ("cell", str(assets / f"Cell_{fmt}.usda"), tuple(o0), tuple(q0), {}),
             ],
         )
         xml = convert(
@@ -180,13 +182,14 @@ def insertion_animation(assets: Path, path: Path, out_json: Path, formats=(("AA"
             extra_world=HAND.format(pos=" ".join(map(str, c0)), quat=" ".join(map(str, q0))),
             extra_xml=GRIP,
         )
+        xml = grip_site(xml, lift)
         m = mujoco.MjModel.from_xml_string(xml)
         d = mujoco.MjData(m)
         hand = m.body_mocapid[m.body("hand").id]
         eq = m.equality("grip").id
         mujoco.mj_forward(m, d)
 
-        def control(m, d, t, keys=keys, K=K, fmt=fmt, hand=hand, eq=eq):
+        def control(m, d, t, keys=keys, K=K, fmt=fmt, hand=hand, eq=eq, lift=lift):
             if t < K["t_release"]:
                 i = max(j for j in range(len(keys)) if keys[j][0] <= t)
                 a, b = keys[i], keys[min(i + 1, len(keys) - 1)]

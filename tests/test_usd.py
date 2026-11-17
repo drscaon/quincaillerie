@@ -97,3 +97,18 @@ def test_scene_references_resolve(small_set):
     assert "assembly_ISO4032_M4" in names and "assembly_Cell_AA" in names
     bodies = [p for p in st.Traverse() if p.HasAPI(UsdPhysics.RigidBodyAPI)]
     assert len(bodies) == 2 * (4 + 2) + 3 + 3  # each part twice (a holder is 2 bodies), plus the assemblies
+
+
+def test_every_part_rests_on_z_0_of_its_file(varied_set):
+    """Contract, section 3: a standalone part's underside is at z = 0, so that referenced onto a
+    floor at z = 0 it rests on it, neither in it nor above it: screws standing on their heads,
+    cylindrical cells lying, coin cells and holders flat (colliders and visuals alike)."""
+    from pathlib import Path
+
+    purposes = [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.guide]
+    files = [f for f in sorted((Path(varied_set.out_dir) / "assets").glob("*.usd*")) if "_physx" not in f.name]
+    assert {f.name.split("_")[0] for f in files} >= {"ISO4017", "ISO4032", "Cell", "Holder"}
+    for f in files:
+        stage = Usd.Stage.Open(str(f))
+        box = UsdGeom.BBoxCache(Usd.TimeCode.Default(), purposes).ComputeUntransformedBound(stage.GetDefaultPrim())
+        assert abs(box.ComputeAlignedRange().GetMin()[2]) < 1e-9, f.name
