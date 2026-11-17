@@ -37,6 +37,10 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Changed
 
+- The insertion check judges a cell by its own size: a cell shorter than
+  nominal sits that much further along, and one thinner than nominal may be
+  held by its contacts just above the bed. Cells now vary down to their
+  datasheet's minimum, which the fixed nominal criteria refused.
 - A dented cell's can collider follows the dent (convex pieces, fine where
   the dent is), and a corrosion crust has its own collider: both change how
   the cell rests and seats. `tests/test_physical_defects.py` checks it in

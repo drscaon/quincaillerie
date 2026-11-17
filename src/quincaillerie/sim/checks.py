@@ -385,7 +385,11 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
         tilt = float(np.degrees(np.arcsin(min(1, abs(R[2, 0])))))
         comp = -d.qpos[m.jnt_qposadr[m.joint("spring").id]] / MM
         k = float(m.jnt_stiffness[m.joint("spring").id])
-        seated = abs(centre[0]) < 0.6 and abs(centre[2] - D["half_h"]) < 0.4 and tilt < 1.0 and speed < 1.0
+        # in the cradle: on the bed, or a cell thinner than nominal (down to its datasheet's minimum)
+        # held by its two contacts a little above it, as they clamp it at the axis height they are made for
+        low, high = lift / MM - 0.4, D["half_h"] + 1.0
+        # and against the + contact: a cell shorter by dl has its centre dl / 2 further that way
+        seated = abs(centre[0] + dl / 2) < 0.6 and low < centre[2] < high and tilt < 1.0 and speed < 1.0
         if D["kind"] == "cradle":
             on = touch.get("plus_plate", {})
             F = sum(on.values())
@@ -418,7 +422,7 @@ def insertion(cell_file, holder_file, fmt, reverse=False, record=False):
                 on[g2] = on.get(g2, 0.0) + v
         top = "can" if "can" in on else ("cap" if "cap" in on else "none")
         seated = (
-            np.hypot(centre[0], centre[1]) < 0.6 and abs(centre[2] - D["h"] / 2) < 0.15 and tilt < 1.0 and speed < 1.0
+            np.hypot(centre[0], centre[1]) < 0.6 and abs(centre[2] - lift / MM) < 0.15 and tilt < 1.0 and speed < 1.0
         )
         res.update(
             tilt_deg=tilt,

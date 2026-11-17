@@ -41,7 +41,7 @@ referenced and a floor at z = 0, saved under `sim_test/scenes/`:
 | nut_on_screw | a nut on its screw, both dropped | the nut stays on its thread: shift below half a pitch, off-axis below 0.3 mm |
 | holder | an empty holder on the floor | the base settles (0.3 mm) and the plate or clip stays put in the base's frame (0.05 mm) |
 | seated | a cell in its holder, on the floor | relative to the holder, the cell stays within the holder's side play (+0.6 mm), the contact moves less than 0.3 mm |
-| insertion (MuJoCo) | a cell carried into its holder and released, then the same reversed | seated, spring at the compression *this* holder should get from *this* cell (its drawn preload and the cell's drawn length), force within 10 % (coin clips: 15 %, the contact point is estimated); reversed: wrong polarity, or refused by the keying (9 V) |
+| insertion (MuJoCo) | a cell carried into its holder and released, then the same reversed | seated (at rest, level, against the + contact, its centre shifted by half its own length deficit; on the bed, or, for a cell thinner than nominal down to its datasheet's minimum, held by its contacts up to 1 mm above it), spring at the compression *this* holder should get from *this* cell (its drawn preload and the cell's drawn length), force within 10 % (coin clips: 15 %, the contact point is estimated); reversed: wrong polarity, or refused by the keying (9 V) |
 | screwing (MuJoCo, `--screwing`) | a nut driven 1 turn/s on a fixed screw, then back | advance per turn within 5 % of the pitch |
 | jam (MuJoCo, `--defects`) | a sound nut driven with a light torque towards the crushed thread of a screw, and the same on a sound screw | it stops at the damage: it travels at least a quarter pitch less than on the sound screw |
 
