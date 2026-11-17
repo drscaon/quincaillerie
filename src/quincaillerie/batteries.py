@@ -313,8 +313,11 @@ def write_cell(path, name, cv=None, root_name=None):
             (0, 0, 0),
             (0.5 * mass * rr**2, mass * (3 * rr**2 + LL**2) / 12, mass * (3 * rr**2 + LL**2) / 12),
         )
-        mate_frame(stage, f"{R}/MateFrame_plus", m(L / 2, 0, 0), (1, 0, 0, 0), dict(role="terminal", polarity="+"))
-        mate_frame(stage, f"{R}/MateFrame_minus", m(-L / 2, 0, 0), (0, 0, 0, 1), dict(role="terminal", polarity="-"))
+        # on each terminal's tip, +Z out of the cell: the way the terminal presses on its contact
+        q_plus, q_minus = (np.sqrt(0.5), 0, np.sqrt(0.5), 0), (np.sqrt(0.5), 0, -np.sqrt(0.5), 0)
+        mate_frame(stage, f"{R}/MateFrame_plus", m(L / 2, 0, 0), q_plus, dict(role="terminal", polarity="+"))
+        mate_frame(stage, f"{R}/MateFrame_minus", m(-L / 2, 0, 0), q_minus, dict(role="terminal", polarity="-"))
+        seat_z = -r
         dims = dict(diameter=c["d"] * MM, length=L * MM)
     elif kind == "nine_volt":
         L, W, T = c["L"], c["W"], c["T"]
@@ -348,17 +351,18 @@ def write_cell(path, name, cv=None, root_name=None):
         mate_frame(
             stage,
             f"{R}/MateFrame_plus",
-            m(L / 2 + 3, 6.35, 0),
-            (1, 0, 0, 0),
+            m(L / 2 + 3, 6.35, 0),  # on the snap's top, +Z out of the battery: the clip goes on along -Z
+            (np.sqrt(0.5), 0, np.sqrt(0.5), 0),
             dict(role="terminal", polarity="+", snap="male"),
         )
         mate_frame(
             stage,
             f"{R}/MateFrame_minus",
             m(L / 2 + 3, -6.35, 0),
-            (1, 0, 0, 0),
+            (np.sqrt(0.5), 0, np.sqrt(0.5), 0),
             dict(role="terminal", polarity="-", snap="female"),
         )
+        seat_z = -T / 2
         dims = dict(length=L * MM, width=W * MM, thickness=T * MM)
     else:  # coin, + face up
         r, h = c["d"] / 2, c["h"]
@@ -387,7 +391,12 @@ def write_cell(path, name, cv=None, root_name=None):
         )
         mate_frame(stage, f"{R}/MateFrame_plus", m(0, 0, h / 2), (1, 0, 0, 0), dict(role="terminal", polarity="+"))
         mate_frame(stage, f"{R}/MateFrame_minus", m(0, 0, -h / 2), (0, 1, 0, 0), dict(role="terminal", polarity="-"))
+        seat_z = -h / 2
         dims = dict(diameter=c["d"] * MM, height=h * MM)
+    # where the cell rests on its holder's bed: coincident with the holder's MateFrame_seat, it is seated
+    up = "+X towards the + contact" if kind in ("cradle", "nine_volt") else "the + face up"
+    seat = dict(role="cell_seat", axis=f"+Z down into the bed, {up}")
+    mate_frame(stage, f"{R}/MateFrame_seat", m(0, 0, seat_z), (0, 1, 0, 0), seat)
     _, subsets = vb.write(stage, f"{R}/Visual/{root_name}_mesh", R)
     if cv.label_wear > 0.02 or cv.dirt > 0.02:  # the printed face gets the instance's scuffs and dirt
         import os
@@ -575,9 +584,9 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
         mate_frame(
             stage,
             f"{B}/MateFrame_seat",
-            (0, 0, hh * MM),
-            (1, 0, 0, 0),
-            dict(role="cell_seat", axis="+X towards the + contact", cellCentre=True),
+            (0, 0, 0),  # on the bed, under the seated cell's centre; the cell's own seat frame matches it
+            (0, 1, 0, 0),
+            dict(role="cell_seat", axis="+Z down into the bed, +X towards the + contact"),
         )
     else:
         r, h, Rw = D["r"], D["h"], D["Rw"]
@@ -636,7 +645,11 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
         )
         info = dict(clipTorsionStiffness=kth, clipPreloadAngle=theta0, contactForce=D["F"])
         mate_frame(
-            stage, f"{B}/MateFrame_seat", (0, 0, h / 2 * MM), (1, 0, 0, 0), dict(role="cell_seat", axis="+Z = + face")
+            stage,
+            f"{B}/MateFrame_seat",
+            (0, 0, 0),  # on the bed, under the seated cell's centre; the cell's own seat frame matches it
+            (0, 1, 0, 0),
+            dict(role="cell_seat", axis="+Z down into the bed, the + face up"),
         )
     _, subsets = vb.write(stage, f"{B}/Visual/{root_name}_base_mesh", R, variant_mats=("plastic",))
     # base: mass and inertia of its ABS boxes

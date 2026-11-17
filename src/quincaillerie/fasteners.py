@@ -249,7 +249,7 @@ def write_screw(
     mate_frame(
         stage,
         f"{R}/MateFrame_drive",
-        (0, 0, -k),
+        (0, 0, 0),  # where a socket's mouth is when it holds the whole head: the head goes in along +Z
         (0, 1, 0, 0),
         dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=k),
     )
@@ -335,7 +335,7 @@ def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="n
     mate_frame(
         stage,
         f"{R}/MateFrame_drive",
-        (0, 0, H),
+        (0, 0, 0),  # where a socket's mouth is when it holds the whole nut: the nut goes in along +Z
         (1, 0, 0, 0),
         dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=H),
     )
