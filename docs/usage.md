@@ -30,9 +30,9 @@ Part of the [Quincaillerie](../README.md) documentation.
 | Hex head screw, ISO 4017 | M3 to M12, any length | M3×12: 0.91 · M8×30: 15.4 · M12×40: 45.2 | core + head + ≈ 800 thread pieces |
 | Hex nut, ISO 4032 | M3 to M12 | M3: 0.38 · M8: 5.55 · M12: 15.7 | ≈ 200 pieces (ridge + ring sectors) |
 | Plain washer, ISO 7089 | M3 to M12 | M3: 0.12 · M8: 1.81 · M12: 6.19 | 24 ring sectors |
-| Cylindrical cell + cradle | AAA, AA, C, D, CR123A, 18650, 21700 | 11.5 to 135 (typical) | can + button cylinders; holder: boxes, spring plate on a prismatic joint |
-| 9 V block + keyed holder | 9V (6LR61) | 45 | box + two snap cylinders; terminal slots sized to the snaps |
-| Coin / button cell + clip | CR2032, LR44 | 2.9, 1.9 | can + cap cylinders; clip on a revolute joint |
+| Cylindrical cell + cradle | AAA, AA, C, D, CR123A, 18650, 21700 | 11.5 to 139 (typical, [sources](sources.md)) | can + button cylinders; holder: boxes, spring plate on a prismatic joint |
+| 9 V block + keyed holder | 9V (6LR61) | 45.6 | box + two snap cylinders; terminal slots sized to the snaps |
+| Coin / button cell + clip | CR2032, LR44 | 3.0, 1.9 | can + cap cylinders; clip on a revolute joint |
 
 Fastener dimensions (across flats, head height, nut height, washer
 diameters, pitch) are the nominal values found in public tables; the ISO
