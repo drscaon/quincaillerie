@@ -37,6 +37,12 @@ The same seed gives the same parts, except for the cells' defects:
 
 ### Changed
 
+- README and docs images rendered again with the sourced values of PRV-33
+  (cell sizes and masses, the draws within the standards' tolerances): the
+  cells, the variation and the social preview renders, and the drop and
+  insertion GIFs, simulated again. The drop GIF no longer shows the shared
+  ground, which still collides, but the studio floor, as the stills do; the
+  GIFs' default size is the published 640 × 360.
 - The insertion check judges a cell by its own size: a cell shorter than
   nominal sits that much further along, and one thinner than nominal may be
   held by its contacts just above the bed. Cells now vary down to their

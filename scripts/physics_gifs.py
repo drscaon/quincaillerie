@@ -323,7 +323,7 @@ def main(argv=None):
     ap.add_argument("--out", default="docs/images")
     ap.add_argument("--only", default="drop,screwing,insertion,jam")
     ap.add_argument("--samples", type=int, default=24)
-    ap.add_argument("--size", default="720,405")
+    ap.add_argument("--size", default="640,360")
     ap.add_argument("--keep", help="keep the work folder here")
     args = ap.parse_args(argv)
     out = Path(args.out)
