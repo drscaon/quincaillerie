@@ -87,6 +87,9 @@ def main():
     if mode == "drop":
         sc.frame_start, sc.frame_end = 1, n
         import_with_physics(scene_path)
+        for o in bpy.data.objects:  # the shared ground still collides; the studio's floor is what is seen
+            if o.name.split(".")[0] == "Ground":
+                o.hide_render = True
         sc.rigidbody_world.point_cache.frame_end = n
         studio(W, H, spp, eye, tgt, lens)
         for f in range(1, n + 1):
