@@ -101,6 +101,15 @@ The same seed gives the same parts, except for the cells' defects:
   refused (PRV-40).
 - `generate --no-vary` refuses an unknown aspect, instead of ignoring it and
   letting every aspect vary (PRV-35).
+- Cell labels are no longer stretched around the cell. Every label was drawn on
+  one 2048 × 1024 image whatever the wrapper's proportions, so the print came
+  out 1.6 to 3.8 times too tall around the cell (about twice on an AA or an
+  18650, nearly four times on a C, a D or a CR123A, whose texts overlapped),
+  and 1.25 times on the 9 V block. Each label now has the proportions of the
+  surface it is printed on (`catalog.wrapper_span`, `catalog.label_9v_size`,
+  which the meshes use too), and its texts shrink to fit the shorter wrappers.
+  Visual only: geometry, colliders and masses are unchanged. README images
+  rendered again.
 
 ### Breaking changes
 

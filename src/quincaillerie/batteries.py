@@ -22,7 +22,7 @@ import numpy as np
 from pxr import Sdf
 
 from . import physx
-from .catalog import CELLS
+from .catalog import CELLS, label_9v_size, wrapper_span
 from .contract import write_labels
 from .usd import (
     VisualBuilder,
@@ -276,14 +276,11 @@ def write_cell(path, name, cv=None, root_name=None):
     if kind == "cradle":
         L, r, nr, nh = c["L"], c["d"] / 2, c["nub_d"] / 2, c["nub_h"]
         h1 = L / 2 - nh
+        w0, w1, rw = wrapper_span(c)
         parts = [
-            ("nickel_can", [(0, -L / 2), (r - 0.4, -L / 2), (r, -L / 2 + 0.4), (r, -L / 2 + 0.8)], None),
-            (
-                f"wrapper_{name}",
-                [(r + 0.02, -L / 2 + 0.8), (r + 0.02, h1 - 2.0)],
-                ((-L / 2 + 0.8) * MM, (h1 - 2.0) * MM),
-            ),
-            ("nickel_can", [(r, h1 - 2.0), (r, h1 - 0.5), (r - 0.5, h1), (nr + 0.6, h1)], None),
+            ("nickel_can", [(0, -L / 2), (r - 0.4, -L / 2), (r, -L / 2 + 0.4), (r, w0)], None),
+            (f"wrapper_{name}", [(rw, w0), (rw, w1)], (w0 * MM, w1 * MM)),
+            ("nickel_can", [(r, w1), (r, h1 - 0.5), (r - 0.5, h1), (nr + 0.6, h1)], None),
             ("nickel_can", [(nr + 0.6, h1), (nr, h1), (nr, h1 + nh - 0.2), (nr - 0.3, h1 + nh), (0, h1 + nh)], None),
         ]
         for mat, prof, along in parts:
@@ -325,7 +322,8 @@ def write_cell(path, name, cv=None, root_name=None):
         L, W, T = c["L"], c["W"], c["T"]
         V, F = box_mesh(m(L / 2, W / 2, T / 2))
         vb.add(V, F, "case_9V", uv_box(V, F, 60.0), 30)
-        V, F = box_mesh(m(L * 0.35, W / 2 + 0.02, T / 2 - 2))
+        lw, lh = label_9v_size(c)
+        V, F = box_mesh(m(lw / 2, W / 2 + 0.02, lh / 2))
         V = V + np.array(m(-L * 0.1, 0, 0))
         P = V[F].reshape(-1, 3)
         uvl = np.c_[(P[:, 0] - V[:, 0].min()) / np.ptp(V[:, 0]), (P[:, 2] - V[:, 2].min()) / np.ptp(V[:, 2])]

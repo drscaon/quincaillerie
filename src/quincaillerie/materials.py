@@ -19,6 +19,8 @@ import os
 import numpy as np
 from pxr import Gf, Sdf, UsdGeom, UsdPhysics, UsdShade
 
+from .catalog import CELLS, label_9v_size, wrapper_span
+
 # name: (base colour, metallic, roughness, extras)
 # extras: rough_tex (texture, scale, bias), normal_tex, color_tex, coat (weight, roughness), specular
 MATERIALS = {
@@ -188,6 +190,25 @@ def _tileable_noise(n, octaves, rng):
     return img
 
 
+def _label_size(length_mm, height_mm, longest=2048):
+    """Pixel size of a label printed on a length x height (mm) surface: the same scale both ways,
+    its longest side ``longest`` pixels."""
+    k = longest / max(length_mm, height_mm)
+    return round(length_mm * k), round(height_mm * k)
+
+
+def _fit_text(d, text, bold, xa, xb, ya, yb, fill):
+    """Draw ``text`` from the left of the box (xa, ya)-(xb, yb), in pixels, centred in its height:
+    with glyphs as tall as the box, or smaller so that the line fits its width."""
+    size = max(int(yb - ya), 1)
+    font = _font(size, bold)
+    w = d.textlength(text, font=font)
+    if w > xb - xa:
+        size = max(int(size * (xb - xa) / w), 1)
+        font = _font(size, bold)
+    d.text((xa, (ya + yb) / 2), text, font=font, fill=fill, anchor="lm")
+
+
 LABELS = {  # IEC designation, nominal voltage, chemistry text, colours (band, background)
     "AAA": ("LR03", "1.5 V", "ALKALINE", (165, 32, 38)),
     "AA": ("LR6", "1.5 V", "ALKALINE", (28, 72, 160)),
@@ -223,10 +244,13 @@ def make_textures(out):
     L = np.sqrt(nx**2 + ny**2 + nz**2)
     nm = np.stack([nx / L, ny / L, nz / L], -1) * 0.5 + 0.5
     Image.fromarray((nm * 255).astype(np.uint8)).save(f"{out}/plastic_normal.png")
-    # cylindrical cell labels: x = along the cell (- end on the left), y = around the circumference
+    # cylindrical cell labels: x = along the cell (- end on the left), y = around the circumference.
+    # Each image has its wrapper's proportions (length x circumference), so the print is not stretched
+    # on the cell; texts are as tall as their slot allows, and narrower where the wrapper is short.
     for f in CELL_FORMATS:
         iec, volt, chem, col = LABELS[f]
-        W, H = 2048, 1024
+        x0, x1, rw = wrapper_span(CELLS[f])
+        W, H = _label_size(x1 - x0, 2 * np.pi * rw)
         img = Image.new("RGB", (W, H), col)
         d = ImageDraw.Draw(img)
         dark = tuple(int(c * 0.55) for c in col)
@@ -234,38 +258,23 @@ def make_textures(out):
         d.rectangle([0, int(H * 0.94), W, H], fill=dark)
         d.rectangle([int(W * 0.70), 0, int(W * 0.73), H], fill=(235, 235, 235))
         for y0 in (0.12, 0.62):  # the label twice around the cell
-            y = int(H * y0)
-            d.text((int(W * 0.06), y), f, font=_font(int(H * 0.19)), fill=(255, 255, 255))
-            d.text(
-                (int(W * 0.06), y + int(H * 0.20)),
-                f"{iec}  ·  {volt}  ·  {chem}",
-                font=_font(int(H * 0.055), False),
-                fill=(235, 235, 235),
-            )
-            d.text((int(W * 0.78), y + int(H * 0.04)), "+", font=_font(int(H * 0.2)), fill=(255, 255, 255))
-            d.text(
-                (int(W * 0.40), y + int(H * 0.06)), "QUINCAILLERIE", font=_font(int(H * 0.045)), fill=(255, 255, 255)
-            )
-            d.text(
-                (int(W * 0.40), y + int(H * 0.115)),
-                "synthetic test cell",
-                font=_font(int(H * 0.04), False),
-                fill=(230, 230, 230),
-            )
+            for text, bold, (xa, xb), (ya, yb), fill in (
+                (f, True, (0.06, 0.38), (0.0, 0.19), (255, 255, 255)),
+                (f"{iec}  ·  {volt}  ·  {chem}", False, (0.06, 0.68), (0.20, 0.255), (235, 235, 235)),
+                ("QUINCAILLERIE", True, (0.40, 0.68), (0.06, 0.105), (255, 255, 255)),
+                ("synthetic test cell", False, (0.40, 0.68), (0.115, 0.155), (230, 230, 230)),
+                ("+", True, (0.78, 0.97), (0.04, 0.24), (255, 255, 255)),
+            ):
+                _fit_text(d, text, bold, W * xa, W * xb, H * (y0 + ya), H * (y0 + yb), fill)
         img.save(f"{out}/label_{f}.png")
     # 9V label (box UV: one face strip), coin markings
-    W, H = 1024, 512
+    W, H = _label_size(*label_9v_size(CELLS["9V"]))
     img = Image.new("RGB", (W, H), LABELS["9V"][3])
     d = ImageDraw.Draw(img)
     d.rectangle([0, 0, W, int(H * 0.12)], fill=(25, 25, 28))
     d.rectangle([0, int(H * 0.88), W, H], fill=(25, 25, 28))
-    d.text((int(W * 0.06), int(H * 0.22)), "9V", font=_font(int(H * 0.36)), fill=(25, 25, 28))
-    d.text(
-        (int(W * 0.06), int(H * 0.62)),
-        "6LR61  ·  ALKALINE  ·  QUINCAILLERIE",
-        font=_font(int(H * 0.07), False),
-        fill=(25, 25, 28),
-    )
+    _fit_text(d, "9V", True, W * 0.06, W * 0.94, H * 0.22, H * 0.58, (25, 25, 28))
+    _fit_text(d, "6LR61  ·  ALKALINE  ·  QUINCAILLERIE", False, W * 0.06, W * 0.94, H * 0.62, H * 0.69, (25, 25, 28))
     img.save(f"{out}/label_9V.png")
     for f, txt in (("CR2032", "CR2032\n3V  +"), ("LR44", "LR44\n1.5V +")):
         S = 1024

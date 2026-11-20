@@ -95,6 +95,20 @@ CELL_MIN = {
 }
 FORMATS = list(CELLS)
 
+
+def wrapper_span(c: dict) -> tuple[float, float, float]:
+    """Where a cylindrical cell's printed wrapper lies (mm): from x0 to x1 along the cell (- end at
+    -L/2), at radius r. The cell's mesh and its label texture both take it from here, so the label
+    is drawn at the wrapper's own proportions."""
+    L, r, nh = c["L"], c["d"] / 2, c["nub_h"]
+    return -L / 2 + 0.8, L / 2 - nh - 2.0, r + 0.02
+
+
+def label_9v_size(c: dict) -> tuple[float, float]:
+    """The 9V block's printed label (mm): its length along the block and its height."""
+    return 0.7 * c["L"], c["T"] - 4.0
+
+
 KINDS = ("screw", "nut", "washer", "cell", "holder")
 # related elements that `--with` can add to a generated part
 RELATED = {
