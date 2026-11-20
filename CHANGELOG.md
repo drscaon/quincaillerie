@@ -6,6 +6,33 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0b1] - 2026-11-20 (beta)
+
+### Breaking changes
+
+- Every part's underside is at z = 0 of its file, as contract section 3
+  says (PRV-40): screws stand on their heads (they were moved up by their
+  head height), cylindrical cells, 9 V batteries and coin cells lie on their
+  undersides (they were centred on their origin). Nuts, washers and holders
+  already were. Referenced onto a floor at z = 0, a part now rests on it
+  instead of starting inside it. The geometry, colliders, mate frames and
+  centre of mass moved together; the values recorded are unchanged.
+  `rest_pose` is now the identity for every part, `seated_overrides` puts a
+  cell's underside on the bed, and the scenes and checks place nuts and
+  washers by each screw's own head height (`scenes.under_head`).
+- Mate frames follow the contract's section 8, measured by the new
+  `tests/test_mate_frames.py` (PRV-35):
+  - `MateFrame_drive` of a screw and of a nut is where a socket's mouth is
+    when it holds the whole hex (under the head, under the nut), so the hex
+    goes in along +Z by `quincaillerie:engagement`; it was on the end face.
+  - A cylindrical cell's and a 9 V battery's `MateFrame_plus` and
+    `MateFrame_minus` point +Z out of the battery, along its axis; they
+    pointed up. A coin cell's already did.
+  - A holder's `MateFrame_seat` is on its bed, +Z down into it, instead of at
+    the seated cell's centre; every cell has its own `MateFrame_seat`, where
+    it touches the bed. When the two coincide, the cell is in the pose the
+    seated check simulates. The `cellCentre` attribute is gone.
+
 ### Changed values
 
 - Values brought within their sources (PRV-33): an 18650 cell is 18.4 ×
@@ -115,31 +142,6 @@ The same seed gives the same parts, except for the cells' defects:
   at its origin since PRV-40: AA cells floated 7.25 mm, 9 V blocks 8.75 mm,
   M10 screws about 0.5 mm, an LR44 2.7 mm, and a flipped CR2032 sank 1.6 mm
   into the floor. Each part is now put down by its lowest point.
-
-### Breaking changes
-
-- Every part's underside is at z = 0 of its file, as contract section 3
-  says (PRV-40): screws stand on their heads (they were moved up by their
-  head height), cylindrical cells, 9 V batteries and coin cells lie on their
-  undersides (they were centred on their origin). Nuts, washers and holders
-  already were. Referenced onto a floor at z = 0, a part now rests on it
-  instead of starting inside it. The geometry, colliders, mate frames and
-  centre of mass moved together; the values recorded are unchanged.
-  `rest_pose` is now the identity for every part, `seated_overrides` puts a
-  cell's underside on the bed, and the scenes and checks place nuts and
-  washers by each screw's own head height (`scenes.under_head`).
-- Mate frames follow the contract's section 8, measured by the new
-  `tests/test_mate_frames.py` (PRV-35):
-  - `MateFrame_drive` of a screw and of a nut is where a socket's mouth is
-    when it holds the whole hex (under the head, under the nut), so the hex
-    goes in along +Z by `quincaillerie:engagement`; it was on the end face.
-  - A cylindrical cell's and a 9 V battery's `MateFrame_plus` and
-    `MateFrame_minus` point +Z out of the battery, along its axis; they
-    pointed up. A coin cell's already did.
-  - A holder's `MateFrame_seat` is on its bed, +Z down into it, instead of at
-    the seated cell's centre; every cell has its own `MateFrame_seat`, where
-    it touches the bed. When the two coincide, the cell is in the pose the
-    seated check simulates. The `cellCentre` attribute is gone.
 
 ## [0.3.0b1] - 2026-11-13 (beta)
 
