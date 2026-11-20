@@ -102,6 +102,18 @@ def fasteners_scene(assets, path):
     return save(st)
 
 
+def lay(st, prim_name, asset_file, pos, quat=(1, 0, 0, 0), finish=None):
+    """add_ref, then the part moved up or down until its lowest point touches the floor (z = 0).
+    The x and y of ``pos`` and the orientation are kept; the z of ``pos`` does not matter."""
+    from pxr import Usd, UsdGeom
+
+    x = add_ref(st, prim_name, asset_file, pos, quat, finish)
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render])
+    low = cache.ComputeWorldBound(x.GetPrim()).ComputeAlignedRange().GetMin()[2]
+    place(x, (pos[0], pos[1], pos[2] - low), quat)
+    return x
+
+
 def cells_scene(assets, path):
     """Cells standing in a row; behind, holders with their cell seated."""
     st = new_scene(path)
@@ -112,19 +124,19 @@ def cells_scene(assets, path):
         r = c["d"] / 2 * MM
         q = qmul(quat_axis_angle((0, 0, 1), -1.35 + 0.15 * i), up)
         centre = (x + r, -0.080 + 0.004 * (i % 2), c["L"] / 2 * MM)
-        add_ref(st, f"cell_{n}", assets / f"Cell_{n}.usda", origin_for(centre, q, r), q)
+        lay(st, f"cell_{n}", assets / f"Cell_{n}.usda", origin_for(centre, q, r), q)
         x += c["d"] * MM + 0.008
-    add_ref(
+    lay(
         st,
         "cell_9V",
         assets / "Cell_9V.usda",
         origin_for((x + 0.012, -0.078, 0.0485 / 2), qmul(quat_axis_angle((0, 0, 1), -0.35), up), 0.0175 / 2),
         qmul(quat_axis_angle((0, 0, 1), -0.35), up),
     )
-    add_ref(st, "cell_CR2032", assets / "Cell_CR2032.usda", (x + 0.045, -0.090, 0.0), quat_axis_angle((0, 0, 1), 0.4))
-    add_ref(st, "cell_LR44", assets / "Cell_LR44.usda", (x + 0.052, -0.065, 0.0027), quat_axis_angle((0, 0, 1), 0.1))
+    lay(st, "cell_CR2032", assets / "Cell_CR2032.usda", (x + 0.045, -0.090, 0.0), quat_axis_angle((0, 0, 1), 0.4))
+    lay(st, "cell_LR44", assets / "Cell_LR44.usda", (x + 0.052, -0.065, 0.0027), quat_axis_angle((0, 0, 1), 0.1))
     flip = qmul(quat_axis_angle((0, 0, 1), 1.2), quat_axis_angle((1, 0, 0), np.pi))
-    add_ref(st, "cell_CR2032_b", assets / "Cell_CR2032.usda", (x + 0.072, -0.085, 0.0016), flip)
+    lay(st, "cell_CR2032_b", assets / "Cell_CR2032.usda", (x + 0.072, -0.085, 0.0016), flip)
     for n, (hx, hy, yaw) in {
         "AA": (-0.085, 0.010, 0.10),
         "18650": (-0.005, 0.012, 0.05),
@@ -174,15 +186,15 @@ def showcase_scene(assets, path):
     for i, (n, x) in enumerate((("AA", -0.035), ("18650", -0.011), ("21700", 0.015), ("C", 0.047), ("D", 0.084))):
         c = CELLS[n]
         q = qmul(quat_axis_angle((0, 0, 1), -1.45 + 0.12 * i), up)
-        add_ref(st, f"cell_{n}", assets / f"Cell_{n}.usda", (x, 0.012 - 0.006 * (i % 2), c["L"] / 2 * MM), q)
-    add_ref(st, "cell_AAA", assets / "Cell_AAA.usda", (-0.012, -0.045, 0.00525), quat_axis_angle((0, 0, 1), 0.25))
+        lay(st, f"cell_{n}", assets / f"Cell_{n}.usda", (x, 0.012 - 0.006 * (i % 2), c["L"] / 2 * MM), q)
+    lay(st, "cell_AAA", assets / "Cell_AAA.usda", (-0.012, -0.045, 0.00525), quat_axis_angle((0, 0, 1), 0.25))
     holders = {"AA": (0.135, 0.035, 0.2), "CR2032": (0.066, -0.052, -0.2), "9V": (0.128, -0.045, 0.2)}
     for n, (hx, hy, yaw) in holders.items():
         add_ref(st, f"holder_{n}", assets / f"Holder_{n}.usda", (hx, hy, 0), quat_axis_angle((0, 0, 1), yaw))
         place_seated(st, f"holder_{n}", f"seated_{n}", assets / f"Cell_{n}.usda", n, (hx, hy, 0), yaw)
-    add_ref(st, "coin_LR44", assets / "Cell_LR44.usda", (0.022, -0.062, 0.0027), quat_axis_angle((0, 0, 1), 0.4))
+    lay(st, "coin_LR44", assets / "Cell_LR44.usda", (0.022, -0.062, 0.0027), quat_axis_angle((0, 0, 1), 0.4))
     flip = qmul(quat_axis_angle((0, 0, 1), 1.1), quat_axis_angle((1, 0, 0), np.pi))
-    add_ref(st, "coin_CR2032", assets / "Cell_CR2032.usda", (0.036, -0.082, 0.0016), flip)
+    lay(st, "coin_CR2032", assets / "Cell_CR2032.usda", (0.036, -0.082, 0.0016), flip)
     return save(st)
 
 
@@ -206,11 +218,11 @@ def variation_scene(tmp, path, seed=4):
     for i in range(10):
         y = -0.09 + 0.02 * i
         q = qmul(quat_axis_angle((0, 0, 1), 0.08 * (i - 5)), quat_axis_angle((0, 1, 0), np.pi / 2))
-        add_ref(st, f"s{i}", A / f"ISO4017_M10x35_{i:03d}.usdc", (-0.075, y, 0.0085), q)
-        add_ref(st, f"n{i}", A / f"ISO4032_M10_{i:03d}.usdc", (-0.025, y, 0), quat_axis_angle((0, 0, 1), 0.4 * i))
-        add_ref(st, f"w{i}", A / f"ISO7089_M10_{i:03d}.usda", (0.003, y, 0), (1, 0, 0, 0))
+        lay(st, f"s{i}", A / f"ISO4017_M10x35_{i:03d}.usdc", (-0.075, y, 0.0085), q)
+        lay(st, f"n{i}", A / f"ISO4032_M10_{i:03d}.usdc", (-0.025, y, 0), quat_axis_angle((0, 0, 1), 0.4 * i))
+        lay(st, f"w{i}", A / f"ISO7089_M10_{i:03d}.usda", (0.003, y, 0), (1, 0, 0, 0))
     for i in range(8):
-        add_ref(
+        lay(
             st,
             f"c{i}",
             Path(c.out_dir) / "assets" / f"Cell_AA_{i:03d}.usda",
@@ -218,7 +230,7 @@ def variation_scene(tmp, path, seed=4):
             quat_axis_angle((0, 0, 1), 0.03 * i + (np.pi if i % 2 else 0)),
         )
     for i in range(3):
-        add_ref(
+        lay(
             st,
             f"b{i}",
             Path(n.out_dir) / "assets" / f"Cell_9V_{i:03d}.usda",
