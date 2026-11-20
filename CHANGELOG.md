@@ -110,6 +110,11 @@ The same seed gives the same parts, except for the cells' defects:
   which the meshes use too), and its texts shrink to fit the shorter wrappers.
   Visual only: geometry, colliders and masses are unchanged. README images
   rendered again.
+- README images: loose parts rest on the floor. `scripts/readme_images.py`
+  still lifted them by their half-height, though every asset rests on z = 0
+  at its origin since PRV-40: AA cells floated 7.25 mm, 9 V blocks 8.75 mm,
+  M10 screws about 0.5 mm, an LR44 2.7 mm, and a flipped CR2032 sank 1.6 mm
+  into the floor. Each part is now put down by its lowest point.
 
 ### Breaking changes
 
