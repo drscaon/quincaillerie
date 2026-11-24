@@ -20,6 +20,7 @@ Part of the [Quincaillerie](../README.md) documentation.
 | `--collider` | `thread` | collision of the fasteners: `thread` (the helix in convex pieces: nuts screw on, crushed threads jam) or `simple` (the envelope alone: 2 pieces for a screw, 12 for a nut, 8 for a washer), see [Simple colliders](physics.md#simple-colliders) |
 | `--finish F` | `zinc_clear` | default finish of the fasteners (all six are in every file's variant set) |
 | `--no-physics` | | no rigid bodies, colliders, joints or physics scene |
+| `--engines LIST` | `physx,omniphysics,newton` | engine layers written beside each file with physics, comma-separated, or `none`; Quincaillerie writes the PhysX and Newton ones, see [Newton layer](openusd.md#newton-layer) |
 | `--no-scene` | | assets and materials only |
 | `--seed S`, `--out DIR` | 1, `output` | the same seed and options give the same parts |
 

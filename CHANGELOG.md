@@ -6,6 +6,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A Newton layer beside every file with physics, `<file>_newton.usda` (contract section 9,
+  a new engine layer): `newton:contactGap` on every collider, from the contact offset the
+  asset asks for, and `PhysicsArticulationRootAPI` on battery holders, whose joints Newton
+  1.8 accepts only inside an articulation. The files and their PhysX layers are unchanged.
+  `python -m quincaillerie.newton` checks the layers.
+- `generate --engines LIST`: the engine layers to write (`physx`, `omniphysics`, `newton`,
+  comma-separated, or `none`); by default all of them, as the four Primvaria generators do.
+
+### Fixed
+
+- Battery holders have their mass in `instances.csv` (`measured:mass_kg`, base and spring
+  plate or clip); the column was empty.
+
 ## [0.4.0b1] - 2026-11-20 (beta)
 
 ### Breaking changes

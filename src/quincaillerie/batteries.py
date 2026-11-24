@@ -19,7 +19,7 @@ asset, so it sits on a floor where it is placed; its seat is on top of its 2 mm 
 from __future__ import annotations
 
 import numpy as np
-from pxr import Sdf
+from pxr import Sdf, UsdPhysics
 
 from . import physx
 from .catalog import CELLS, label_9v_size, wrapper_span
@@ -660,6 +660,9 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
     com = (cen * vols[:, None]).sum(0) / vols.sum()
     ext = np.ptp(np.vstack([cen - halves, cen + halves]), axis=0)
     rigid_body(stage.GetPrimAtPath(B), mb, com, box_inertia(mb, ext), kinematic=fixed_base)
+    mass = sum(  # base, spring plate or clip: the mass of the pack's table
+        p.GetAttribute("physics:mass").Get() for p in stage.Traverse() if p.HasAPI(UsdPhysics.RigidBodyAPI)
+    )
     finish_variants(stage, root, [subsets["plastic"]], ["abs_black", "abs_grey"], hv.plastic)
     set_attrs(
         root,
@@ -675,4 +678,4 @@ def write_holder(path, name, fixed_base=False, hv=None, root_name=None):
         ),
     )
     _save(stage, "holder")
-    return dict(name=root_name, kind="holder", format=name, family=kind, **as_attrs(hv))
+    return dict(name=root_name, kind="holder", format=name, family=kind, mass_g=mass * 1e3, **as_attrs(hv))

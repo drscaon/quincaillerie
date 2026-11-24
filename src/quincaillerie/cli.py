@@ -8,6 +8,7 @@ import time
 
 from . import __version__
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
+from .contract import ENGINES, engine_list
 from .fasteners import COLLIDERS
 from .materials import FINISHES
 from .variation import ASPECTS, THREAD_PLAY
@@ -76,6 +77,7 @@ def cmd_generate(args):
         detail=args.detail,
         collider=args.collider,
         thread_play=args.thread_play,
+        engines=args.engines,
     )
     print(f"{len(res.parts)} assets in {res.out_dir}/assets ({time.time() - t0:.1f}s)")
     if len(res.parts) > 12:  # a summary, not every line
@@ -175,6 +177,13 @@ def build_parser():
     g.add_argument("--out", default="output")
     g.add_argument("--no-scene", action="store_true", help="assets and materials only")
     g.add_argument("--no-physics", action="store_true", help="visual assets only: no rigid bodies, colliders or joints")
+    g.add_argument(
+        "--engines",
+        type=engine_list,
+        default=ENGINES,
+        metavar="LIST",
+        help=f"engine layers written beside each file, comma-separated, or none (default: {','.join(ENGINES)})",
+    )
     g.set_defaults(func=cmd_generate)
     s = sub.add_parser("sim-test", help="MuJoCo checks of a generated set")
     s.add_argument("dir")

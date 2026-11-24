@@ -123,8 +123,9 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
   visual mesh (so every DCC imports one object per body), mass, centre of
   mass and principal inertia, convex collision shapes, physics materials,
   joints with drives, mate frames (thread axis, drive, terminals, cell seat).
-  The files hold nothing specific to an engine: what only PhysX reads (Isaac
-  Sim) is a layer over each file, `<file>_physx.usda`. A shared material
+  The files hold nothing specific to an engine: what only PhysX (Isaac Sim) or
+  Newton reads is a layer over each file, `<file>_physx.usda` and
+  `<file>_newton.usda`. A shared material
   library in UsdPreviewSurface and MaterialX.
 - **Checks** (`quincaillerie sim-test`, `quincaillerie blender-test`): the
   same scenes, read back from the files, in MuJoCo and in Blender.
@@ -206,6 +207,7 @@ and a nut screwed on in MuJoCo.
 | `materials/` | `quincaillerie_materials.usda` (UsdPreviewSurface + MaterialX), `.mtlx`, textures; `instances/`: the baked textures of worn instances |
 | `scene.usda` | every instance on the shared ground (see below), plus the assemblies |
 | `assets/*_physx.usda`, `scene_physx.usda` | the same files with the PhysX settings (Isaac Sim): a layer over each file, to open instead of it, see [PhysX layer](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md#physx-layer) |
+| `assets/*_newton.usda`, `scene_newton.usda` | the same with what Newton needs: contact gaps, holders as articulations, see [Newton layer](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md#newton-layer) |
 | `instances.csv` | one row per instance, read back from the files: its identity, its classes (the [semantic labels](https://github.com/drscaon/quincaillerie/blob/main/docs/openusd.md) renderers turn into segmentation masks), **every drawn value** (`variation:<name>`) and **every measured value** (`measured:<name>`), then its kind, size or format: the ground truth |
 | `manifest.json` | what the pack is (contract, generator, version, preset, seed, aspects, files) and its summary: counts by kind and by defect, the options used |
 | `sim_test/` | test scenes and reports (`sim-test`, `blender-test`) |

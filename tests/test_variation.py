@@ -7,7 +7,7 @@ import os
 import numpy as np
 from pxr import Usd, UsdGeom, UsdPhysics
 
-from quincaillerie import fits
+from quincaillerie import contract, fits
 from quincaillerie.fasteners import _bend, _widen
 from quincaillerie.threads import iso_profile, segments
 from quincaillerie.variation import ASPECTS, FastenerVariation, Sampler
@@ -97,7 +97,7 @@ def test_bend_moves_the_tip():
 
 
 def test_varied_set_files_and_ground_truth(varied_set):
-    files = sorted(f for f in os.listdir(os.path.join(varied_set.out_dir, "assets")) if "_physx" not in f)
+    files = sorted(f for f in os.listdir(os.path.join(varied_set.out_dir, "assets")) if not contract.is_engine_layer(f))
     assert len(files) == 20 and "ISO4017_M6x12_004.usdc" in files and "Holder_AA_004.usda" in files
     with open(os.path.join(varied_set.out_dir, "instances.csv")) as f:
         rows = list(csv.DictReader(f))

@@ -6,7 +6,7 @@ import os
 import pytest
 from pxr import Sdf, Usd, UsdPhysics
 
-from quincaillerie import generate, physx, resolve
+from quincaillerie import contract, generate, physx, resolve
 from quincaillerie.sim.checks import inventory
 from quincaillerie.validate import validate
 
@@ -19,7 +19,7 @@ def pack(tmp_path_factory):
 
 def _files(pack):
     files = sorted(glob.glob(os.path.join(pack, "**", "*.usd*"), recursive=True))
-    return [f for f in files if not physx.is_overlay(f)], [f for f in files if physx.is_overlay(f)]
+    return [f for f in files if not contract.is_engine_layer(f)], [f for f in files if physx.is_overlay(f)]
 
 
 def test_the_files_hold_no_engine_data(pack):

@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from pxr import Gf, Usd, UsdGeom
 
+from quincaillerie import contract
 from quincaillerie.batteries import FLOOR_T, write_cell, write_holder
 from quincaillerie.catalog import CELLS, DEFAULT_LENGTH, METRIC
 from quincaillerie.fasteners import write_nut, write_screw
@@ -116,7 +117,7 @@ def test_a_cell_whose_seat_frame_coincides_with_the_holders_is_seated(parts, fmt
 def test_a_varied_cell_rests_on_the_bed_by_its_own_size(varied_set):
     """The seat frame of a cell made larger or smaller is where that cell touches the bed."""
     cells = sorted((Path(varied_set.out_dir) / "assets").glob("Cell_*.usd*"))
-    cells = [f for f in cells if "_physx" not in f.name]
+    cells = [f for f in cells if not contract.is_engine_layer(f)]
     assert cells
     for f in cells:
         stage = Usd.Stage.Open(str(f))
