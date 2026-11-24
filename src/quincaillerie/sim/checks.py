@@ -31,6 +31,7 @@ from pxr import Usd, UsdGeom, UsdPhysics
 
 from ..batteries import FLOOR_T, holder_design, insertion_keys, key_pose
 from ..catalog import CELLS, METRIC
+from ..contract import is_engine_layer
 from ..scenes import add_ref, centre_height, drop_pose, new_scene, origin_for, save, seated_overrides, under_head
 from ..usd import place, q2m, qmul
 from .mujoco_model import convert, scene
@@ -45,7 +46,7 @@ def inventory(set_dir):
     """{name: dict(kind, key, file, defect, ...)} for every asset under set_dir/assets, in name order."""
     out = {}
     for f in sorted(glob.glob(os.path.join(set_dir, "assets", "*.usd*"))):
-        if os.path.splitext(f)[0].endswith("_physx"):  # the PhysX layer of an asset, not an asset
+        if is_engine_layer(f):  # an engine layer of an asset, not an asset
             continue
         st = Usd.Stage.Open(f)
         root = st.GetDefaultPrim()

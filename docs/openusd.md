@@ -43,7 +43,7 @@ Angular drives use UsdPhysics units (per degree). The root of each part says fro
 (`quincaillerie:contactOffset`: 0.1 mm for a threaded part, below twice the
 thread clearance; 0.5 mm for cells and holders). It is a request to the
 engine, not an engine setting: the Blender add-on takes a tenth of it as its
-collision margin, and the PhysX layer copies it.
+collision margin, and the PhysX and Newton layers copy it.
 
 ## PhysX layer
 
@@ -63,6 +63,25 @@ nothing: it references the layer of each part on top of the part.
 `python -m quincaillerie.physx <folder>` checks the layers of a set; the
 OpenUSD validators run on them in CI. Not simulated: see
 [Limits](limits.md#limits).
+
+## Newton layer
+
+What Newton needs and cannot guess from the file is a second layer beside it,
+built the same way: `assets/<part>_newton.usda` and `scene_newton.usda`.
+
+| On | What | Value |
+|---|---|---|
+| every collider but the ground | `newton:contactGap`, the distance from which contacts are generated | the asset's `quincaillerie:contactOffset`: 0.1 mm for fasteners, 0.5 mm for cells and holders. Newton's own default, 0.1 m, is meant for robots and floods its contact buffer with parts this small |
+| a battery holder's root | `PhysicsArticulationRootAPI` | the base and its spring plate or clip become one articulation. UsdPhysics simulates joints outside an articulation as constraints, but Newton 1.8 refuses them |
+
+The articulation is in the Newton layer only, so the file and its PhysX layer
+are unchanged. `python -m quincaillerie.newton <folder>` checks the layers of
+a set. Primvaria's CI opens them in Newton 1.8 on CPU, with its XPBD solver:
+every part of the catalogue at rest after a drop, its mass as in the pack.
+
+`generate --engines` chooses the layers: `physx,newton` (or the default, which
+also names `omniphysics`, a layer Quincaillerie has nothing for), `physx`,
+`newton`, or `none`.
 
 ## Ground and physics scene (the same in every Primvaria project)
 

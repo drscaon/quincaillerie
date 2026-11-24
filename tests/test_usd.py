@@ -5,6 +5,7 @@ import os
 import numpy as np
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade
 
+from quincaillerie import contract
 from quincaillerie.batteries import FLOOR_T, holder_design, spring_design
 
 
@@ -106,7 +107,7 @@ def test_every_part_rests_on_z_0_of_its_file(varied_set):
     from pathlib import Path
 
     purposes = [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.guide]
-    files = [f for f in sorted((Path(varied_set.out_dir) / "assets").glob("*.usd*")) if "_physx" not in f.name]
+    files = [f for f in sorted((Path(varied_set.out_dir) / "assets").glob("*.usd*")) if not contract.is_engine_layer(f)]
     assert {f.name.split("_")[0] for f in files} >= {"ISO4017", "ISO4032", "Cell", "Holder"}
     for f in files:
         stage = Usd.Stage.Open(str(f))

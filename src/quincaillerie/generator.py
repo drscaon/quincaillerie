@@ -21,6 +21,7 @@ import numpy as np
 
 from .batteries import write_cell, write_holder
 from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset_name
+from .contract import ENGINES
 from .fasteners import write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .pack import write_pack
@@ -135,6 +136,7 @@ def generate(
     detail="normal",
     collider="thread",
     thread_play="class",
+    engines=ENGINES,
 ):
     """Write `count` instances of each part, the material library and a scene. Returns a Result.
 
@@ -143,7 +145,12 @@ def generate(
     only: no rigid bodies, colliders, joints or physics scene. collider: "thread" (fasteners screw
     and jam) or "simple" (their envelope alone, for large scenes; see fasteners.COLLIDERS).
     thread_play: how the thread clearance is chosen: "class" (drawn in the 6g / 6H fit), "middle"
-    (the middle of the fit for every instance) or "legacy" (the range used before the fit classes)."""
+    (the middle of the fit for every instance) or "legacy" (the range used before the fit classes).
+    engines: the engine layers written beside each file with physics, among ENGINES (contract,
+    section 9); Quincaillerie writes "physx" and "newton", and has nothing for "omniphysics"."""
+    unknown = set(engines) - set(ENGINES)
+    if unknown:
+        raise ValueError(f"unknown engine {sorted(unknown)[0]!r}; expected some of {', '.join(ENGINES)}")
     if finish not in FINISHES:
         raise ValueError(f"unknown finish {finish!r}; expected one of {', '.join(FINISHES)}")
     set_name = set_name or parts[0].name
@@ -173,12 +180,14 @@ def generate(
 
                 strip_physics(Usd.Stage.Open(os.path.join(root, info["file"])))
                 info.pop("colliders", None)
+            engine_layers(os.path.join(root, info["file"]), physics, engines)
             res.parts.append(info)
             instances.setdefault(p, []).append(info)
     if scene:
         res.scene = write_scene(
             os.path.join(root, "scene.usda"), parts, instances, root, count, finish, seed, physics, bool(vary)
         )
+        engine_layers(res.scene, physics, engines)
     summary = dict(
         set=set_name,
         parts=len(res.parts),
@@ -203,6 +212,21 @@ def generate(
     extra = {row["name"]: {k: row[k] for k in own if row.get(k) is not None} for row in res.parts}
     write_pack(root, set_name, seed, vary, summary=summary, extra=extra)
     return res
+
+
+def engine_layers(path, physics, engines) -> None:
+    """Leave beside a file the engine layers asked for: the PhysX layer is written with the file
+    (physx.py), the Newton layer here, after the file's identity is stamped (newton.py)."""
+    stem, _ = os.path.splitext(path)
+    if not physics or "physx" not in engines:
+        if os.path.exists(f"{stem}_physx.usda"):
+            os.remove(f"{stem}_physx.usda")
+    if os.path.exists(f"{stem}_newton.usda"):
+        os.remove(f"{stem}_newton.usda")
+    if physics and "newton" in engines:
+        from .newton import write_overlay
+
+        write_overlay(path)
 
 
 ROW = 25  # instances of one part side by side in the scene, before a new row
