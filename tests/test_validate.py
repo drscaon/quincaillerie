@@ -7,6 +7,7 @@ import pytest
 from quincaillerie.validate import main, usd_files, validate
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("fixture", ["small_set", "varied_set"])
 def test_openusd_validators(fixture, request):
     files = usd_files([request.getfixturevalue(fixture).out_dir])

@@ -12,6 +12,7 @@ def scenes(small_set):
     return {name: (kind, path, info) for name, kind, path, info in build_test_scenes(small_set.out_dir)}
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("name", ["drop_ISO7089_M4", "drop_Cell_AA", "holder_AA", "seated_AA", "nut_on_screw_M4"])
 def test_gravity(scenes, name):
     kind, path, info = scenes[name]
@@ -28,6 +29,7 @@ def test_insertion_aa(small_set, reverse):
     assert r["polarity"] == ("reversed" if reverse else "correct")
 
 
+@pytest.mark.slow
 def test_a_scene_of_simple_fasteners_settles(tmp_path):
     from quincaillerie import generate, resolve
     from quincaillerie.sim.checks import build_test_scenes, settle_scene
