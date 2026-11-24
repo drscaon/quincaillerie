@@ -61,6 +61,7 @@ def parts(tmp_path_factory):
     return found
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("size", list(METRIC))
 def test_a_nut_whose_frame_coincides_is_on_the_screw_against_its_head(parts, size):
     """Thread: the plane is the face under the head, and the screw goes through the nut along +Z."""

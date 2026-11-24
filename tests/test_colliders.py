@@ -42,6 +42,7 @@ def test_nut_wedges_leave_the_bore_free_and_fill_the_hexagon():
         assert set(pts[:, 2].round(12)) == {0.0, round(height, 12)}
 
 
+@pytest.mark.slow
 def test_simple_colliders_are_few_and_change_nothing_else(sets):
     thread, simple = _rows(sets["thread"]), _rows(sets["simple"])
     assert thread.keys() == simple.keys()
@@ -89,6 +90,7 @@ def test_command_line(tmp_path):
     assert all(int(r["measured:colliders"]) <= 8 for r in rows)
 
 
+@pytest.mark.slow
 def test_a_large_scene_lays_its_rows_on_a_floor_that_covers_them(tmp_path):
     from pxr import UsdGeom
 

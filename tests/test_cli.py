@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from quincaillerie import __version__
 from quincaillerie.cli import main
 
@@ -18,6 +20,7 @@ def test_list(capsys):
     assert "M12" in out and "CR2032" in out and "zinc_clear" in out
 
 
+@pytest.mark.slow
 def test_generate_and_blender_addon(tmp_path, capsys):
     assert main(["generate", "washer", "M5", "--with", "nut", "--no-scene", "--out", str(tmp_path)]) == 0
     assert sorted(os.listdir(tmp_path / "ISO7089_M5" / "assets")) == [
@@ -42,6 +45,7 @@ def test_generate_and_blender_addon(tmp_path, capsys):
     assert sorted(names) == ["__init__.py", "blender_manifest.toml"]
 
 
+@pytest.mark.slow
 def test_no_physics(tmp_path):
     from pxr import Usd, UsdPhysics
 
