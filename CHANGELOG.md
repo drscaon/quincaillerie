@@ -15,6 +15,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   changes for code that imports them or for `python -m quincaillerie.conformance`. The contract
   tests on stages written by hand moved to primvaria-contract; `tests/test_contract.py`
   keeps the tests of this generator's files.
+- `quincaillerie.validate` (the OpenUSD validators) comes from primvaria-contract too, which this
+  generator now requires at 0.2.0b1 or later; `python -m quincaillerie.validate` works as before. It now also reports a path that does not exist (`not found`) and fails, as Filaire's did.
 - CI runs at two levels. On a commit (push to main, pull request): the tests not marked
   `slow` on Ubuntu and Python 3.12 only, and the engine checks on the varied batches only (the whole catalogue before a release). Before a release and with the "Run
   workflow" button: every test, platform and Python, the oldest OpenUSD and every
