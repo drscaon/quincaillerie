@@ -74,8 +74,9 @@ SOURCES = {
     "tip_chamfer": Source(
         "estimate",
         "the chamfer at the tip of a screw or bolt",
-        note="ISO 4753, which sets it, is not public; the tables only say the point is chamfered (up to M4 it may be "
-        "left as rolled). Drawn from the minor to the major diameter over one pitch",
+        note="the standard for the ends of threaded parts (ISO 4753) is not public, and the tables used here give "
+        "no size for the chamfer; Quincaillerie cuts it from the thread's minor to its major diameter over one "
+        "pitch",
     ),
     "fillet_shape": Source(
         "estimate",
