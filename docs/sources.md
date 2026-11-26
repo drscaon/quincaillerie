@@ -152,6 +152,198 @@ The table is written from `quincaillerie/sources.py`
 | `UNDER_HEAD.M12.c.max` | 0.6 | mm |  | [jisb1180](#jisb1180) |
 | `UNDER_HEAD.M12.r_min` | 0.6 | mm |  | [jisb1180](#jisb1180) |
 | `UNDER_HEAD.M12.da_max` | 13.7 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `CAP_SCREW.M3.socket` | 2.5 | mm |  to 2.52 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.b` | 18 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.dk.min` | 5.32 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.dk.max` | 5.5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.k.min` | 2.86 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.k.max` | 3 | mm |  to 3 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.s.min` | 2.52 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.s.max_8.8_10.9` | 2.58 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.s.max_12.9` | 2.56 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.t_min` | 1.3 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.w_min` | 1.15 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.v_max` | 0.3 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.dw_min` | 5.07 | mm |  to 5.32 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.ds_min` | 2.86 | mm |  to 3 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.full_to` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.5` | 5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.6` | 6 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.8` | 8 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.10` | 10 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.12` | 12 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M3.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.socket` | 3 | mm |  to 3.02 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.b` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.dk.min` | 6.78 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.dk.max` | 7 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.k.min` | 3.82 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.k.max` | 4 | mm |  to 4 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.s.min` | 3.02 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.s.max_8.8_10.9` | 3.08 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.s.max_12.9` | 3.08 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.t_min` | 2 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.w_min` | 1.4 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.v_max` | 0.4 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.dw_min` | 6.53 | mm |  to 6.78 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.ds_min` | 3.82 | mm |  to 4 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.full_to` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.6` | 6 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.8` | 8 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.10` | 10 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.12` | 12 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M4.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.socket` | 4 | mm |  to 4.02 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.b` | 22 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.dk.min` | 8.28 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.dk.max` | 8.5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.k.min` | 4.82 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.k.max` | 5 | mm |  to 5 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.s.min` | 4.02 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.s.max_8.8_10.9` | 4.095 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.s.max_12.9` | 4.095 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.t_min` | 2.5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.w_min` | 1.9 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.v_max` | 0.5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.dw_min` | 8.03 | mm |  to 8.28 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.ds_min` | 4.82 | mm |  to 5 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.full_to` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.8` | 8 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.10` | 10 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.12` | 12 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.45` | 45 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M5.lengths.50` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.socket` | 5 | mm |  to 5.02 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.b` | 24 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.dk.min` | 9.78 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.dk.max` | 10 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.k.min` | 5.7 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.k.max` | 6 | mm |  to 6 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.s.min` | 5.02 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.s.max_8.8_10.9` | 5.14 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.s.max_12.9` | 5.095 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.t_min` | 3 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.w_min` | 2.3 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.v_max` | 0.6 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.dw_min` | 9.38 | mm |  to 9.78 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.ds_min` | 5.82 | mm |  to 6 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.full_to` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.10` | 10 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.12` | 12 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.45` | 45 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.50` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.55` | 55 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M6.lengths.60` | 60 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.socket` | 6 | mm |  to 6.02 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.b` | 28 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.dk.min` | 12.73 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.dk.max` | 13 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.k.min` | 7.64 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.k.max` | 8 | mm |  to 8 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.s.min` | 6.02 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.s.max_8.8_10.9` | 6.14 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.s.max_12.9` | 6.095 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.t_min` | 4 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.w_min` | 3.3 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.v_max` | 0.8 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.dw_min` | 12.33 | mm |  to 12.73 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.ds_min` | 7.78 | mm |  to 8 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.full_to` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.12` | 12 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.45` | 45 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.50` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.55` | 55 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.60` | 60 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.65` | 65 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.70` | 70 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M8.lengths.80` | 80 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.socket` | 8 | mm |  to 8.025 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.b` | 32 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.dk.min` | 15.73 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.dk.max` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.k.min` | 9.64 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.k.max` | 10 | mm |  to 10 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.s.min` | 8.025 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.s.max_8.8_10.9` | 8.175 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.s.max_12.9` | 8.115 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.t_min` | 5 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.w_min` | 4 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.v_max` | 1 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.dw_min` | 15.33 | mm |  to 15.73 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.ds_min` | 9.78 | mm |  to 10 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.full_to` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.16` | 16 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.45` | 45 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.50` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.55` | 55 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.60` | 60 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.65` | 65 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.70` | 70 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.80` | 80 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.90` | 90 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M10.lengths.100` | 100 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.socket` | 10 | mm |  to 10.025 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.b` | 36 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.dk.min` | 17.73 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.dk.max` | 18 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.k.min` | 11.57 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.k.max` | 12 | mm |  to 12 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.s.min` | 10.025 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.s.max_8.8_10.9` | 10.175 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.s.max_12.9` | 10.115 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.t_min` | 6 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.w_min` | 4.8 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.v_max` | 1.2 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.dw_min` | 17.23 | mm |  to 17.73 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.ds_min` | 11.73 | mm |  to 12 | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.full_to` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.20` | 20 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.25` | 25 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.30` | 30 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.35` | 35 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.40` | 40 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.45` | 45 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.50` | 50 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.55` | 55 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.60` | 60 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.65` | 65 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.70` | 70 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.80` | 80 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.90` | 90 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.100` | 100 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.110` | 110 | mm |  | [jisb1176](#jisb1176) |
+| `CAP_SCREW.M12.lengths.120` | 120 | mm |  | [jisb1176](#jisb1176) |
 | `BOLT.M3.b` | 12 | mm |  | [jisb1180](#jisb1180) |
 | `BOLT.M3.ds_min` | 2.86 | mm |  to 3 | [jisb1180](#jisb1180) |
 | `BOLT.M3.lengths.20` | 20 | mm |  | [jisb1180](#jisb1180) |
@@ -346,6 +538,7 @@ The table is written from `quincaillerie/sources.py`
 | `fits: es of a g thread, per mm of pitch` | 11 | µm |  | [iso965](#iso965) |
 | `fits: Td2 grade 6, factor` | 90 | µm |  | [iso965](#iso965) |
 | `fits: TD2 grade 6 / Td2 grade 6` | 1.32 |  |  | [iso965](#iso965) |
+| `fits.GRADE_5_RATIO` | 0.8 |  |  | [iso965_grade5](#iso965_grade5) |
 | `fits.DIAMETER_STEPS.0.99-1.4` | 1.4 | mm |  | [iso965](#iso965) |
 | `fits.DIAMETER_STEPS.1.4-2.8` | 2.8 | mm |  | [iso965](#iso965) |
 | `fits.DIAMETER_STEPS.2.8-5.6` | 5.6 | mm |  | [iso965](#iso965) |
@@ -357,6 +550,8 @@ The table is written from `quincaillerie/sources.py`
 
 - <a id="iso4017"></a>**iso4017** (standard table): Westfield Fasteners, ISO 4017 hex head set screw specification: table 1 (pitch, s, k, product grade A) and table 3 (length tolerances). <https://westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4017-M-THRfull.pdf>
 - <a id="jisb1180"></a>**jisb1180** (standard table): Miki Pulley, hexagon bolts, excerpt from JIS B 1180 (part grade A, the ISO 4014 and ISO 4017 heads): b (reference, l up to 125 mm), ds, dw, c, r, and the nominal lengths with ls min and lg max; lg max = l - b, ls min = lg max - 5 P. <https://mikipulley.co.jp/EN/Services/Tech_data/tech09.html>
+- <a id="jisb1176"></a>**jisb1176** (standard table): Misumi, hexagon socket head cap screws, excerpts from JIS B 1176 (which corresponds to ISO 4762:2004): b, dk, k, s (8.8 and 10.9; 12.9), t, w, v, dw, ds, and the nominal lengths with ls min and lg max (lg max = l - b, ls min = lg max - 5 P; shorter lengths threaded to the head); lengths per size checked against Engineers Edge's ISO 4762 table. The length tolerance is the product grade A one, as for ISO 4017. <https://hu.misumi-ec.com/pdf/fa/2014/P2_1891-1892_F80_EN.pdf>, <https://engineersedge.com/iso_socket_head_screw.htm>
+- <a id="iso965_grade5"></a>**iso965_grade5** (handbook): Machinery's Handbook, 31st edition, pitch-diameter tolerances of external metric threads, Td2 by grade (ISO 965-1): grade 5 is 0.8 of grade 6 in every row (e.g. 0.200 / 0.250, 0.224 / 0.280 mm); 5g6g is a grade 5 pitch diameter in position g, the class ISO 4762 asks for property class 12.9. <https://online.flippingbook.com/view/954046886/656>, <https://amesweb.info/Fasteners/Screws/Metric-Hexagon-Socket-Head-Cap-Screw-Dimensions.aspx>
 - <a id="iso4014_westfield"></a>**iso4014_westfield** (standard table): Westfield Fasteners, ISO 4014 partly threaded hex bolts: table 1 (b, c, da, dw, r). <https://www.westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4014-M-THRpart.pdf>
 - <a id="tip_chamfer"></a>**tip_chamfer** (estimate): the chamfer at the tip of a screw or bolt. Estimate: ISO 4753, which sets it, is not public; the tables only say the point is chamfered (up to M4 it may be left as rolled). Drawn from the minor to the major diameter over one pitch
 - <a id="fillet_shape"></a>**fillet_shape** (estimate): the shape of the fillet under the head. Estimate: the tables give its radius r (r min, and r max = (da max - d) / 2), not its curve; a straight line from the bearing face to the shank stands for the arc

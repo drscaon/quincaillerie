@@ -8,6 +8,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Hexagon socket head cap screws, ISO 4762 (`quincaillerie generate cap_screw M8`, kind
+  `cap_screw`, files `ISO4762_<size>x<length>`), plain head, property class 8.8, 10.9 or 12.9
+  (`--property-class`, default 12.9). A cylindrical head with a hex socket ending in a 120° cone:
+  the head's diameter, height, the socket's across flats and depth, the top edge's chamfer and
+  the bearing circle under the head are drawn within the table's limits and recorded
+  (`primvaria:variation:head_d_mm`, `socket_depth_mm`, `top_chamfer_mm`, ...). The head collides
+  as six convex walls around the socket and a solid part under it, so a hex key goes in as
+  deep as the socket; `MateFrame_drive` (`drive = hex_socket`) sits at its mouth. Threaded to
+  the head up to a length per size, with a plain shank beyond, as a bolt's. One cap screw per
+  size joins the catalogue (55 assets). Values from a public excerpt of JIS B 1176, which
+  corresponds to ISO 4762.
+- Thread class 5g6g for class 12.9 cap screws: the pitch diameter's band is grade 5, 0.8 of
+  grade 6 (`fits.thread_class`, `fits.GRADE_5_RATIO`); 8.8 and 10.9 stay 6g. No other part's
+  draws change.
+
 - Hex head bolts, ISO 4014 (`quincaillerie generate bolt M8 --length 50`, kind `bolt`, files
   `ISO4014_<size>x<length>`): a plain shank under the head, then the thread over the reference
   length b. The shank's diameter (ds min to d) and where the thread starts (between ls min and

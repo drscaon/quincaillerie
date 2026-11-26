@@ -27,8 +27,9 @@ coincide. `tests/test_mate_frames.py` measures each one on the part's geometry.
 
 | Frame | On | Origin | +Z |
 |---|---|---|---|
-| `MateFrame_thread` | screw, nut | the face under the head; the nut's face against it | along the shank: the screw goes through the nut |
-| `MateFrame_drive` | screw, nut | where a socket's mouth is when it holds the whole hex | towards the socket: the head, or nut, goes in as deep as `quincaillerie:engagement` |
+| `MateFrame_thread` | screw, bolt, cap screw, nut | the face under the head; the nut's face against it | along the shank: the screw goes through the nut |
+| `MateFrame_drive` | screw, bolt, nut | where a socket's mouth is when it holds the whole hex | towards the socket: the head, or nut, goes in as deep as `quincaillerie:engagement` |
+| `MateFrame_drive` | cap screw | the mouth of its hex socket, on top of the head (`drive = hex_socket`) | into the head: a hex key goes in as deep as `quincaillerie:engagement`, the socket's depth t |
 | `MateFrame_plus`, `MateFrame_minus` | cell | the terminal's tip | out of the cell: the way the terminal presses on its contact |
 | `MateFrame_seat` | holder, cell | the holder's bed under the seated cell's centre; where the cell touches it | down into the bed; +X towards the + contact |
 

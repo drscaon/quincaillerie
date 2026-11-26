@@ -15,6 +15,7 @@ import pytest
 from quincaillerie import batteries, sources, variation
 from quincaillerie.catalog import (
     BOLT,
+    CAP_SCREW,
     CELL_MIN,
     CELLS,
     DEFAULT_LENGTH,
@@ -52,6 +53,29 @@ def test_every_number_of_the_catalogue_names_its_source():
         *(f"UNDER_HEAD.{size}.{n}" for size in UNDER_HEAD for n in ("dw_min", "c.min", "c.max", "r_min", "da_max")),
         *(f"BOLT.{size}.{n}" for size in BOLT for n in ("b", "ds_min")),
         *(f"BOLT.{size}.lengths.{length}" for size, b in BOLT.items() for length in b["lengths"]),
+        *(
+            f"CAP_SCREW.{size}.{n}"
+            for size in CAP_SCREW
+            for n in (
+                "socket",
+                "b",
+                "dk.min",
+                "dk.max",
+                "k.min",
+                "k.max",
+                "s.min",
+                "s.max_8.8_10.9",
+                "s.max_12.9",
+                "t_min",
+                "w_min",
+                "v_max",
+                "dw_min",
+                "ds_min",
+                "full_to",
+            )
+        ),
+        *(f"CAP_SCREW.{size}.lengths.{length}" for size, c in CAP_SCREW.items() for length in c["lengths"]),
+        "fits.GRADE_5_RATIO",
         *(f"LENGTH_TOLERANCE.{longest}" for longest, _ in LENGTH_TOLERANCE),
         "variation.STEEL_DENSITY",
         *(f"variation.DENSITY.{k}" for k in variation.DENSITY),
@@ -140,6 +164,37 @@ def test_drawn_under_the_head_and_shank_stay_within_the_table(size):
             assert lg - 5 * m["P"] - 1e-9 <= lp.min() and lp.max() <= lg + 1e-9, size
         else:
             assert all(r["shank_d_mm"] is None and r["plain_length_mm"] is None for r in rows)
+
+
+@pytest.mark.parametrize("size", list(METRIC))
+@pytest.mark.parametrize("property_class", ["8.8", "12.9"])
+def test_drawn_cap_screws_stay_within_the_table(size, property_class):
+    """ISO 4762 (QUI-08): head, socket, chamfer, bearing circle, fillet and a long screw's plain shank,
+    as instances get them, inside the table's limits; the socket's limit depends on the class."""
+    m, c = METRIC[size], CAP_SCREW[size]
+    sampler = Sampler(seed=13)
+    long = c["lengths"][-1]
+    rows = [
+        asdict(sampler.fastener("cap_screw", "black_oxide", m["P"], m["d"], long, property_class)) for _ in range(500)
+    ]
+
+    def within(column, lo, hi):
+        x = np.array([r[column] for r in rows], float)
+        assert lo - 1e-9 <= x.min() and x.max() <= hi + 1e-9, (column, size, property_class)
+
+    s_max = c["s"][2] if property_class == "12.9" else c["s"][1]
+    within("across_flats_dmm", c["s"][0] - c["socket"], s_max - c["socket"])
+    within("height_dmm", c["k"][0] - c["k"][1], 0.0)
+    within("head_d_mm", *c["dk"])
+    within("socket_depth_mm", c["t_min"], c["k"][0] - c["w_min"])
+    within("top_chamfer_mm", 0.0, c["v_max"])
+    within("bearing_face_d_mm", c["dw_min"], c["dk"][0])
+    within("shank_d_mm", c["ds_min"], m["d"])
+    lg = long - c["b"]
+    within("plain_length_mm", lg - 5 * m["P"], lg)
+    assert {r["thread_class"] for r in rows} == {"5g6g" if property_class == "12.9" else "6g"}
+    short = sampler.fastener("cap_screw", "black_oxide", m["P"], m["d"], c["full_to"], property_class)
+    assert short.plain_length_mm is None and short.shank_d_mm is None  # threaded to the head
 
 
 @pytest.mark.parametrize("fmt", list(CELLS))

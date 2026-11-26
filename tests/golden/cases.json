@@ -36,6 +36,26 @@
    ]
   },
   {
+   "name": "cap_screw_m8_long_10_9",
+   "args": [
+    "generate",
+    "cap_screw",
+    "M8",
+    "--length",
+    "60",
+    "--property-class",
+    "10.9",
+    "--with",
+    "nut",
+    "--count",
+    "3",
+    "--collider",
+    "simple",
+    "--seed",
+    "11"
+   ]
+  },
+  {
    "name": "nut_m6_defects_middle",
    "args": [
     "generate",

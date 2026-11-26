@@ -7,7 +7,20 @@ import sys
 import time
 
 from . import __version__
-from .catalog import BOLT, CELLS, DEFAULT_BOLT_LENGTH, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
+from .catalog import (
+    BOLT,
+    CAP_SCREW,
+    CELLS,
+    DEFAULT_BOLT_LENGTH,
+    DEFAULT_LENGTH,
+    DEFAULT_PROPERTY_CLASS,
+    KINDS,
+    LENGTHS,
+    METRIC,
+    PROPERTY_CLASSES,
+    RELATED,
+    SIZES,
+)
 from .contract import ENGINES, engine_list
 from .fasteners import COLLIDERS
 from .materials import FINISHES
@@ -42,6 +55,14 @@ def cmd_list(args):
             f"    {s:5s} {b['lengths'][0]:g} to {b['lengths'][-1]:g}, thread b {b['b']:g}",
             f" ISO4014_{s}x{DEFAULT_BOLT_LENGTH[s]}",
         )
+    print("  cap screws (ISO 4762), lengths (mm), threaded to the head up to, socket s and default:")
+    for s, c in CAP_SCREW.items():
+        print(
+            f"    {s:5s} {c['lengths'][0]:g} to {c['lengths'][-1]:g}, full thread to {c['full_to']:g},",
+            f"s {c['socket']:g} ",
+            f" ISO4762_{s}x{DEFAULT_LENGTH[s]}",
+        )
+    print("  property classes (cap screws):", " ".join(PROPERTY_CLASSES), f"(default {DEFAULT_PROPERTY_CLASS})")
     print("  finishes:", " ".join(FINISHES))
     print("Cells and holders, formats:")
     for f, c in CELLS.items():
@@ -64,10 +85,13 @@ def cmd_generate(args):
         set_name = "catalog"
     else:
         if not args.key:
-            print("generate: give a size (screw, bolt, nut, washer) or a cell format (cell, holder)", file=sys.stderr)
+            print(
+                "generate: give a size (screw, bolt, cap_screw, nut, washer) or a cell format (cell, holder)",
+                file=sys.stderr,
+            )
             return 2
         with_ = [w for w in (args.with_ or "").split(",") if w]
-        parts = resolve(args.kind, args.key, args.length, with_)
+        parts = resolve(args.kind, args.key, args.length, with_, args.property_class)
         set_name = None
     res = generate(
         parts,
@@ -145,9 +169,16 @@ def build_parser():
     g = sub.add_parser("generate", help="write assets, materials and a scene")
     g.add_argument("kind", choices=list(KINDS) + ["all"], help="part kind, or 'all' for the whole catalogue")
     g.add_argument(
-        "key", nargs="?", help="size (M3..M12) for screw/bolt/nut/washer, format (AA, 18650, CR2032...) for cell/holder"
+        "key",
+        nargs="?",
+        help="size (M3..M12) for screw/bolt/cap_screw/nut/washer, format (AA, 18650, CR2032...) for cell/holder",
     )
-    g.add_argument("--length", type=float, help="screw or bolt length in mm (default: per size)")
+    g.add_argument("--length", type=float, help="screw, bolt or cap screw length in mm (default: per size)")
+    g.add_argument(
+        "--property-class",
+        choices=list(PROPERTY_CLASSES),
+        help=f"a cap screw's property class (default {DEFAULT_PROPERTY_CLASS}): 12.9 is threaded 5g6g, the others 6g",
+    )
     g.add_argument(
         "--with", dest="with_", metavar="KINDS", help="related elements, comma-separated: nut,washer / holder / cell"
     )

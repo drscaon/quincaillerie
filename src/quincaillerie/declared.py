@@ -163,9 +163,27 @@ _SHANK = [
     ("plain_length_mm", "tolerance", ("cited",), ""),
 ]
 _at = [row[0] for row in DECLARED["screw"]].index("fillet_r_mm") + 1
+# a cap screw (ISO 4762, class 12.9 by default: thread 5g6g): its socket's across flats is the
+# across_flats column, and its head draws its own sizes; a plain shank only on the lengths longer
+# than its size's fully threaded ones (drawn here at 60 mm: an M8 of 60 mm has one)
+_CAP_HEAD = [
+    ("head_d_mm", "tolerance", ("cited",), ""),
+    ("socket_depth_mm", "tolerance", ("cited",), ""),
+    ("top_chamfer_mm", "tolerance", ("cited",), ""),
+    ("bearing_face_d_mm", "tolerance", ("cited",), ""),
+    ("fillet_r_mm", "tolerance", ("cited",), ""),
+]
+_screw = DECLARED["screw"]
+_at_length = [row[0] for row in _screw].index("length_dmm") + 1
+_cap = [
+    ("thread_class", "tolerance", ("constant", "5g6g"), "") if row[0] == "thread_class" else row
+    for row in _screw[:_at_length]
+]
+_cap += _CAP_HEAD + _SHANK + _screw[_at:]
 DECLARED = {
     "screw": DECLARED["screw"],
     "bolt": DECLARED["screw"][:_at] + _SHANK + DECLARED["screw"][_at:],
+    "cap_screw": _cap,
     **{part: rows for part, rows in DECLARED.items() if part != "screw"},
 }
 
@@ -183,6 +201,12 @@ EFFECT = {
     ),
     ("bolt", "defect_angle_deg"): "how far around the thread the crush or the burr extends",
     ("bolt", "defect_size"): "how deep the crush is, how far the shank bends, how high the burr stands",
+    ("cap_screw", "defect_z"): (
+        "a crushed thread: where along the threaded part, and where around it starts; a burr: where around the tip "
+        "it starts"
+    ),
+    ("cap_screw", "defect_angle_deg"): "how far around the thread the crush or the burr extends",
+    ("cap_screw", "defect_size"): "how deep the crush is, how far the shank bends, how high the burr stands",
     ("nut", "defect_z"): "where along the bore the crushed thread is, and where around it starts",
     ("nut", "defect_angle_deg"): "how far around the bore the crush extends",
     ("washer", "defect_size"): "the height of the cone at the rim",

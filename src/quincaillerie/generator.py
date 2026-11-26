@@ -22,19 +22,22 @@ import numpy as np
 from .batteries import write_cell, write_holder
 from .catalog import (
     BOLT,
+    CAP_SCREW,
     CELLS,
     DEFAULT_BOLT_LENGTH,
     DEFAULT_LENGTH,
+    DEFAULT_PROPERTY_CLASS,
     FASTENERS,
     KINDS,
     METRIC,
+    PROPERTY_CLASSES,
     RELATED,
     SIZES,
     THREADED,
     asset_name,
 )
 from .contract import ENGINES
-from .fasteners import write_bolt, write_nut, write_screw, write_washer
+from .fasteners import write_bolt, write_cap_screw, write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .pack import write_pack
 from .scenes import (
@@ -57,7 +60,8 @@ from .variation import ASPECTS, Sampler
 class Part:
     kind: str
     key: str  # size (M8) or cell format (AA)
-    length: float | None = None  # screws and bolts, mm
+    length: float | None = None  # screws, bolts and cap screws, mm
+    property_class: str | None = None  # cap screws: 8.8, 10.9 or 12.9
 
     @property
     def name(self) -> str:
@@ -65,7 +69,7 @@ class Part:
 
     @property
     def filename(self) -> str:
-        return self.name + (".usdc" if self.kind in ("screw", "bolt", "nut") else ".usda")
+        return self.name + (".usdc" if self.kind in ("screw", "bolt", "cap_screw", "nut") else ".usda")
 
 
 @dataclass
@@ -75,8 +79,9 @@ class Result:
     scene: str | None = None
 
 
-def resolve(kind, key, length=None, with_=()):
-    """The parts of a request: the main part and the related elements asked with `with_`."""
+def resolve(kind, key, length=None, with_=(), property_class=None):
+    """The parts of a request: the main part and the related elements asked with `with_`.
+    property_class: a cap screw's (8.8, 10.9 or 12.9; default 12.9)."""
     if kind not in KINDS:
         raise ValueError(f"unknown kind {kind!r}; expected one of {', '.join(KINDS)}")
     fast = kind in FASTENERS
@@ -98,20 +103,41 @@ def resolve(kind, key, length=None, with_=()):
             raise ValueError(
                 f"bolt length {length:g} mm out of range: an ISO 4014 {key} bolt is {lengths[0]} to {lengths[-1]} mm"
             )
-    parts = [Part(kind, key, length if kind in THREADED else None)]
+    if kind == "cap_screw":
+        length = float(length or DEFAULT_LENGTH[key])
+        lengths = CAP_SCREW[key]["lengths"]
+        if not lengths[0] <= length <= lengths[-1]:
+            raise ValueError(
+                f"cap screw length {length:g} mm out of range: an ISO 4762 {key} screw is {lengths[0]} to "
+                f"{lengths[-1]} mm"
+            )
+    if property_class is not None:
+        if "cap_screw" not in (kind, *with_):
+            raise ValueError("--property-class: only for a cap screw")
+        if property_class not in PROPERTY_CLASSES:
+            raise ValueError(
+                f"unknown property class {property_class!r}; expected one of {', '.join(PROPERTY_CLASSES)}"
+            )
+    pclass = property_class or DEFAULT_PROPERTY_CLASS
+
+    def part(k, length):
+        return Part(k, key, length if k in THREADED else None, pclass if k == "cap_screw" else None)
+
+    parts = [part(kind, length)]
     for w in with_:
         default = DEFAULT_BOLT_LENGTH if w == "bolt" else DEFAULT_LENGTH
-        parts.append(Part(w, key, (length or default[key]) if w in THREADED else None))
+        parts.append(part(w, (length or default[key]) if w in THREADED else None))
     return parts
 
 
 def catalog_parts():
-    """Every part of the catalogue: per size a screw and a bolt (default lengths), a nut, a washer;
-    every cell and its holder."""
+    """Every part of the catalogue: per size a screw, a bolt and a cap screw (default lengths, the
+    cap screw of class 12.9), a nut, a washer; every cell and its holder."""
     out = []
     for s in SIZES:
         out += [Part("screw", s, float(DEFAULT_LENGTH[s])), Part("nut", s), Part("washer", s)]
         out += [Part("bolt", s, float(DEFAULT_BOLT_LENGTH[s]))]
+        out += [Part("cap_screw", s, float(DEFAULT_LENGTH[s]), DEFAULT_PROPERTY_CLASS)]
     for f in CELLS:
         out += [Part("cell", f), Part("holder", f)]
     return out
@@ -125,6 +151,10 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
         info = write_screw(path, part.key, part.length, finish, variation, name, detail, collider)
     elif part.kind == "bolt":
         info = write_bolt(path, part.key, part.length, finish, variation, name, detail, collider)
+    elif part.kind == "cap_screw":
+        info = write_cap_screw(
+            path, part.key, part.length, finish, variation, name, detail, collider, part.property_class
+        )
     elif part.kind == "nut":
         info = write_nut(path, part.key, finish, variation, name, detail, collider)
     elif part.kind == "washer":
@@ -141,7 +171,8 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
 def draw(sampler, part, finish):
     """The variation of the next instance of a part."""
     if part.kind in FASTENERS:
-        return sampler.fastener(part.kind, finish, METRIC[part.key]["P"], METRIC[part.key]["d"], part.length)
+        m = METRIC[part.key]
+        return sampler.fastener(part.kind, finish, m["P"], m["d"], part.length, part.property_class)
     kind = CELLS[part.key]["kind"]
     return sampler.cell(part.key, kind) if part.kind == "cell" else sampler.holder(part.key, kind)
 
@@ -293,9 +324,9 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
     y += 0.01
     x = 0.0
     for p in parts:
-        # one assembly per size: with the screw, or with the bolt when there is no screw of that size
-        lone_bolt = p.kind == "bolt" and ("screw", p.key) not in by
-        if (p.kind == "screw" or lone_bolt) and ("nut", p.key) in by:
+        # one assembly per size: with the screw, else the bolt, else the cap screw of that size
+        first = next(k for k in THREADED if (k, p.key) in by) if p.kind in THREADED else None
+        if p.kind == first and ("nut", p.key) in by:
             t = METRIC[p.key]
             k = under_head(sound(p))  # the screw stands on its head; its own head height
             add_ref(st, f"assembly_{p.name}", sound(p), (x, y, 0), (1, 0, 0, 0))
