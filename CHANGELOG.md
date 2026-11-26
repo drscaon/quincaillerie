@@ -6,6 +6,31 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Hex head bolts, ISO 4014 (`quincaillerie generate bolt M8 --length 50`, kind `bolt`, files
+  `ISO4014_<size>x<length>`): a plain shank under the head, then the thread over the reference
+  length b. The shank's diameter (ds min to d) and where the thread starts (between ls min and
+  lg max: lg max = l − b, ls min = lg max − 5 P) are drawn per instance and recorded
+  (`primvaria:variation:shank_d_mm`, `plain_length_mm`), with the colliders following them. The
+  lengths are those of each size's table (M3: 20 to 30 mm, M12: 50 to 120 mm); one bolt per
+  size joins the catalogue (48 assets). Values from a public excerpt of JIS B 1180 (part grade A),
+  see `docs/sources.md`.
+- Under the head of every screw and bolt: a bearing face (diameter dw from dw min to s min,
+  height c) and a fillet (radius r from r min to (da max − d) / 2), drawn per instance, in the
+  visual mesh, the mass and the colliders (`primvaria:variation:bearing_face_d_mm`,
+  `bearing_face_h_mm`, `fillet_r_mm`). These draws come from a stream of their own: no value
+  drawn before changes for a given seed. A part built without a sampler takes the middle of
+  each range.
+
+### Changed values
+
+- ISO 4017 screws: the hex now ends at the bearing face, the fillet is added; the mass of an
+  M8 × 30 goes down by about 0.4 % (15.40 to 15.35 g) and `--collider simple` writes 4 pieces
+  instead of 2. Reproducibility references regenerated; no drawn value changed.
+- The tip chamfer stays the estimate it was (minor to major diameter over one pitch), now
+  listed in `docs/sources.md`: ISO 4753, which sets it, is not public.
+
 ### Changed
 
 - The code of the Primvaria contract comes from the new package primvaria-contract, which

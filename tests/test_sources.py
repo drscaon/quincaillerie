@@ -13,7 +13,17 @@ import numpy as np
 import pytest
 
 from quincaillerie import batteries, sources, variation
-from quincaillerie.catalog import CELL_MIN, CELLS, DEFAULT_LENGTH, LENGTH_TOLERANCE, LENGTHS, METRIC, TOLERANCES
+from quincaillerie.catalog import (
+    BOLT,
+    CELL_MIN,
+    CELLS,
+    DEFAULT_LENGTH,
+    LENGTH_TOLERANCE,
+    LENGTHS,
+    METRIC,
+    TOLERANCES,
+    UNDER_HEAD,
+)
 from quincaillerie.variation import Sampler
 
 DOC = Path(__file__).parents[1] / "docs" / "sources.md"
@@ -39,6 +49,9 @@ def test_every_number_of_the_catalogue_names_its_source():
         *_leaves("CELLS", CELLS),
         *_leaves("CELL_MIN", CELL_MIN),
         *(f"LENGTHS.{length}" for length in LENGTHS),
+        *(f"UNDER_HEAD.{size}.{n}" for size in UNDER_HEAD for n in ("dw_min", "c.min", "c.max", "r_min", "da_max")),
+        *(f"BOLT.{size}.{n}" for size in BOLT for n in ("b", "ds_min")),
+        *(f"BOLT.{size}.lengths.{length}" for size, b in BOLT.items() for length in b["lengths"]),
         *(f"LENGTH_TOLERANCE.{longest}" for longest, _ in LENGTH_TOLERANCE),
         "variation.STEEL_DENSITY",
         *(f"variation.DENSITY.{k}" for k in variation.DENSITY),
@@ -102,6 +115,31 @@ def test_drawn_fasteners_stay_within_their_standard(size):
             longest = min(n for n, _ in LENGTH_TOLERANCE if n >= DEFAULT_LENGTH[size])
             tol = BY_PATH[f"LENGTH_TOLERANCE.{longest}"].value
             assert np.abs([r["length_dmm"] for r in rows]).max() <= tol + 1e-9, size
+
+
+@pytest.mark.parametrize("size", list(METRIC))
+def test_drawn_under_the_head_and_shank_stay_within_the_table(size):
+    """Bearing face, fillet and a bolt's plain shank, as instances get them: inside the table's limits,
+    the bearing face inside the hex, the thread starting between ls min and lg max (QUI-06)."""
+    m, u, b = METRIC[size], UNDER_HEAD[size], BOLT[size]
+    sampler = Sampler(seed=11)
+    for kind in ("screw", "bolt"):
+        length = b["lengths"][len(b["lengths"]) // 2] if kind == "bolt" else None
+        rows = [asdict(sampler.fastener(kind, "zinc_clear", m["P"], m["d"], length)) for _ in range(500)]
+        dw = np.array([r["bearing_face_d_mm"] for r in rows])
+        assert u["dw_min"] - 1e-9 <= dw.min() and dw.max() <= TOLERANCES[size]["s_min"] + 1e-9, (kind, size)
+        c = np.array([r["bearing_face_h_mm"] for r in rows])
+        assert u["c"][0] - 1e-9 <= c.min() and c.max() <= u["c"][1] + 1e-9, (kind, size)
+        r_ = np.array([r["fillet_r_mm"] for r in rows])
+        assert u["r_min"] - 1e-9 <= r_.min() and r_.max() <= (u["da_max"] - m["d"]) / 2 + 1e-9, (kind, size)
+        if kind == "bolt":
+            ds = np.array([r["shank_d_mm"] for r in rows])
+            assert b["ds_min"] - 1e-9 <= ds.min() and ds.max() <= m["d"] + 1e-9, size
+            lp = np.array([r["plain_length_mm"] for r in rows])
+            lg = length - b["b"]
+            assert lg - 5 * m["P"] - 1e-9 <= lp.min() and lp.max() <= lg + 1e-9, size
+        else:
+            assert all(r["shank_d_mm"] is None and r["plain_length_mm"] is None for r in rows)
 
 
 @pytest.mark.parametrize("fmt", list(CELLS))

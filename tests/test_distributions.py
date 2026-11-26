@@ -26,7 +26,7 @@ DOC = Path(__file__).parents[1] / "docs" / "variation.md"
 def draws(part):
     """N variations of the part, as {column: values}."""
     sampler = Sampler(seed=20261116, defect_rate=declared.RATE)
-    if part in ("screw", "nut", "washer"):
+    if part in ("screw", "bolt", "nut", "washer"):
         rows = [asdict(sampler.fastener(part, FINISH, PITCH, DIAMETER)) for _ in range(N)]
     elif part.startswith("cell"):
         kind = "coin" if "coin" in part else "cradle"
@@ -100,7 +100,7 @@ def check(column, dist, values, others):
         return
     if kind == "cited":
         part = others["kind"]
-        lo, hi = tolerance_range(part, column, "M8" if part in ("screw", "nut", "washer") else SIZE[part])
+        lo, hi = tolerance_range(part, column, "M8" if part in ("screw", "bolt", "nut", "washer") else SIZE[part])
         check(column, ("uniform", 0.0, 1.0), (values - lo) / (hi - lo), others)
         return
     if kind == "relative":

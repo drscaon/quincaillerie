@@ -32,7 +32,17 @@ from pxr import Usd, UsdGeom, UsdPhysics
 from ..batteries import FLOOR_T, holder_design, insertion_keys, key_pose
 from ..catalog import CELLS, METRIC
 from ..contract import is_engine_layer
-from ..scenes import add_ref, centre_height, drop_pose, new_scene, origin_for, save, seated_overrides, under_head
+from ..scenes import (
+    add_ref,
+    centre_height,
+    drop_pose,
+    new_scene,
+    origin_for,
+    plain_length,
+    save,
+    seated_overrides,
+    under_head,
+)
 from ..usd import place, q2m, qmul
 from .mujoco_model import convert, scene
 
@@ -117,6 +127,8 @@ def build_test_scenes(set_dir, pairs=2):
             t = METRIC[size]
             P, L = t["P"] * MM, sa["length"]
             turns = max(2, int(round(0.4 * L / P)))
+            # on a bolt (ISO 4014), on the thread: above the plain shank
+            turns = max(turns, int(np.ceil(plain_length(sa["file"]) / P - 1e-9)) + 1)
             head = under_head(sa["file"])  # the screw stands on its head, 2 cm up
             tag = f"nut_on_screw_{size}" + (f"_{j}" if len(screws) > 1 else "")
             st = new(tag)

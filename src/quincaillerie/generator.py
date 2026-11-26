@@ -20,9 +20,21 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .batteries import write_cell, write_holder
-from .catalog import CELLS, DEFAULT_LENGTH, KINDS, METRIC, RELATED, SIZES, asset_name
+from .catalog import (
+    BOLT,
+    CELLS,
+    DEFAULT_BOLT_LENGTH,
+    DEFAULT_LENGTH,
+    FASTENERS,
+    KINDS,
+    METRIC,
+    RELATED,
+    SIZES,
+    THREADED,
+    asset_name,
+)
 from .contract import ENGINES
-from .fasteners import write_nut, write_screw, write_washer
+from .fasteners import write_bolt, write_nut, write_screw, write_washer
 from .materials import FINISHES, write_materials
 from .pack import write_pack
 from .scenes import (
@@ -31,6 +43,7 @@ from .scenes import (
     footprint,
     new_scene,
     place_seated,
+    plain_length,
     rest_pose,
     save,
     thread_height,
@@ -44,7 +57,7 @@ from .variation import ASPECTS, Sampler
 class Part:
     kind: str
     key: str  # size (M8) or cell format (AA)
-    length: float | None = None  # screws, mm
+    length: float | None = None  # screws and bolts, mm
 
     @property
     def name(self) -> str:
@@ -52,7 +65,7 @@ class Part:
 
     @property
     def filename(self) -> str:
-        return self.name + (".usdc" if self.kind in ("screw", "nut") else ".usda")
+        return self.name + (".usdc" if self.kind in ("screw", "bolt", "nut") else ".usda")
 
 
 @dataclass
@@ -66,7 +79,7 @@ def resolve(kind, key, length=None, with_=()):
     """The parts of a request: the main part and the related elements asked with `with_`."""
     if kind not in KINDS:
         raise ValueError(f"unknown kind {kind!r}; expected one of {', '.join(KINDS)}")
-    fast = kind in ("screw", "nut", "washer")
+    fast = kind in FASTENERS
     if fast and key not in METRIC:
         raise ValueError(f"unknown size {key!r}; expected one of {', '.join(SIZES)}")
     if not fast and key not in CELLS:
@@ -78,18 +91,27 @@ def resolve(kind, key, length=None, with_=()):
         length = float(length or DEFAULT_LENGTH[key])
         if not 2 * METRIC[key]["P"] <= length <= 200:
             raise ValueError(f"screw length {length:g} mm out of range")
-    parts = [Part(kind, key, length if kind == "screw" else None)]
+    if kind == "bolt":
+        length = float(length or DEFAULT_BOLT_LENGTH[key])
+        lengths = BOLT[key]["lengths"]
+        if not lengths[0] <= length <= lengths[-1]:
+            raise ValueError(
+                f"bolt length {length:g} mm out of range: an ISO 4014 {key} bolt is {lengths[0]} to {lengths[-1]} mm"
+            )
+    parts = [Part(kind, key, length if kind in THREADED else None)]
     for w in with_:
-        parts.append(Part(w, key, (length or DEFAULT_LENGTH[key]) if w == "screw" else None))
+        default = DEFAULT_BOLT_LENGTH if w == "bolt" else DEFAULT_LENGTH
+        parts.append(Part(w, key, (length or default[key]) if w in THREADED else None))
     return parts
 
 
 def catalog_parts():
-    """Every part of the catalogue: per size a screw (default length), a nut, a washer; every cell
-    and its holder."""
+    """Every part of the catalogue: per size a screw and a bolt (default lengths), a nut, a washer;
+    every cell and its holder."""
     out = []
     for s in SIZES:
         out += [Part("screw", s, float(DEFAULT_LENGTH[s])), Part("nut", s), Part("washer", s)]
+        out += [Part("bolt", s, float(DEFAULT_BOLT_LENGTH[s]))]
     for f in CELLS:
         out += [Part("cell", f), Part("holder", f)]
     return out
@@ -101,6 +123,8 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
     path = os.path.join(assets_dir, filename)
     if part.kind == "screw":
         info = write_screw(path, part.key, part.length, finish, variation, name, detail, collider)
+    elif part.kind == "bolt":
+        info = write_bolt(path, part.key, part.length, finish, variation, name, detail, collider)
     elif part.kind == "nut":
         info = write_nut(path, part.key, finish, variation, name, detail, collider)
     elif part.kind == "washer":
@@ -116,7 +140,7 @@ def write_part(part, assets_dir, finish="zinc_clear", variation=None, name=None,
 
 def draw(sampler, part, finish):
     """The variation of the next instance of a part."""
-    if part.kind in ("screw", "nut", "washer"):
+    if part.kind in FASTENERS:
         return sampler.fastener(part.kind, finish, METRIC[part.key]["P"], METRIC[part.key]["d"], part.length)
     kind = CELLS[part.key]["kind"]
     return sampler.cell(part.key, kind) if part.kind == "cell" else sampler.holder(part.key, kind)
@@ -250,10 +274,10 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
         files = [os.path.join(root, i["file"]) for i in instances[p]]
         names = [i["name"] for i in instances[p]]
         for i in range(count):
-            yaw = rng.uniform(0, 2 * np.pi) if p.kind in ("screw", "nut", "washer") else 0.0
+            yaw = rng.uniform(0, 2 * np.pi) if p.kind in FASTENERS else 0.0
             q = qmul(quat_axis_angle((0, 0, 1), yaw), q0)
             pos = ((i % ROW) * w + off[0], y + (i // ROW) * d + off[1], off[2])
-            fin = None if varied or p.kind not in ("screw", "nut", "washer") else finish
+            fin = None if varied or p.kind not in FASTENERS else finish
             k = i if varied else 0
             prim = names[k] if varied else f"{p.name}_{i:03d}"
             add_ref(st, prim, files[k], pos, q, fin)
@@ -269,7 +293,9 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
     y += 0.01
     x = 0.0
     for p in parts:
-        if p.kind == "screw" and ("nut", p.key) in by:
+        # one assembly per size: with the screw, or with the bolt when there is no screw of that size
+        lone_bolt = p.kind == "bolt" and ("screw", p.key) not in by
+        if (p.kind == "screw" or lone_bolt) and ("nut", p.key) in by:
             t = METRIC[p.key]
             k = under_head(sound(p))  # the screw stands on its head; its own head height
             add_ref(st, f"assembly_{p.name}", sound(p), (x, y, 0), (1, 0, 0, 0))
@@ -279,7 +305,9 @@ def write_scene(path, parts, instances, root, count=1, finish="zinc_clear", seed
                 add_ref(st, f"assembly_{pw.name}", sound(pw), (x, y, k), (1, 0, 0, 0))
                 h = t["washer"][2] * 1e-3
             pn = by[("nut", p.key)]
-            n = int(np.ceil(h / (t["P"] * 1e-3) + 1e-9)) + 1  # first whole pitch above the washer
+            # first whole pitch above the washer, and on a bolt above its plain shank
+            h = max(h, plain_length(sound(p)))
+            n = int(np.ceil(h / (t["P"] * 1e-3) + 1e-9)) + 1
             add_ref(st, f"assembly_{pn.name}", sound(pn), (x, y, k + thread_height(p.key, n)), (1, 0, 0, 0))
             x += max(t["s"], t["washer"][1]) * 1e-3 * 1.5
         if p.kind == "holder" and ("cell", p.key) in by:

@@ -50,8 +50,8 @@ def nut_band_mm(pitch_mm: float, d_mm: float) -> float:
 
 
 def clearance_range_mm(kind: str, pitch_mm: float, d_mm: float) -> tuple[float, float]:
-    """Radial clearance per side of a 6g screw or a 6H nut: (tightest, loosest), in mm."""
-    if kind == "screw":
+    """Radial clearance per side of a 6g screw or bolt or a 6H nut: (tightest, loosest), in mm."""
+    if kind in ("screw", "bolt"):
         lo = allowance_g_mm(pitch_mm) / 2
         hi = lo + screw_band_mm(pitch_mm, d_mm) / 2
     elif kind == "nut":
