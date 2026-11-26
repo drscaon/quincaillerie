@@ -121,6 +121,10 @@ PyPI have none, so this check is skipped there. The `.mtlx` document is
 validated against the MaterialX standard library when the `materialx` extra is
 installed.
 
+What the files use of the OpenUSD Core Specification 1.0, and which schemas
+give them their meaning beyond it, is in the
+[Primvaria contract, section 13](https://github.com/drscaon/primvaria/blob/main/docs/contract.md#13-openusd-core-specification).
+
 ## Primvaria contract
 
 ```bash
