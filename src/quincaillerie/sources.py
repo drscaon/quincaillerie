@@ -6,7 +6,8 @@ engineering handbook, or, where none was found, an estimate with what it rests o
 gives a range (a tolerance, a minimum and a maximum), the value and what the generator draws around it
 must lie within it; tests/test_sources.py checks both, and that no value is left without a source.
 
-The standards themselves (ISO 4017, ISO 4032, ISO 7089, ISO 965-1, IEC 60086-2) were not consulted:
+The standards themselves (ISO 4017, ISO 4014, ISO 4032, ISO 7089, ISO 965-1, ISO 4753, IEC 60086-2) were not
+consulted:
 the values come from the public tables and datasheets below, which reproduce them.
 
     python -m quincaillerie.sources     # the tables of docs/sources.md
@@ -17,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from . import batteries, fits, variation
-from .catalog import CELL_MIN, CELLS, LENGTH_TOLERANCE, LENGTHS, METRIC, TOLERANCES
+from .catalog import BOLT, CELL_MIN, CELLS, LENGTH_TOLERANCE, LENGTHS, METRIC, TOLERANCES, UNDER_HEAD
 
 KINDS = ("standard table", "datasheet", "handbook", "estimate")
 
@@ -36,6 +37,30 @@ SOURCES = {
         "Westfield Fasteners, ISO 4017 hex head set screw specification: table 1 (pitch, s, k, product grade A) "
         "and table 3 (length tolerances)",
         ("https://westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4017-M-THRfull.pdf",),
+    ),
+    "jisb1180": Source(
+        "standard table",
+        "Miki Pulley, hexagon bolts, excerpt from JIS B 1180 (part grade A, the ISO 4014 and ISO 4017 heads): b "
+        "(reference, l up to 125 mm), ds, dw, c, r, and the nominal lengths with ls min and lg max; "
+        "lg max = l - b, ls min = lg max - 5 P",
+        ("https://mikipulley.co.jp/EN/Services/Tech_data/tech09.html",),
+    ),
+    "iso4014_westfield": Source(
+        "standard table",
+        "Westfield Fasteners, ISO 4014 partly threaded hex bolts: table 1 (b, c, da, dw, r)",
+        ("https://www.westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4014-M-THRpart.pdf",),
+    ),
+    "tip_chamfer": Source(
+        "estimate",
+        "the chamfer at the tip of a screw or bolt",
+        note="ISO 4753, which sets it, is not public; the tables only say the point is chamfered (up to M4 it may be "
+        "left as rolled). Drawn from the minor to the major diameter over one pitch",
+    ),
+    "fillet_shape": Source(
+        "estimate",
+        "the shape of the fillet under the head",
+        note="the tables give its radius r (r min, and r max = (da max - d) / 2), not its curve; a straight line "
+        "from the bearing face to the shank stands for the arc",
     ),
     "iso4032": Source(
         "standard table",
@@ -223,6 +248,20 @@ def _fasteners() -> list[Value]:
             Value(f"TOLERANCES.{size}.washer_h.min", t["washer_h"][0], "mm", "iso7089"),
             Value(f"TOLERANCES.{size}.washer_h.max", t["washer_h"][1], "mm", "iso7089"),
         ]
+    for size, u in UNDER_HEAD.items():
+        out += [
+            Value(f"UNDER_HEAD.{size}.dw_min", u["dw_min"], "mm", "jisb1180"),
+            Value(f"UNDER_HEAD.{size}.c.min", u["c"][0], "mm", "jisb1180"),
+            Value(f"UNDER_HEAD.{size}.c.max", u["c"][1], "mm", "jisb1180"),
+            Value(f"UNDER_HEAD.{size}.r_min", u["r_min"], "mm", "jisb1180"),
+            Value(f"UNDER_HEAD.{size}.da_max", u["da_max"], "mm", "iso4014_westfield"),
+        ]
+    for size, b in BOLT.items():
+        out += [
+            Value(f"BOLT.{size}.b", b["b"], "mm", "jisb1180"),
+            Value(f"BOLT.{size}.ds_min", b["ds_min"], "mm", "jisb1180", None, METRIC[size]["d"]),
+        ]
+        out += [Value(f"BOLT.{size}.lengths.{length}", length, "mm", "jisb1180") for length in b["lengths"]]
     out += [Value(f"LENGTHS.{length}", length, "mm", "iso4017") for length in LENGTHS]
     out += [Value(f"LENGTH_TOLERANCE.{longest}", tol, "mm", "iso4017") for longest, tol in LENGTH_TOLERANCE]
     return out
@@ -288,7 +327,10 @@ def values() -> list[Value]:
 
 # Numbers in the code that are not about the real world, and so have no source: what they are.
 NOT_PHYSICAL = {
-    "DEFAULT_LENGTH": "the length generated when none is asked for: a choice, among the standard lengths",
+    "DEFAULT_LENGTH, DEFAULT_BOLT_LENGTH": "the length generated when none is asked for: a choice, among the "
+    "standard lengths",
+    "fasteners.under_head": "a part built without a sampler takes the middle of each range the tables give "
+    "(bearing face, fillet, plain shank): the standards give limits only",
     "batteries.FLOOR_T": "the thickness of the holders' floor: Quincaillerie's own holder design",
     "batteries.CONTACT_OFFSET, fasteners.CONTACT_OFFSET": "the distance at which contacts are generated: a "
     "simulation setting",

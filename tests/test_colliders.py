@@ -47,9 +47,10 @@ def test_simple_colliders_are_few_and_change_nothing_else(sets):
     thread, simple = _rows(sets["thread"]), _rows(sets["simple"])
     assert thread.keys() == simple.keys()
     for name, row in simple.items():
-        pieces = {"screw": {2}, "nut": {12}, "washer": {8}}[row["kind"]]
+        # a screw: core, head, bearing face, fillet; a bolt: and its plain shank
+        pieces = {"screw": {4}, "bolt": {5}, "nut": {12}, "washer": {8}}[row["kind"]]
         if row["variation:defect"] == "bent":  # a bent shank follows the bend in slices
-            assert int(row["measured:colliders"]) > 2
+            assert int(row["measured:colliders"]) > 4
         else:
             assert int(row["measured:colliders"]) in pieces
         assert int(thread[name]["measured:colliders"]) > int(row["measured:colliders"])
@@ -71,11 +72,34 @@ def test_the_asset_says_which_collider_it_has(sets):
 
 def test_a_simple_screw_is_a_cylinder_at_the_major_diameter(tmp_path):
     info = write_screw(str(tmp_path / "s.usdc"), "M8", 30, collider="simple", detail="low")
-    assert info["colliders"] == 2
+    assert info["colliders"] == 4  # core, head, bearing face, fillet
     stage = Usd.Stage.Open(str(tmp_path / "s.usdc"))
     core = stage.GetPrimAtPath(f"/{stage.GetDefaultPrim().GetName()}/Collision/core")
     radius = core.GetAttribute("radius").Get()
     assert METRIC["M8"]["d"] * MM / 2 * 0.97 < radius < METRIC["M8"]["d"] * MM / 2
+
+
+def test_a_bolt_collides_on_its_plain_shank_then_on_its_thread(tmp_path):
+    """ISO 4014 (QUI-06): the shank collider is the drawn plain shank, the thread starts where it ends;
+    the bearing face and the fillet under the head have their own colliders."""
+    from quincaillerie.fasteners import write_bolt
+
+    info = write_bolt(str(tmp_path / "b.usdc"), "M8", 50, collider="simple", detail="low")
+    assert info["colliders"] == 5
+    stage = Usd.Stage.Open(str(tmp_path / "b.usdc"))
+    root = stage.GetDefaultPrim()
+    lp = root.GetAttribute("quincaillerie:plainLength").Get()
+    ds = root.GetAttribute("quincaillerie:shankDiameter").Get()
+    assert lp == pytest.approx(root.GetAttribute("primvaria:variation:plain_length_mm").Get() * MM)
+    shank = stage.GetPrimAtPath(f"/{root.GetName()}/Collision/shank")
+    assert shank.GetAttribute("radius").Get() == pytest.approx(ds / 2)
+    assert shank.GetAttribute("height").Get() == pytest.approx(lp)
+    core = stage.GetPrimAtPath(f"/{root.GetName()}/Collision/core")
+    length = root.GetAttribute("quincaillerie:length").Get()
+    assert core.GetAttribute("height").Get() == pytest.approx(length - lp)
+    face = stage.GetPrimAtPath(f"/{root.GetName()}/Collision/bearing_face")
+    dw = root.GetAttribute("quincaillerie:bearingFaceDiameter").Get()
+    assert face.GetAttribute("radius").Get() == pytest.approx(dw / 2)
 
 
 def test_unknown_collider(tmp_path):

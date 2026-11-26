@@ -7,7 +7,7 @@ import sys
 import time
 
 from . import __version__
-from .catalog import CELLS, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
+from .catalog import BOLT, CELLS, DEFAULT_BOLT_LENGTH, DEFAULT_LENGTH, KINDS, LENGTHS, METRIC, RELATED, SIZES
 from .contract import ENGINES, engine_list
 from .fasteners import COLLIDERS
 from .materials import FINISHES
@@ -36,6 +36,12 @@ def cmd_list(args):
         row = f"  {s:5s} {t['P']:6.2f} {t['s']:6.1f} {t['k']:7.1f} {t['m']:6.1f} {w:>20s}"
         print(f"{row}  ISO4017_{s}x{DEFAULT_LENGTH[s]}")
     print("  screw lengths (mm):", " ".join(map(str, LENGTHS)), "(any length from 2 pitches to 200 mm)")
+    print("  bolts (ISO 4014, plain shank under the head), lengths (mm) and default:")
+    for s, b in BOLT.items():
+        print(
+            f"    {s:5s} {b['lengths'][0]:g} to {b['lengths'][-1]:g}, thread b {b['b']:g}",
+            f" ISO4014_{s}x{DEFAULT_BOLT_LENGTH[s]}",
+        )
     print("  finishes:", " ".join(FINISHES))
     print("Cells and holders, formats:")
     for f, c in CELLS.items():
@@ -58,7 +64,7 @@ def cmd_generate(args):
         set_name = "catalog"
     else:
         if not args.key:
-            print("generate: give a size (screw, nut, washer) or a cell format (cell, holder)", file=sys.stderr)
+            print("generate: give a size (screw, bolt, nut, washer) or a cell format (cell, holder)", file=sys.stderr)
             return 2
         with_ = [w for w in (args.with_ or "").split(",") if w]
         parts = resolve(args.kind, args.key, args.length, with_)
@@ -139,9 +145,9 @@ def build_parser():
     g = sub.add_parser("generate", help="write assets, materials and a scene")
     g.add_argument("kind", choices=list(KINDS) + ["all"], help="part kind, or 'all' for the whole catalogue")
     g.add_argument(
-        "key", nargs="?", help="size (M3..M12) for screw/nut/washer, format (AA, 18650, CR2032...) for cell/holder"
+        "key", nargs="?", help="size (M3..M12) for screw/bolt/nut/washer, format (AA, 18650, CR2032...) for cell/holder"
     )
-    g.add_argument("--length", type=float, help="screw length in mm (default: per size)")
+    g.add_argument("--length", type=float, help="screw or bolt length in mm (default: per size)")
     g.add_argument(
         "--with", dest="with_", metavar="KINDS", help="related elements, comma-separated: nut,washer / holder / cell"
     )

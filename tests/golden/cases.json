@@ -18,6 +18,24 @@
    ]
   },
   {
+   "name": "bolt_m10_with_nut",
+   "args": [
+    "generate",
+    "bolt",
+    "M10",
+    "--length",
+    "60",
+    "--with",
+    "nut",
+    "--count",
+    "3",
+    "--collider",
+    "simple",
+    "--seed",
+    "9"
+   ]
+  },
+  {
    "name": "nut_m6_defects_middle",
    "args": [
     "generate",

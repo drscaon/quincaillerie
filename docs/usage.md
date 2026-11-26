@@ -8,16 +8,16 @@ Part of the [Quincaillerie](../README.md) documentation.
 
 | Option | Default | Effect |
 |---|---|---|
-| `KIND KEY` | | `screw`, `nut`, `washer` and a size (`M3`…`M12`); `cell`, `holder` and a format (`AA`, `18650`, `9V`, `CR2032`…); or `all` |
-| `--length L` | per size (M8: 30) | screw length in mm, from 2 pitches to 200 mm |
-| `--with KINDS` | | related elements: `nut,washer` (screw), `screw,washer` (nut), `holder` (cell), `cell` (holder) |
+| `KIND KEY` | | `screw`, `bolt`, `nut`, `washer` and a size (`M3`…`M12`); `cell`, `holder` and a format (`AA`, `18650`, `9V`, `CR2032`…); or `all` |
+| `--length L` | per size (M8: 30 for a screw, 50 for a bolt) | screw length in mm, from 2 pitches to 200 mm; bolt length within its size's ISO 4014 range (M8: 40 to 80 mm), see `quincaillerie list` |
+| `--with KINDS` | | related elements: `nut,washer` (screw, bolt), `screw,washer` or `bolt,washer` (nut), `holder` (cell), `cell` (holder) |
 | `--count N` | 1 | distinct instances of each part, each with its own drawn variation, all in the scene |
 | `--defect-rate R` | 0.15 | share of instances with a defect |
 | `--thread-play` | `class` | thread clearance: `class` (drawn in the 6g / 6H fit), `middle` (the middle of the fit for every instance, whatever the seed) or `legacy` (the range used before the fit classes: 1.6–8 % of the pitch), see [Thread fit](physics.md#thread-fit) |
 | `--no-vary ASPECTS` | | aspects that stay nominal: `tolerance`, `defect`, `wear`, `physics` |
 | `--nominal` | | no variation: the reference part (`--count` copies in the scene) |
 | `--detail` | `normal` | visual mesh resolution, `low`, `normal` or `high` (1.4, 3.4 and 7.5 MB for an M8 × 30 screw) |
-| `--collider` | `thread` | collision of the fasteners: `thread` (the helix in convex pieces: nuts screw on, crushed threads jam) or `simple` (the envelope alone: 2 pieces for a screw, 12 for a nut, 8 for a washer), see [Simple colliders](physics.md#simple-colliders) |
+| `--collider` | `thread` | collision of the fasteners: `thread` (the helix in convex pieces: nuts screw on, crushed threads jam) or `simple` (the envelope alone: 4 pieces for a screw, 5 for a bolt, 12 for a nut, 8 for a washer), see [Simple colliders](physics.md#simple-colliders) |
 | `--finish F` | `zinc_clear` | default finish of the fasteners (all six are in every file's variant set) |
 | `--no-physics` | | no rigid bodies, colliders, joints or physics scene |
 | `--engines LIST` | `physx,omniphysics,newton` | engine layers written beside each file with physics, comma-separated, or `none`; Quincaillerie writes the PhysX and Newton ones, see [Newton layer](openusd.md#newton-layer) |
@@ -28,7 +28,8 @@ Part of the [Quincaillerie](../README.md) documentation.
 
 | Part | Sizes or formats | Mass (g) | Collision |
 |---|---|---|---|
-| Hex head screw, ISO 4017 | M3 to M12, any length | M3×12: 0.91 · M8×30: 15.4 · M12×40: 45.2 | core + head + ≈ 800 thread pieces |
+| Hex head screw, ISO 4017 (threaded to the head) | M3 to M12, any length | M3×12: 0.89 · M8×30: 15.4 · M12×40: 45.1 | core + head + bearing face + fillet + ≈ 800 thread pieces |
+| Hex head bolt, ISO 4014 (plain shank under the head) | M3 to M12, the lengths of each size's table (M3: 20 to 30 mm, M12: 50 to 120 mm) | M3×25: 1.56 · M8×50: 23.4 · M12×70: 71.9 | plain shank + core + head + bearing face + fillet + thread pieces over the threaded part |
 | Hex nut, ISO 4032 | M3 to M12 | M3: 0.38 · M8: 5.55 · M12: 15.7 | ≈ 200 pieces (ridge + ring sectors) |
 | Plain washer, ISO 7089 | M3 to M12 | M3: 0.12 · M8: 1.81 · M12: 6.19 | 24 ring sectors |
 | Cylindrical cell + cradle | AAA, AA, C, D, CR123A, 18650, 21700 | 11.5 to 139 (typical, [sources](sources.md)) | can + button cylinders; holder: boxes, spring plate on a prismatic joint |

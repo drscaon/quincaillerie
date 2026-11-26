@@ -50,6 +50,48 @@ LENGTH_TOLERANCE = (
 )
 
 
+# Under the head of a hex head screw (ISO 4017) or bolt (ISO 4014), product grade A (mm): the
+# bearing face's diameter dw (from dw_min up to s_min, so that it stays inside the hex) and height c
+# (c_min to c_max), the fillet radius r (r_min to r_max = (da_max - d) / 2, da being the fillet's
+# largest diameter). The standards give limits only: a nominal part takes the middle of each range.
+UNDER_HEAD = {
+    "M3": dict(dw_min=4.57, c=(0.15, 0.40), r_min=0.1, da_max=3.6),
+    "M4": dict(dw_min=5.88, c=(0.15, 0.40), r_min=0.2, da_max=4.7),
+    "M5": dict(dw_min=6.88, c=(0.15, 0.50), r_min=0.2, da_max=5.7),
+    "M6": dict(dw_min=8.88, c=(0.15, 0.50), r_min=0.25, da_max=6.8),
+    "M8": dict(dw_min=11.63, c=(0.15, 0.60), r_min=0.4, da_max=9.2),
+    "M10": dict(dw_min=14.63, c=(0.15, 0.60), r_min=0.4, da_max=11.2),
+    "M12": dict(dw_min=16.63, c=(0.15, 0.60), r_min=0.6, da_max=13.7),
+}
+# Hex head bolts, ISO 4014 (partially threaded), product grade A: thread length b (reference, for
+# nominal lengths up to 125 mm), the plain shank's smallest diameter ds_min (its largest is d) and
+# the nominal lengths the table gives for each size. The plain shank is not a free parameter: its
+# length lies between ls_min and lg_max, both set by the size and the nominal length (plain_range).
+BOLT = {
+    "M3": dict(b=12.0, ds_min=2.86, lengths=(20, 25, 30)),
+    "M4": dict(b=14.0, ds_min=3.82, lengths=(25, 30, 35, 40)),
+    "M5": dict(b=16.0, ds_min=4.82, lengths=(25, 30, 35, 40, 45, 50)),
+    "M6": dict(b=18.0, ds_min=5.82, lengths=(30, 35, 40, 45, 50, 55, 60)),
+    "M8": dict(b=22.0, ds_min=7.78, lengths=(40, 45, 50, 55, 60, 65, 70, 80)),
+    "M10": dict(b=26.0, ds_min=9.78, lengths=(45, 50, 55, 60, 65, 70, 80, 90, 100)),
+    "M12": dict(b=30.0, ds_min=11.73, lengths=(50, 55, 60, 65, 70, 80, 90, 100, 110, 120)),
+}
+DEFAULT_BOLT_LENGTH = {"M3": 25, "M4": 30, "M5": 35, "M6": 40, "M8": 50, "M10": 60, "M12": 70}
+
+
+def plain_range(size: str, length_mm: float) -> tuple[float, float]:
+    """(ls_min, lg_max) of an ISO 4014 bolt (mm): lg_max = l - b, ls_min = lg_max - 5 P. The plain
+    shank ends between the two; the thread runs from there to the tip."""
+    lg = length_mm - BOLT[size]["b"]
+    return lg - 5 * METRIC[size]["P"], lg
+
+
+def fillet_range(size: str) -> tuple[float, float]:
+    """(r_min, r_max) of the fillet under the head (mm), r_max = (da_max - d) / 2."""
+    u = UNDER_HEAD[size]
+    return u["r_min"], (u["da_max"] - METRIC[size]["d"]) / 2
+
+
 def length_tolerance(length_mm: float) -> float:
     """± mm of a screw of that nominal length (the tolerance of the next listed length up)."""
     for longest, tol in LENGTH_TOLERANCE:
@@ -109,12 +151,16 @@ def label_9v_size(c: dict) -> tuple[float, float]:
     return 0.7 * c["L"], c["T"] - 4.0
 
 
-KINDS = ("screw", "nut", "washer", "cell", "holder")
+KINDS = ("screw", "bolt", "nut", "washer", "cell", "holder")
+# the hex head fasteners with a thread: an ISO 4017 screw (threaded to the head) or an ISO 4014 bolt
+THREADED = ("screw", "bolt")
+FASTENERS = ("screw", "bolt", "nut", "washer")
 # related elements that `--with` can add to a generated part
 RELATED = {
     "screw": ("nut", "washer"),
-    "nut": ("screw", "washer"),
-    "washer": ("screw", "nut"),
+    "bolt": ("nut", "washer"),
+    "nut": ("screw", "bolt", "washer"),
+    "washer": ("screw", "bolt", "nut"),
     "cell": ("holder",),
     "holder": ("cell",),
 }
@@ -122,6 +168,10 @@ RELATED = {
 
 def screw_name(size: str, length: float) -> str:
     return f"ISO4017_{size}x{length:g}"
+
+
+def bolt_name(size: str, length: float) -> str:
+    return f"ISO4014_{size}x{length:g}"
 
 
 def nut_name(size: str) -> str:
@@ -135,6 +185,8 @@ def washer_name(size: str) -> str:
 def asset_name(kind: str, size_or_format: str, length: float | None = None) -> str:
     if kind == "screw":
         return screw_name(size_or_format, length or DEFAULT_LENGTH[size_or_format])
+    if kind == "bolt":
+        return bolt_name(size_or_format, length or DEFAULT_BOLT_LENGTH[size_or_format])
     if kind == "nut":
         return nut_name(size_or_format)
     if kind == "washer":

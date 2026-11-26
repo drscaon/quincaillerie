@@ -33,7 +33,16 @@ def test_resolve_with_related():
 
 
 @pytest.mark.parametrize(
-    "args", [("screw", "M7"), ("cell", "AAAA"), ("screw", "M8", None, ["holder"]), ("bolt", "M8"), ("screw", "M8", 0.5)]
+    "args",
+    [
+        ("screw", "M7"),
+        ("cell", "AAAA"),
+        ("screw", "M8", None, ["holder"]),
+        ("bolt", "M8", 150),
+        ("bolt", "M8", 20),
+        ("rivet", "M8"),
+        ("screw", "M8", 0.5),
+    ],
 )
 def test_resolve_rejects(args):
     with pytest.raises(ValueError):

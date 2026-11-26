@@ -10,8 +10,11 @@ Part of the [Quincaillerie](../README.md) documentation.
   the standards, not from the standards; cell dimensions and masses from one
   manufacturer's datasheet each; the holders' contact forces and spring
   preloads are estimates ([sources](sources.md) says which value comes from
-  where). Screws are fully threaded (no plain shank) and have no chamfer
-  under the head.
+  where). Under the head, the bearing face and the fillet are drawn within the
+  tables' limits, but the fillet's curve is a straight line, and the chamfer at
+  the tip (ISO 4753, not public) is an estimate over one pitch. A bolt's thread
+  starts at once where its plain shank ends: the run-out of up to two pitches
+  is not modelled.
 - **Plausible variation, not measured distributions.** Tolerances are drawn
   uniformly within the limits their sources give; the rest (defect sizes,
   wear, spring scatter) are realistic orders of magnitude. None is a
@@ -45,6 +48,6 @@ Part of the [Quincaillerie](../README.md) documentation.
 1. Tools that go with the parts: screwdriver bits and screwdrivers, hex keys
    and wrenches matched to the drives (`--with tool`), and tapped bases.
 2. More fasteners: socket head cap screws (ISO 4762), countersunk and pan
-   head screws, partially threaded shanks, lock and spring washers.
+   head screws.
 3. A PhysX test in Isaac Sim; CAD export (STEP) of the same parametric parts.
 4. Assembly tasks: torque, misalignment tolerances, success labels.

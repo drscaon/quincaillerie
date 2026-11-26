@@ -117,6 +117,102 @@ The table is written from `quincaillerie/sources.py`
 | `TOLERANCES.M12.m_min` | 10.37 | mm |  | [iso4032](#iso4032) |
 | `TOLERANCES.M12.washer_h.min` | 2.3 | mm |  | [iso7089](#iso7089) |
 | `TOLERANCES.M12.washer_h.max` | 2.7 | mm |  | [iso7089](#iso7089) |
+| `UNDER_HEAD.M3.dw_min` | 4.57 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M3.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M3.c.max` | 0.4 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M3.r_min` | 0.1 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M3.da_max` | 3.6 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M4.dw_min` | 5.88 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M4.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M4.c.max` | 0.4 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M4.r_min` | 0.2 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M4.da_max` | 4.7 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M5.dw_min` | 6.88 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M5.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M5.c.max` | 0.5 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M5.r_min` | 0.2 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M5.da_max` | 5.7 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M6.dw_min` | 8.88 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M6.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M6.c.max` | 0.5 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M6.r_min` | 0.25 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M6.da_max` | 6.8 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M8.dw_min` | 11.63 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M8.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M8.c.max` | 0.6 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M8.r_min` | 0.4 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M8.da_max` | 9.2 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M10.dw_min` | 14.63 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M10.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M10.c.max` | 0.6 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M10.r_min` | 0.4 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M10.da_max` | 11.2 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `UNDER_HEAD.M12.dw_min` | 16.63 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M12.c.min` | 0.15 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M12.c.max` | 0.6 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M12.r_min` | 0.6 | mm |  | [jisb1180](#jisb1180) |
+| `UNDER_HEAD.M12.da_max` | 13.7 | mm |  | [iso4014_westfield](#iso4014_westfield) |
+| `BOLT.M3.b` | 12 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M3.ds_min` | 2.86 | mm |  to 3 | [jisb1180](#jisb1180) |
+| `BOLT.M3.lengths.20` | 20 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M3.lengths.25` | 25 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M3.lengths.30` | 30 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M4.b` | 14 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M4.ds_min` | 3.82 | mm |  to 4 | [jisb1180](#jisb1180) |
+| `BOLT.M4.lengths.25` | 25 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M4.lengths.30` | 30 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M4.lengths.35` | 35 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M4.lengths.40` | 40 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.b` | 16 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.ds_min` | 4.82 | mm |  to 5 | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.25` | 25 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.30` | 30 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.35` | 35 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.40` | 40 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.45` | 45 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M5.lengths.50` | 50 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.b` | 18 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.ds_min` | 5.82 | mm |  to 6 | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.30` | 30 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.35` | 35 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.40` | 40 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.45` | 45 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.50` | 50 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.55` | 55 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M6.lengths.60` | 60 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.b` | 22 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.ds_min` | 7.78 | mm |  to 8 | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.40` | 40 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.45` | 45 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.50` | 50 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.55` | 55 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.60` | 60 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.65` | 65 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.70` | 70 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M8.lengths.80` | 80 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.b` | 26 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.ds_min` | 9.78 | mm |  to 10 | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.45` | 45 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.50` | 50 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.55` | 55 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.60` | 60 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.65` | 65 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.70` | 70 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.80` | 80 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.90` | 90 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M10.lengths.100` | 100 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.b` | 30 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.ds_min` | 11.73 | mm |  to 12 | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.50` | 50 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.55` | 55 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.60` | 60 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.65` | 65 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.70` | 70 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.80` | 80 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.90` | 90 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.100` | 100 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.110` | 110 | mm |  | [jisb1180](#jisb1180) |
+| `BOLT.M12.lengths.120` | 120 | mm |  | [jisb1180](#jisb1180) |
 | `LENGTHS.6` | 6 | mm |  | [iso4017](#iso4017) |
 | `LENGTHS.8` | 8 | mm |  | [iso4017](#iso4017) |
 | `LENGTHS.10` | 10 | mm |  | [iso4017](#iso4017) |
@@ -260,6 +356,10 @@ The table is written from `quincaillerie/sources.py`
 ### Sources
 
 - <a id="iso4017"></a>**iso4017** (standard table): Westfield Fasteners, ISO 4017 hex head set screw specification: table 1 (pitch, s, k, product grade A) and table 3 (length tolerances). <https://westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4017-M-THRfull.pdf>
+- <a id="jisb1180"></a>**jisb1180** (standard table): Miki Pulley, hexagon bolts, excerpt from JIS B 1180 (part grade A, the ISO 4014 and ISO 4017 heads): b (reference, l up to 125 mm), ds, dw, c, r, and the nominal lengths with ls min and lg max; lg max = l - b, ls min = lg max - 5 P. <https://mikipulley.co.jp/EN/Services/Tech_data/tech09.html>
+- <a id="iso4014_westfield"></a>**iso4014_westfield** (standard table): Westfield Fasteners, ISO 4014 partly threaded hex bolts: table 1 (b, c, da, dw, r). <https://www.westfieldfasteners.co.uk/Standards/ScrewBolt-HexHd4014-M-THRpart.pdf>
+- <a id="tip_chamfer"></a>**tip_chamfer** (estimate): the chamfer at the tip of a screw or bolt. Estimate: ISO 4753, which sets it, is not public; the tables only say the point is chamfered (up to M4 it may be left as rolled). Drawn from the minor to the major diameter over one pitch
+- <a id="fillet_shape"></a>**fillet_shape** (estimate): the shape of the fillet under the head. Estimate: the tables give its radius r (r min, and r max = (da max - d) / 2), not its curve; a straight line from the bearing face to the shank stands for the arc
 - <a id="iso4032"></a>**iso4032** (standard table): Böllhoff, ISO 4032 hexagon nuts, steel 10, data sheet (m min and max, s min and max). <https://eshop-ro.boellhoff.com/out/media/pdf/ISO_4032_Stahl_10___en.pdf>
 - <a id="iso7089"></a>**iso7089** (standard table): AMES, metric flat washer dimensions chart, after ISO 7089:2000 (d1, d2, h with their limits). <https://amesweb.info/Fasteners/Washers/Standard-Metric-Flat-Washer-Sizes-Dimensions-Chart.aspx>
 - <a id="iso965"></a>**iso965** (handbook): Machinery's Handbook, 31st edition, ISO metric threads: fundamental deviations (es g = −(15 + 11 P) µm, EI H = 0) and the grade ratios (TD2 grade 6 = 1.32 Td2(6)); Td2 = 90 P^0.4 d^0.1 µm checked against RoyMech's M20 6g example (170 µm; the formula gives 171). <https://online.flippingbook.com/view/954046886/678/>, <https://online.flippingbook.com/view/954046886/656>, <https://roymech.org/Useful_Tables/Screws/Thread_tol.html>
@@ -286,7 +386,8 @@ The table is written from `quincaillerie/sources.py`
 
 ### Numbers that are not physical values
 
-- `DEFAULT_LENGTH`: the length generated when none is asked for: a choice, among the standard lengths.
+- `DEFAULT_LENGTH, DEFAULT_BOLT_LENGTH`: the length generated when none is asked for: a choice, among the standard lengths.
+- `fasteners.under_head`: a part built without a sampler takes the middle of each range the tables give (bearing face, fillet, plain shank): the standards give limits only.
 - `batteries.FLOOR_T`: the thickness of the holders' floor: Quincaillerie's own holder design.
 - `batteries.CONTACT_OFFSET, fasteners.CONTACT_OFFSET`: the distance at which contacts are generated: a simulation setting.
 - `fits.SIM_FLOOR_MM`: the least clearance generated, so that the collision pieces can slide: a simulation setting (contract, docs/physics.md).

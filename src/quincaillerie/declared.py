@@ -59,6 +59,14 @@ def defect(kinds):
     return ("choice", {"none": NONE_SHARE, **{k: RATE / len(kinds) for k in kinds}})
 
 
+# under the head of a screw or a bolt: absolute sizes, uniform within the range the size's table gives
+UNDER_HEAD = [
+    ("bearing_face_d_mm", "tolerance", ("cited",), ""),
+    ("bearing_face_h_mm", "tolerance", ("cited",), ""),
+    ("fillet_r_mm", "tolerance", ("cited",), ""),
+]
+
+
 DECLARED = {
     "screw": [
         ("clearance_mm", "tolerance", ("band",), ""),
@@ -66,6 +74,7 @@ DECLARED = {
         ("across_flats_dmm", "tolerance", ("cited",), ""),
         ("height_dmm", "tolerance", ("cited",), ""),
         ("length_dmm", "tolerance", ("cited",), ""),
+        *UNDER_HEAD,
         ("defect", "defect", defect(["crushed_thread", "bent", "burr"]), ""),
         *place("crushed_thread|burr"),
         (
@@ -147,6 +156,18 @@ DECLARED = {
     ],
 }
 
+# a bolt (ISO 4014) draws what a screw draws, and its plain shank: its diameter, and where the
+# thread starts (between ls_min and lg_max of its size and nominal length)
+_SHANK = [
+    ("shank_d_mm", "tolerance", ("cited",), ""),
+    ("plain_length_mm", "tolerance", ("cited",), ""),
+]
+_at = [row[0] for row in DECLARED["screw"]].index("fillet_r_mm") + 1
+DECLARED = {
+    "screw": DECLARED["screw"],
+    "bolt": DECLARED["screw"][:_at] + _SHANK + DECLARED["screw"][_at:],
+    **{part: rows for part, rows in DECLARED.items() if part != "screw"},
+}
 
 # What a defect does to a cell, for the page: the dent is in the colliders and the visual mesh,
 # the corrosion crust has its own collider (QUI-10).
@@ -156,6 +177,12 @@ EFFECT = {
     ),
     ("screw", "defect_angle_deg"): "how far around the thread the crush or the burr extends",
     ("screw", "defect_size"): "how deep the crush is, how far the shank bends, how high the burr stands",
+    ("bolt", "defect_z"): (
+        "a crushed thread: where along the threaded part, and where around it starts; a burr: where around the tip "
+        "it starts"
+    ),
+    ("bolt", "defect_angle_deg"): "how far around the thread the crush or the burr extends",
+    ("bolt", "defect_size"): "how deep the crush is, how far the shank bends, how high the burr stands",
     ("nut", "defect_z"): "where along the bore the crushed thread is, and where around it starts",
     ("nut", "defect_angle_deg"): "how far around the bore the crush extends",
     ("washer", "defect_size"): "the height of the cone at the rim",

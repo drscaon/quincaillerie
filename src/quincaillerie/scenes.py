@@ -15,7 +15,7 @@ from .batteries import FLOOR_T, holder_design
 from .catalog import CELLS, METRIC
 from .contract import set_group
 from .ground import GROUND_MARGIN, ground, physics_scene
-from .usd import create_stage, place, quat_axis_angle
+from .usd import NS, create_stage, place, quat_axis_angle
 
 MM = 1e-3
 
@@ -96,7 +96,7 @@ def origin_for(centre, quat, height):
 
 def footprint(kind, key, length=None):
     """Approximate (x, y) size of a part at rest (m), for laying parts out without overlap."""
-    if kind in ("screw", "nut", "washer"):
+    if kind in ("screw", "bolt", "nut", "washer"):
         t = METRIC[key]
         s = max(t["s"], t["washer"][1]) * MM
         return s * 1.2, s * 1.2
@@ -149,6 +149,13 @@ def drop_pose(kind, key, height=0.04, tilt=(0.5, 0.35)):
 
     q = qmul(quat_axis_angle((1, 0, 0), tilt[0]), quat_axis_angle((0, 1, 0), tilt[1]))
     return (0, 0, height), q
+
+
+def plain_length(screw_file) -> float:
+    """Length (m) of a bolt's plain shank under the head; 0 for a screw threaded to the head."""
+    stage = Usd.Stage.Open(str(screw_file))
+    attr = stage.GetDefaultPrim().GetAttribute(f"{NS}:plainLength")
+    return float(attr.Get()) if attr and attr.HasValue() else 0.0
 
 
 def thread_height(size, turns_from_head):
