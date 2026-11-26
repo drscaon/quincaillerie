@@ -55,6 +55,10 @@ their rotation gives them; the loose parts in front were dropped in MuJoCo
 and rest where they fell. Imported from the OpenUSD files into Blender and
 rendered with Cycles.*
 
+> [!TIP]
+> If Quincaillerie is useful to you, please ⭐ star the repository. Stars show me
+> what people actually need, so I can decide which features to develop next.
+
 ## Every instance is different
 
 ![Ten instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/variation.jpg)
