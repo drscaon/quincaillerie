@@ -6,7 +6,7 @@ engineering handbook, or, where none was found, an estimate with what it rests o
 gives a range (a tolerance, a minimum and a maximum), the value and what the generator draws around it
 must lie within it; tests/test_sources.py checks both, and that no value is left without a source.
 
-The standards themselves (ISO 4017, ISO 4014, ISO 4032, ISO 7089, ISO 965-1, ISO 4753, IEC 60086-2) were not
+The standards themselves (ISO 4017, ISO 4014, ISO 4762, ISO 4032, ISO 7089, ISO 965-1, ISO 4753, IEC 60086-2) were not
 consulted:
 the values come from the public tables and datasheets below, which reproduce them.
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from . import batteries, fits, variation
-from .catalog import BOLT, CELL_MIN, CELLS, LENGTH_TOLERANCE, LENGTHS, METRIC, TOLERANCES, UNDER_HEAD
+from .catalog import BOLT, CAP_SCREW, CELL_MIN, CELLS, LENGTH_TOLERANCE, LENGTHS, METRIC, TOLERANCES, UNDER_HEAD
 
 KINDS = ("standard table", "datasheet", "handbook", "estimate")
 
@@ -44,6 +44,27 @@ SOURCES = {
         "(reference, l up to 125 mm), ds, dw, c, r, and the nominal lengths with ls min and lg max; "
         "lg max = l - b, ls min = lg max - 5 P",
         ("https://mikipulley.co.jp/EN/Services/Tech_data/tech09.html",),
+    ),
+    "jisb1176": Source(
+        "standard table",
+        "Misumi, hexagon socket head cap screws, excerpts from JIS B 1176 (which corresponds to ISO 4762:2004): b, "
+        "dk, k, s (8.8 and 10.9; 12.9), t, w, v, dw, ds, and the nominal lengths with ls min and lg max "
+        "(lg max = l - b, ls min = lg max - 5 P; shorter lengths threaded to the head); lengths per size checked "
+        "against Engineers Edge's ISO 4762 table. The length tolerance is the product grade A one, as for ISO 4017",
+        (
+            "https://hu.misumi-ec.com/pdf/fa/2014/P2_1891-1892_F80_EN.pdf",
+            "https://engineersedge.com/iso_socket_head_screw.htm",
+        ),
+    ),
+    "iso965_grade5": Source(
+        "handbook",
+        "Machinery's Handbook, 31st edition, pitch-diameter tolerances of external metric threads, Td2 by grade "
+        "(ISO 965-1): grade 5 is 0.8 of grade 6 in every row (e.g. 0.200 / 0.250, 0.224 / 0.280 mm); 5g6g is a "
+        "grade 5 pitch diameter in position g, the class ISO 4762 asks for property class 12.9",
+        (
+            "https://online.flippingbook.com/view/954046886/656",
+            "https://amesweb.info/Fasteners/Screws/Metric-Hexagon-Socket-Head-Cap-Screw-Dimensions.aspx",
+        ),
     ),
     "iso4014_westfield": Source(
         "standard table",
@@ -256,6 +277,25 @@ def _fasteners() -> list[Value]:
             Value(f"UNDER_HEAD.{size}.r_min", u["r_min"], "mm", "jisb1180"),
             Value(f"UNDER_HEAD.{size}.da_max", u["da_max"], "mm", "iso4014_westfield"),
         ]
+    for size, c in CAP_SCREW.items():
+        out += [
+            Value(f"CAP_SCREW.{size}.socket", c["socket"], "mm", "jisb1176", None, c["s"][0]),
+            Value(f"CAP_SCREW.{size}.b", c["b"], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.dk.min", c["dk"][0], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.dk.max", c["dk"][1], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.k.min", c["k"][0], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.k.max", c["k"][1], "mm", "jisb1176", None, METRIC[size]["d"]),
+            Value(f"CAP_SCREW.{size}.s.min", c["s"][0], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.s.max_8.8_10.9", c["s"][1], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.s.max_12.9", c["s"][2], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.t_min", c["t_min"], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.w_min", c["w_min"], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.v_max", c["v_max"], "mm", "jisb1176"),
+            Value(f"CAP_SCREW.{size}.dw_min", c["dw_min"], "mm", "jisb1176", None, c["dk"][0]),
+            Value(f"CAP_SCREW.{size}.ds_min", c["ds_min"], "mm", "jisb1176", None, METRIC[size]["d"]),
+            Value(f"CAP_SCREW.{size}.full_to", c["full_to"], "mm", "jisb1176"),
+        ]
+        out += [Value(f"CAP_SCREW.{size}.lengths.{length}", length, "mm", "jisb1176") for length in c["lengths"]]
     for size, b in BOLT.items():
         out += [
             Value(f"BOLT.{size}.b", b["b"], "mm", "jisb1180"),
@@ -316,6 +356,7 @@ def _threads() -> list[Value]:
         Value("fits: es of a g thread, per mm of pitch", 11.0, "µm", "iso965"),
         Value("fits: Td2 grade 6, factor", 90.0, "µm", "iso965"),
         Value("fits: TD2 grade 6 / Td2 grade 6", 1.32, "", "iso965"),
+        Value("fits.GRADE_5_RATIO", fits.GRADE_5_RATIO, "", "iso965_grade5"),
         *[Value(f"fits.DIAMETER_STEPS.{lo}-{hi}", hi, "mm", "iso965") for lo, hi in fits.DIAMETER_STEPS],
     ]
 

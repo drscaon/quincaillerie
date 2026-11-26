@@ -79,11 +79,137 @@ BOLT = {
 DEFAULT_BOLT_LENGTH = {"M3": 25, "M4": 30, "M5": 35, "M6": 40, "M8": 50, "M10": 60, "M12": 70}
 
 
-def plain_range(size: str, length_mm: float) -> tuple[float, float]:
-    """(ls_min, lg_max) of an ISO 4014 bolt (mm): lg_max = l - b, ls_min = lg_max - 5 P. The plain
-    shank ends between the two; the thread runs from there to the tip."""
-    lg = length_mm - BOLT[size]["b"]
+# Hexagon socket head cap screws, ISO 4762 (plain head), product grade A, from a public excerpt of
+# JIS B 1176 (which corresponds to ISO 4762:2004), in mm: thread length b (reference), head diameter
+# dk and height k (min, max; k max = d), the hex socket's nominal across flats (socket) and its
+# limits s (min, max for classes 8.8 and 10.9,
+# max for 12.9) and depth t (t_min; t stops short of the wall under the socket, w_min), the top
+# edge's chamfer v (up to v_max), the bearing diameter dw_min under the head, the shank's smallest
+# diameter ds_min, the nominal lengths and the longest one threaded to the head (full_to): a longer
+# screw has a plain shank, as a bolt (plain_range).
+CAP_SCREW = {
+    "M3": dict(
+        socket=2.5,
+        b=18.0,
+        dk=(5.32, 5.5),
+        k=(2.86, 3.0),
+        s=(2.52, 2.58, 2.56),
+        t_min=1.3,
+        w_min=1.15,
+        v_max=0.3,
+        dw_min=5.07,
+        ds_min=2.86,
+        lengths=(5, 6, 8, 10, 12, 16, 20, 25, 30),
+        full_to=20,
+    ),
+    "M4": dict(
+        socket=3.0,
+        b=20.0,
+        dk=(6.78, 7.0),
+        k=(3.82, 4.0),
+        s=(3.02, 3.08, 3.08),
+        t_min=2.0,
+        w_min=1.4,
+        v_max=0.4,
+        dw_min=6.53,
+        ds_min=3.82,
+        lengths=(6, 8, 10, 12, 16, 20, 25, 30, 35, 40),
+        full_to=25,
+    ),
+    "M5": dict(
+        socket=4.0,
+        b=22.0,
+        dk=(8.28, 8.5),
+        k=(4.82, 5.0),
+        s=(4.02, 4.095, 4.095),
+        t_min=2.5,
+        w_min=1.9,
+        v_max=0.5,
+        dw_min=8.03,
+        ds_min=4.82,
+        lengths=(8, 10, 12, 16, 20, 25, 30, 35, 40, 45, 50),
+        full_to=25,
+    ),
+    "M6": dict(
+        socket=5.0,
+        b=24.0,
+        dk=(9.78, 10.0),
+        k=(5.70, 6.0),
+        s=(5.02, 5.14, 5.095),
+        t_min=3.0,
+        w_min=2.3,
+        v_max=0.6,
+        dw_min=9.38,
+        ds_min=5.82,
+        lengths=(10, 12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60),
+        full_to=30,
+    ),
+    "M8": dict(
+        socket=6.0,
+        b=28.0,
+        dk=(12.73, 13.0),
+        k=(7.64, 8.0),
+        s=(6.02, 6.14, 6.095),
+        t_min=4.0,
+        w_min=3.3,
+        v_max=0.8,
+        dw_min=12.33,
+        ds_min=7.78,
+        lengths=(12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80),
+        full_to=35,
+    ),
+    "M10": dict(
+        socket=8.0,
+        b=32.0,
+        dk=(15.73, 16.0),
+        k=(9.64, 10.0),
+        s=(8.025, 8.175, 8.115),
+        t_min=5.0,
+        w_min=4.0,
+        v_max=1.0,
+        dw_min=15.33,
+        ds_min=9.78,
+        lengths=(16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100),
+        full_to=40,
+    ),
+    "M12": dict(
+        socket=10.0,
+        b=36.0,
+        dk=(17.73, 18.0),
+        k=(11.57, 12.0),
+        s=(10.025, 10.175, 10.115),
+        t_min=6.0,
+        w_min=4.8,
+        v_max=1.2,
+        dw_min=17.23,
+        ds_min=11.73,
+        lengths=(20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120),
+        full_to=50,
+    ),
+}
+PROPERTY_CLASSES = ("8.8", "10.9", "12.9")
+DEFAULT_PROPERTY_CLASS = "12.9"
+
+
+def socket_s_max(size: str, property_class: str = DEFAULT_PROPERTY_CLASS) -> float:
+    """The largest across flats of a cap screw's hex socket: the table gives one for 12.9 and one
+    for the other classes."""
+    s = CAP_SCREW[size]["s"]
+    return s[2] if property_class == "12.9" else s[1]
+
+
+def plain_range(size: str, length_mm: float, kind: str = "bolt") -> tuple[float, float]:
+    """(ls_min, lg_max) of an ISO 4014 bolt or a long ISO 4762 cap screw (mm): lg_max = l - b,
+    ls_min = lg_max - 5 P. The plain shank ends between the two; the thread runs from there to the
+    tip."""
+    b = (CAP_SCREW if kind == "cap_screw" else BOLT)[size]["b"]
+    lg = length_mm - b
     return lg - 5 * METRIC[size]["P"], lg
+
+
+def has_plain_shank(kind: str, size: str, length_mm: float) -> bool:
+    """A bolt always has one; a cap screw when it is longer than its size's fully threaded lengths."""
+    return kind == "bolt" or (kind == "cap_screw" and length_mm > CAP_SCREW[size]["full_to"])
 
 
 def fillet_range(size: str) -> tuple[float, float]:
@@ -151,16 +277,18 @@ def label_9v_size(c: dict) -> tuple[float, float]:
     return 0.7 * c["L"], c["T"] - 4.0
 
 
-KINDS = ("screw", "bolt", "nut", "washer", "cell", "holder")
-# the hex head fasteners with a thread: an ISO 4017 screw (threaded to the head) or an ISO 4014 bolt
-THREADED = ("screw", "bolt")
-FASTENERS = ("screw", "bolt", "nut", "washer")
+KINDS = ("screw", "bolt", "cap_screw", "nut", "washer", "cell", "holder")
+# the fasteners with an external thread: an ISO 4017 screw (threaded to the head), an ISO 4014 bolt,
+# an ISO 4762 socket head cap screw
+THREADED = ("screw", "bolt", "cap_screw")
+FASTENERS = ("screw", "bolt", "cap_screw", "nut", "washer")
 # related elements that `--with` can add to a generated part
 RELATED = {
     "screw": ("nut", "washer"),
     "bolt": ("nut", "washer"),
-    "nut": ("screw", "bolt", "washer"),
-    "washer": ("screw", "bolt", "nut"),
+    "cap_screw": ("nut", "washer"),
+    "nut": ("screw", "bolt", "cap_screw", "washer"),
+    "washer": ("screw", "bolt", "cap_screw", "nut"),
     "cell": ("holder",),
     "holder": ("cell",),
 }
@@ -172,6 +300,10 @@ def screw_name(size: str, length: float) -> str:
 
 def bolt_name(size: str, length: float) -> str:
     return f"ISO4014_{size}x{length:g}"
+
+
+def cap_screw_name(size: str, length: float) -> str:
+    return f"ISO4762_{size}x{length:g}"
 
 
 def nut_name(size: str) -> str:
@@ -187,6 +319,8 @@ def asset_name(kind: str, size_or_format: str, length: float | None = None) -> s
         return screw_name(size_or_format, length or DEFAULT_LENGTH[size_or_format])
     if kind == "bolt":
         return bolt_name(size_or_format, length or DEFAULT_BOLT_LENGTH[size_or_format])
+    if kind == "cap_screw":
+        return cap_screw_name(size_or_format, length or DEFAULT_LENGTH[size_or_format])
     if kind == "nut":
         return nut_name(size_or_format)
     if kind == "washer":

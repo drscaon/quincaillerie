@@ -31,6 +31,7 @@ import numpy as np
 from . import fits
 from .catalog import (
     BOLT,
+    CAP_SCREW,
     CELL_MIN,
     CELLS,
     DEFAULT_BOLT_LENGTH,
@@ -40,8 +41,10 @@ from .catalog import (
     TOLERANCES,
     UNDER_HEAD,
     fillet_range,
+    has_plain_shank,
     length_tolerance,
     plain_range,
+    socket_s_max,
 )
 
 ASPECTS = ("tolerance", "defect", "wear", "physics")
@@ -66,10 +69,36 @@ FRICTION = {
 }
 
 
-def tolerance_range(kind: str, column: str, key: str, length_mm: float | None = None) -> tuple[float, float]:
+def tolerance_range(
+    kind: str, column: str, key: str, length_mm: float | None = None, property_class: str | None = None
+) -> tuple[float, float]:
     """(lowest, highest) change from the nominal size (mm) that the cited tolerance allows, for a
     column of a part of that size (M8) or format (AA): see TOLERANCES and CELL_MIN in catalog.py,
-    and their sources in docs/sources.md."""
+    and their sources in docs/sources.md. Under the head and along a plain shank, the sizes
+    themselves (mm), not changes."""
+    if kind == "cap_screw":
+        c, m = CAP_SCREW[key], METRIC[key]
+        if column == "across_flats_dmm":  # the hex socket, around its nominal size
+            return c["s"][0] - c["socket"], socket_s_max(key, property_class or "12.9") - c["socket"]
+        if column == "height_dmm":  # k max is d, the nominal height
+            return c["k"][0] - c["k"][1], 0.0
+        if column == "length_dmm":
+            tol = length_tolerance(length_mm or DEFAULT_LENGTH[key])
+            return -tol, tol
+        if column == "head_d_mm":
+            return c["dk"]
+        if column == "socket_depth_mm":  # from t min to the deepest that leaves the wall w min under it
+            return c["t_min"], c["k"][0] - c["w_min"]
+        if column == "top_chamfer_mm":
+            return 0.0, c["v_max"]
+        if column == "bearing_face_d_mm":  # the bearing circle under the head, inside its edge
+            return c["dw_min"], c["dk"][0]
+        if column == "fillet_r_mm":
+            return fillet_range(key)
+        if column == "shank_d_mm":
+            return c["ds_min"], m["d"]
+        if column == "plain_length_mm":
+            return plain_range(key, length_mm or DEFAULT_LENGTH[key], "cap_screw")
     if kind in ("screw", "bolt", "nut", "washer"):
         t, m = TOLERANCES[key], METRIC[key]
         if kind in THREADED and column in UNDER_HEAD_COLUMNS:  # absolute values (mm), not changes
@@ -108,6 +137,17 @@ def tolerance_range(kind: str, column: str, key: str, length_mm: float | None = 
 # stay as they were): absolute sizes in mm, with a bolt's plain shank
 UNDER_HEAD_COLUMNS = ("bearing_face_d_mm", "bearing_face_h_mm", "fillet_r_mm")
 SHANK_COLUMNS = ("shank_d_mm", "plain_length_mm")
+# a cap screw's head (ISO 4762): its diameter, the socket's depth, the top edge's chamfer, and under
+# it the bearing circle and the fillet
+CAP_HEAD_COLUMNS = ("head_d_mm", "socket_depth_mm", "top_chamfer_mm", "bearing_face_d_mm", "fillet_r_mm")
+
+
+def head_columns(kind: str, size: str, length_mm: float | None) -> tuple:
+    """The columns drawn from a threaded part's own stream, in the order they are drawn."""
+    if kind == "cap_screw":
+        length = length_mm or DEFAULT_LENGTH[size]
+        return CAP_HEAD_COLUMNS + (SHANK_COLUMNS if has_plain_shank(kind, size, length) else ())
+    return UNDER_HEAD_COLUMNS + (SHANK_COLUMNS if kind == "bolt" else ())
 
 
 @dataclass
@@ -124,6 +164,10 @@ class FastenerVariation:
     # a bolt's plain shank (None: the middle of the cited range)
     shank_d_mm: float | None = None  # its diameter, ds
     plain_length_mm: float | None = None  # from the bearing face to where the thread starts
+    # a cap screw's head (None: the middle of the cited range)
+    head_d_mm: float | None = None  # its diameter, dk
+    socket_depth_mm: float | None = None  # the hex socket's depth, t
+    top_chamfer_mm: float | None = None  # the chamfer of the head's top edge, v
     defect: str = "none"  # none | crushed_thread | bent | burr | oval | dished
     defect_z: float = 0.0  # where along the part (0..1)
     defect_angle_deg: float = 0.0  # angular extent of crushed threads
@@ -190,15 +234,17 @@ class Sampler:
         return aspect in self.vary
 
     # ------------------------------------------------------------------ fasteners
-    def fastener(self, kind, finish, pitch_mm, diameter_mm=None, length_mm=None):
+    def fastener(self, kind, finish, pitch_mm, diameter_mm=None, length_mm=None, property_class=None):
         """diameter_mm: nominal thread diameter; by default the coarse-pitch size with that pitch.
-        length_mm: a screw's nominal length, which sets its length tolerance (default: the size's)."""
+        length_mm: a screw's nominal length, which sets its length tolerance (default: the size's).
+        property_class: a cap screw's (8.8, 10.9 or 12.9; default 12.9): its thread class and the
+        limits of its socket."""
         if diameter_mm is None:
             diameter_mm = next(m["d"] for m in METRIC.values() if m["P"] == pitch_mm)
         size = next(key for key, m in METRIC.items() if m["d"] == diameter_mm)
 
         def within(column, u):  # the fraction u of the size's cited tolerance
-            lo, hi = tolerance_range(kind, column, size, length_mm)
+            lo, hi = tolerance_range(kind, column, size, length_mm, property_class)
             return float(lo + u * (hi - lo))
 
         v = FastenerVariation(friction=FRICTION.get(finish, 0.15), density=DENSITY.get(finish, STEEL_DENSITY))
@@ -207,10 +253,10 @@ class Sampler:
             u = r.uniform(0.0, 1.0)  # where in its tolerance band: 0 tightest, 1 loosest
             if self.thread_play == "legacy":
                 v.clearance_mm = float(np.clip((0.016 + 0.064 * u) * pitch_mm, 0.015, 0.10))
-            elif kind in ("screw", "bolt", "nut"):  # a 6g screw or bolt, a 6H nut (see fits.py)
+            elif kind in (*THREADED, "nut"):  # a 6g (5g6g) screw, a 6H nut (see fits.py)
                 u = 0.5 if self.thread_play == "middle" else u
-                v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u))
-                v.thread_class = fits.SCREW_CLASS if kind in THREADED else fits.NUT_CLASS
+                v.clearance_mm = float(fits.clearance_mm(kind, pitch_mm, diameter_mm, u, property_class))
+                v.thread_class = fits.thread_class(kind, property_class)
             # across the size's tolerances, from the standards' tables (catalog.TOLERANCES)
             v.across_flats_dmm = within("across_flats_dmm", r.uniform(0.0, 1.0))
             v.height_dmm = within("height_dmm", r.uniform(0.0, 1.0))
@@ -218,8 +264,7 @@ class Sampler:
             v.length_dmm = within("length_dmm", u) if kind in THREADED else 0.0
         if kind in THREADED:  # a stream of their own: the draws of the stream above stay the same
             r = self.rng("tolerance", f"{kind}:under_head")
-            columns = UNDER_HEAD_COLUMNS + (SHANK_COLUMNS if kind == "bolt" else ())
-            for column in columns:
+            for column in head_columns(kind, size, length_mm):
                 u = r.uniform(0.0, 1.0) if self.on("tolerance") else 0.5
                 setattr(v, column, within(column, u))
         r = self.rng("defect", kind)
@@ -227,6 +272,7 @@ class Sampler:
             choices = {
                 "screw": ["crushed_thread", "bent", "burr"],
                 "bolt": ["crushed_thread", "bent", "burr"],
+                "cap_screw": ["crushed_thread", "bent", "burr"],
                 "nut": ["crushed_thread", "oval"],
                 "washer": ["dished"],
             }

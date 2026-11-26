@@ -119,7 +119,11 @@ screwing, jamming) for parts with simple colliders.
 ## Thread fit
 
 The play of each thread is drawn inside the usual commercial fit, a 6g screw
-in a 6H nut, and recorded as `clearance_mm` and `thread_class`. The limits
+in a 6H nut, and recorded as `clearance_mm` and `thread_class`. A socket head
+cap screw (ISO 4762) of property class 12.9, the default, is 5g6g: its pitch
+diameter is held to grade 5, 0.8 of the grade 6 band, in the same position g
+(the 6 is its major diameter's grade, which the generator does not vary);
+classes 8.8 and 10.9 are 6g. The limits
 are computed from the public formulas of the ISO metric thread tolerance
 system ([`fits.py`](https://github.com/drscaon/quincaillerie/blob/main/src/quincaillerie/fits.py)),
 not copied from the standard's tables; they land within 5 % of the values
@@ -135,6 +139,16 @@ printed in handbooks, which a test checks for M3 to M12.
 | M10 | 0.016–0.081 | 0.015–0.086 |
 | M12 | 0.017–0.091 | 0.015–0.098 |
 
+| Size | Cap screw 5g6g (class 12.9), clearance per side (mm) |
+|---|---|
+| M3 | 0.015–0.042 |
+| M4 | 0.015–0.047 |
+| M5 | 0.015–0.050 |
+| M6 | 0.015–0.057 |
+| M8 | 0.015–0.063 |
+| M10 | 0.016–0.068 |
+| M12 | 0.017–0.076 |
+
 `--thread-play` chooses how: `class` (default) draws across the band;
 `middle` gives every instance the middle of its band, so the play no longer
 depends on the seed; `legacy` draws in the range used before the fit classes
@@ -146,5 +160,3 @@ Two simplifications. The draw is uniform across the band, where a real
 production run clusters around its middle. And no part is tighter than
 0.015 mm per side, so that the collision pieces can slide: a real 6H nut may
 have no play of its own, and the tightest 6g screw has 0.010 to 0.017 mm.
-Across flats, heights and lengths are still drawn in plausible ranges, not
-from a tolerance class.

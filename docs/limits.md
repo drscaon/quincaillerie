@@ -14,7 +14,11 @@ Part of the [Quincaillerie](../README.md) documentation.
   tables' limits, but the fillet's curve is a straight line, and the chamfer at
   the tip (ISO 4753, not public) is an estimate over one pitch. A bolt's thread
   starts at once where its plain shank ends: the run-out of up to two pitches
-  is not modelled.
+  is not modelled. A cap screw's (ISO 4762) socket has sharp corners, its
+  bottom is a 120° cone, and the rounding under its head is a 45° chamfer
+  down to the bearing circle; knurled heads, stainless classes and
+  countersunk heads are not made yet. Its 5g6g thread narrows the pitch
+  diameter's band only: no major diameter is drawn, for any thread.
 - **Plausible variation, not measured distributions.** Tolerances are drawn
   uniformly within the limits their sources give; the rest (defect sizes,
   wear, spring scatter) are realistic orders of magnitude. None is a
@@ -47,7 +51,7 @@ Part of the [Quincaillerie](../README.md) documentation.
 
 1. Tools that go with the parts: screwdriver bits and screwdrivers, hex keys
    and wrenches matched to the drives (`--with tool`), and tapped bases.
-2. More fasteners: socket head cap screws (ISO 4762), countersunk and pan
-   head screws.
+2. More fasteners: countersunk (ISO 10642) and pan head screws; knurled
+   heads and stainless classes for cap screws.
 3. A PhysX test in Isaac Sim; CAD export (STEP) of the same parametric parts.
 4. Assembly tasks: torque, misalignment tolerances, success labels.

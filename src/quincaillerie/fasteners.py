@@ -20,7 +20,7 @@ import numpy as np
 from pxr import Sdf
 
 from . import physx
-from .catalog import METRIC, bolt_name, nut_name, screw_name, washer_name
+from .catalog import METRIC, bolt_name, cap_screw_name, nut_name, screw_name, washer_name
 from .contract import write_labels
 from .materials import FINISHES
 from .threads import iso_profile, mesh_mass_props, nut_mesh, segments, threaded_bolt_mesh
@@ -160,19 +160,18 @@ def _bend(points, angle_deg, length):
     return P
 
 
-def under_head(size, v, kind="screw", length=None):
+def under_head(size, v, kind="screw", length=None, property_class=None):
     """The applied sizes under the head (and a bolt's shank), in mm: the drawn values, or the middle
     of the cited range for a part built without a sampler. Written back into v, so that the
     recorded values are the ones the part is built with."""
     from dataclasses import replace
 
-    from .variation import SHANK_COLUMNS, UNDER_HEAD_COLUMNS, tolerance_range
+    from .variation import head_columns, tolerance_range
 
-    columns = UNDER_HEAD_COLUMNS + (SHANK_COLUMNS if kind == "bolt" else ())
     filled = {}
-    for column in columns:
+    for column in head_columns(kind, size, length):
         if getattr(v, column) is None:
-            lo, hi = tolerance_range(kind, column, size, length)
+            lo, hi = tolerance_range(kind, column, size, length, property_class)
             filled[column] = round((lo + hi) / 2, 6)
     return replace(v, **filled) if filled else v
 
@@ -189,6 +188,75 @@ def _fillet(r_in, r, n):
     return revolve_profile([(r_in, r), (r_in, 0.0), (r_in + r, 0.0), (r_in, r)], n)
 
 
+def _hex_radius(theta, s_af):
+    """Distance from the axis to a hexagon of across flats s_af at angle theta, its corners at
+    30 + 60 k degrees (as hex_prism's)."""
+    phi = ((np.asarray(theta) + np.pi / 6) % (np.pi / 3)) - np.pi / 6  # 0 on a flat's normal
+    return (s_af / 2) / np.cos(phi)
+
+
+def cap_head_mesh(dk, k, s_af, t, v, dw, n=72):
+    """Closed mesh of an ISO 4762 head, from z=-k (its top) to 0 (its underside): a cylinder of
+    diameter dk with its top edge chamfered by v, its bottom edge rounded in to the bearing circle
+    dw (a 45 degree chamfer stands for the rounding), and a hex socket of across flats s_af and depth
+    t ending in a 120 degree cone, as a drill leaves it. n: sides (a multiple of 12, so that the
+    hexagon's corners are vertices)."""
+    n = int(np.ceil(n / 12) * 12)
+    th = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    eh = (dk - dw) / 2  # height of the rounding under the head
+    apex = s_af / 3  # depth of a 120 degree cone over the socket's corners: (s / sqrt 3) / tan 60
+    rows = []
+    for a in th:
+        rh = float(_hex_radius(a, s_af))
+        rows.append(
+            [
+                (0.0, 0.0),
+                (dw / 2, 0.0),
+                (dk / 2, -eh),
+                (dk / 2, -k + v),
+                (dk / 2 - v, -k),
+                (rh, -k),
+                (rh, -k + t),
+                (0.0, -k + t + apex),
+            ]
+        )
+    K = len(rows[0])
+    V = np.array([[r * np.cos(a), r * np.sin(a), z] for a, row in zip(th, rows, strict=True) for r, z in row])
+    F = []
+    for i in range(n):
+        j = (i + 1) % n
+        for q in range(K - 1):
+            a_, b_, c_, d_ = i * K + q, j * K + q, j * K + q + 1, i * K + q + 1
+            F += [[a_, b_, c_], [a_, c_, d_]]
+    F = np.array(F)
+    A = np.linalg.norm(np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]]), axis=1)
+    F = F[A > 1e-18]
+    if mesh_mass_props(V, F, 1.0)[0] < 0:  # outward normals
+        F = F[:, ::-1]
+    return V, F
+
+
+def cap_head_colliders(dk, k, s_af, t, v, dw, arc=8):
+    """Convex pieces of an ISO 4762 head: the solid part under the socket (from the socket's floor
+    to the bearing circle), and six walls around the socket, each between one flat of the hexagon
+    and the arc of the head outside it. A hex key goes into the socket as deep as t."""
+    eh = (dk - dw) / 2
+    ring = np.linspace(0, 2 * np.pi, 24, endpoint=False)
+    solid = [
+        [r * np.cos(a), r * np.sin(a), z] for r, z in ((dk / 2, -k + t), (dk / 2, -eh), (dw / 2, 0.0)) for a in ring
+    ]
+    walls = []
+    R = s_af / np.sqrt(3)
+    for j in range(6):
+        a0 = np.pi / 6 + j * np.pi / 3
+        arcs = np.linspace(a0, a0 + np.pi / 3, arc)
+        pts = [[R * np.cos(a), R * np.sin(a), z] for a in (a0, a0 + np.pi / 3) for z in (-k, -k + t)]
+        pts += [[dk / 2 * np.cos(a), dk / 2 * np.sin(a), z] for a in arcs for z in (-k + v, -k + t)]
+        pts += [[(dk / 2 - v) * np.cos(a), (dk / 2 - v) * np.sin(a), -k] for a in arcs]
+        walls.append(np.array(pts))
+    return np.array(solid), walls
+
+
 def write_screw(
     path,
     size="M8",
@@ -199,32 +267,44 @@ def write_screw(
     detail="normal",
     collider="thread",
     kind="screw",
+    property_class=None,
 ):
-    """Hex head screw (ISO 4017, threaded to the head) or bolt (kind="bolt": ISO 4014, a plain shank
-    under the head, then the thread), axis +Z. Built with the head from z=-k to 0 (the hex, then the
-    bearing face under it) and the shank from 0 to the length, then moved up by k when saved: in the
+    """Hex head screw (ISO 4017, threaded to the head), bolt (kind="bolt": ISO 4014, a plain shank
+    under the head, then the thread) or socket head cap screw (kind="cap_screw": ISO 4762, threaded
+    to the head up to its size's full_to length, with a plain shank beyond), axis +Z. Built with the
+    head from z=-k to 0 and the shank from 0 to the length, then moved up by k when saved: in the
     file it stands on its head, its underside at z = 0 (contract, section 3).
 
     collider: "thread" (the helix, in convex pieces) or "simple" (a cylinder at the major diameter)."""
     simple = _collider(collider) == "simple"
-    from .catalog import DEFAULT_BOLT_LENGTH, DEFAULT_LENGTH
+    from .catalog import CAP_SCREW, DEFAULT_BOLT_LENGTH, DEFAULT_LENGTH, DEFAULT_PROPERTY_CLASS, has_plain_shank
 
-    bolt = kind == "bolt"
+    cap = kind == "cap_screw"
     v = v or FastenerVariation()
     nominal = v == FastenerVariation()
     t = METRIC[size]
-    length = float(length or (DEFAULT_BOLT_LENGTH if bolt else DEFAULT_LENGTH)[size])
-    v = under_head(size, v, kind, length)
+    length = float(length or (DEFAULT_BOLT_LENGTH if kind == "bolt" else DEFAULT_LENGTH)[size])
+    pclass = (property_class or DEFAULT_PROPERTY_CLASS) if cap else "8.8"
+    v = under_head(size, v, kind, length, pclass)
+    plain = has_plain_shank(kind, size, length)
     d, P = t["d"] * MM, t["P"] * MM
-    s_af = (t["s"] + v.across_flats_dmm) * MM
-    k = (t["k"] + v.height_dmm) * MM
+    if cap:  # the hex is the socket; the head a cylinder of height k max = d
+        cs = CAP_SCREW[size]
+        s_af = (cs["socket"] + v.across_flats_dmm) * MM
+        k = (cs["k"][1] + v.height_dmm) * MM
+        dk, depth, chamfer = v.head_d_mm * MM, v.socket_depth_mm * MM, v.top_chamfer_mm * MM
+        c = 0.0
+    else:
+        s_af = (t["s"] + v.across_flats_dmm) * MM
+        k = (t["k"] + v.height_dmm) * MM
+        c = v.bearing_face_h_mm * MM
     L = (length + v.length_dmm) * MM
-    dw, c, rf = v.bearing_face_d_mm * MM, v.bearing_face_h_mm * MM, v.fillet_r_mm * MM
-    # a bolt: plain shank of diameter ds from the head to Lp, then the thread to the tip
-    Lp = v.plain_length_mm * MM if bolt else 0.0
-    ds = v.shank_d_mm * MM if bolt else d
+    dw, rf = v.bearing_face_d_mm * MM, v.fillet_r_mm * MM
+    # a plain shank of diameter ds from the head to Lp, then the thread to the tip
+    Lp = v.plain_length_mm * MM if plain else 0.0
+    ds = v.shank_d_mm * MM if plain else d
     clearance = v.clearance_mm * MM
-    name = name or (bolt_name(size, length) if bolt else screw_name(size, length))
+    name = name or {"bolt": bolt_name, "cap_screw": cap_screw_name}.get(kind, screw_name)(size, length)
     R = f"/{name}"
     prof = iso_profile(d, P)
     stage, root = new_stage(path, name)
@@ -238,11 +318,16 @@ def write_screw(
     nt, nz = DETAIL[detail]
     Vs, Fs = threaded_bolt_mesh(prof, L - Lp, clearance, nt=nt, nz_per_pitch=nz, crush=crush, burr=burr)
     Vs = Vs + [0.0, 0.0, Lp]
-    Vh, Fh = hex_prism(s_af, -k, -c)
-    Vw, Fw = _solid(dw / 2, -c, 0.0, nt)
-    # the fillet rests on the thread's crest (a screw) or on the plain shank (a bolt)
-    Vf, Ff = _fillet(ds / 2 if bolt else d / 2 - clearance, rf, nt)
-    shank = [_solid(ds / 2, 0.0, Lp, nt)] if bolt else []
+    if cap:
+        Vh, Fh = cap_head_mesh(dk, k, s_af, depth, chamfer, dw, nt)
+        head = [(Vh, Fh)]
+    else:
+        Vh, Fh = hex_prism(s_af, -k, -c)
+        Vw, Fw = _solid(dw / 2, -c, 0.0, nt)
+        head = [(Vh, Fh), (Vw, Fw)]
+    # the fillet rests on the thread's crest (threaded to the head) or on the plain shank
+    Vf, Ff = _fillet(ds / 2 if plain else d / 2 - clearance, rf, nt)
+    shank = [_solid(ds / 2, 0.0, Lp, nt)] if plain else []
     pieces = [] if simple else segments(prof, 0.0, L - Lp, clearance, "bolt", SEG_DEG, crush=crush, burr=burr)
     pieces = [np.asarray(p) + [0.0, 0.0, Lp] for p in pieces]
     # the simple collider is the shank at its major diameter; the core carries the thread pieces
@@ -257,11 +342,11 @@ def write_screw(
     for V, F in shank:
         vb.add(V, F, "finish", uv_cylindrical(V, F, "z", vscale=100.0))
     vb.add(Vf, Ff, "finish", uv_cylindrical(Vf, Ff, "z", vscale=100.0))
-    vb.add(Vh, Fh, "finish", uv_box(Vh, Fh, 60.0))
-    vb.add(Vw, Fw, "finish", uv_box(Vw, Fw, 60.0))
+    for V, F in head:
+        vb.add(V, F, "finish", uv_box(V, F, 60.0))
     _, subsets = vb.write(stage, f"{R}/Visual/{name}_mesh", R, variant_mats=("finish",))
     _looks(stage, root, name, subsets, finish, v, path)
-    m, com, inertia = _combined_mass([(Vs, Fs), *shank, (Vf, Ff), (Vh, Fh), (Vw, Fw)], v.density)
+    m, com, inertia = _combined_mass([(Vs, Fs), *shank, (Vf, Ff), *head], v.density)
     ev, q = inertia_principal(inertia)
     rigid_body(root, m, com, ev, q)
 
@@ -278,22 +363,35 @@ def write_screw(
             pts = [[rr * np.cos(a), rr * np.sin(a), z] for z in (za, zb) for a in ring]
             collider_hull(stage, f"{R}/Collision/core_{i:02d}", _bend(pts, v.defect_size, L), pmat=steel)
     else:
-        if bolt:
+        if plain:
             collider_cylinder(stage, f"{R}/Collision/shank", (0, 0, Lp / 2), ds / 2, Lp / 2, "Z", pmat=steel)
         collider_cylinder(stage, f"{R}/Collision/core", (0, 0, (Lp + L) / 2), core_r, (L - Lp) / 2, "Z", pmat=steel)
-    collider_hull(stage, f"{R}/Collision/head", Vh[:12], pmat=steel)
-    collider_cylinder(stage, f"{R}/Collision/bearing_face", (0, 0, -c / 2), dw / 2, c / 2, "Z", pmat=steel)
+    if cap:
+        solid, walls = cap_head_colliders(dk, k, s_af, depth, chamfer, dw)
+        collider_hull(stage, f"{R}/Collision/head", solid, pmat=steel)
+        for j, pts in enumerate(walls):
+            collider_hull(stage, f"{R}/Collision/socket_wall_{j}", pts, pmat=steel)
+        head_pieces = 1 + len(walls)
+    else:
+        collider_hull(stage, f"{R}/Collision/head", Vh[:12], pmat=steel)
+        collider_cylinder(stage, f"{R}/Collision/bearing_face", (0, 0, -c / 2), dw / 2, c / 2, "Z", pmat=steel)
+        head_pieces = 2
     collider_hull(stage, f"{R}/Collision/fillet", Vf, pmat=steel)
     for i, pts in enumerate(pieces):
         collider_hull(stage, f"{R}/Collision/thread_{i:04d}", pts, pmat=steel)
-    standard = "ISO 4014" if bolt else "ISO 4017"
-    extra = dict(plainLength=Lp, shankDiameter=ds, threadLength=L - Lp) if bolt else {}
+    standard = {"bolt": "ISO 4014", "cap_screw": "ISO 4762"}.get(kind, "ISO 4017")
+    extra = dict(plainLength=Lp, shankDiameter=ds, threadLength=L - Lp) if plain else {}
+    if cap:
+        extra.update(headDiameter=dk, socketDepth=depth, topChamfer=chamfer)
+    else:
+        extra.update(bearingFaceHeight=c)
+    designation = f"{standard} - {size} x {length:g}" + (f" - {pclass}" if cap else "")
     set_attrs(
         root,
         dict(
             category="screw",
             standard=standard,
-            designation=f"{standard} - {size} x {length:g}",
+            designation=designation,
             size=size,
             pitch=P,
             majorDiameter=d,
@@ -302,10 +400,9 @@ def write_screw(
             acrossFlats=s_af,
             headHeight=k,
             bearingFaceDiameter=dw,
-            bearingFaceHeight=c,
             filletRadius=rf,
             **extra,
-            propertyClass="8.8",
+            propertyClass=pclass,
             finishes=FINISHES,
             threadClearance=clearance,
             collision=collider,
@@ -322,22 +419,31 @@ def write_screw(
         (1, 0, 0, 0),
         dict(role="male_thread", pitch=P, majorDiameter=d, hand="right", axis="+Z"),
     )
-    mate_frame(
-        stage,
-        f"{R}/MateFrame_drive",
-        (0, 0, 0),  # where a socket's mouth is when it holds the whole head: the head goes in along +Z
-        (0, 1, 0, 0),
-        dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=k),
-    )
+    if cap:  # the socket's mouth on top of the head: a hex key goes in along +Z, as deep as t
+        mate_frame(
+            stage,
+            f"{R}/MateFrame_drive",
+            (0, 0, -k),
+            (1, 0, 0, 0),
+            dict(role="drive", drive="hex_socket", acrossFlats=s_af, engagement=depth),
+        )
+    else:
+        mate_frame(
+            stage,
+            f"{R}/MateFrame_drive",
+            (0, 0, 0),  # where a socket's mouth is when it holds the whole head: the head goes in along +Z
+            (0, 1, 0, 0),
+            dict(role="drive", drive="external_hex", acrossFlats=s_af, engagement=k),
+        )
     _save(stage, kind)
-    bolt_colliders = 1 if bolt and not slices else 0
+    shank_colliders = 1 if plain and not slices else 0
     return dict(
         name=name,
         kind=kind,
         size=size,
         length_mm=length,
         mass_g=m * 1e3,
-        colliders=len(pieces) + 3 + (slices or 1) + bolt_colliders,
+        colliders=len(pieces) + head_pieces + 1 + (slices or 1) + shank_colliders,
         **as_attrs(v),
     )
 
@@ -347,6 +453,21 @@ def write_bolt(
 ):
     """Hex head bolt, ISO 4014: see write_screw."""
     return write_screw(path, size, length, finish, v, name, detail, collider, kind="bolt")
+
+
+def write_cap_screw(
+    path,
+    size="M8",
+    length=None,
+    finish="black_oxide",
+    v=None,
+    name=None,
+    detail="normal",
+    collider="thread",
+    property_class=None,
+):
+    """Hexagon socket head cap screw, ISO 4762: see write_screw."""
+    return write_screw(path, size, length, finish, v, name, detail, collider, "cap_screw", property_class)
 
 
 def write_nut(path, size="M8", finish="zinc_clear", v=None, name=None, detail="normal", collider="thread"):

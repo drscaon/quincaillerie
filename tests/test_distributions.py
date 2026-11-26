@@ -20,14 +20,15 @@ N = 4000
 P_MIN = 1e-3
 PITCH, DIAMETER, FINISH = 1.25, 8.0, "zinc_clear"  # an M8 part in a plated steel finish
 SIZE = {"cell (cylinder)": "AA", "cell (coin)": "CR2032"}  # the format each cell part is drawn in
+LENGTH = {"cap_screw": 60.0}  # a cap screw long enough for a plain shank (the others: their default)
 DOC = Path(__file__).parents[1] / "docs" / "variation.md"
 
 
 def draws(part):
     """N variations of the part, as {column: values}."""
     sampler = Sampler(seed=20261116, defect_rate=declared.RATE)
-    if part in ("screw", "bolt", "nut", "washer"):
-        rows = [asdict(sampler.fastener(part, FINISH, PITCH, DIAMETER)) for _ in range(N)]
+    if part in ("screw", "bolt", "cap_screw", "nut", "washer"):
+        rows = [asdict(sampler.fastener(part, FINISH, PITCH, DIAMETER, LENGTH.get(part))) for _ in range(N)]
     elif part.startswith("cell"):
         kind = "coin" if "coin" in part else "cradle"
         rows = [asdict(sampler.cell(SIZE[part], kind)) for _ in range(N)]
@@ -100,7 +101,8 @@ def check(column, dist, values, others):
         return
     if kind == "cited":
         part = others["kind"]
-        lo, hi = tolerance_range(part, column, "M8" if part in ("screw", "bolt", "nut", "washer") else SIZE[part])
+        fastener = part in ("screw", "bolt", "cap_screw", "nut", "washer")
+        lo, hi = tolerance_range(part, column, "M8" if fastener else SIZE[part], LENGTH.get(part))
         check(column, ("uniform", 0.0, 1.0), (values - lo) / (hi - lo), others)
         return
     if kind == "relative":

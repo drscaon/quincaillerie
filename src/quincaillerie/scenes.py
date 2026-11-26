@@ -96,7 +96,7 @@ def origin_for(centre, quat, height):
 
 def footprint(kind, key, length=None):
     """Approximate (x, y) size of a part at rest (m), for laying parts out without overlap."""
-    if kind in ("screw", "bolt", "nut", "washer"):
+    if kind in ("screw", "bolt", "cap_screw", "nut", "washer"):
         t = METRIC[key]
         s = max(t["s"], t["washer"][1]) * MM
         return s * 1.2, s * 1.2

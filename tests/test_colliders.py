@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 import pytest
-from pxr import Usd, UsdPhysics
+from pxr import Gf, Usd, UsdGeom, UsdPhysics
 
 from quincaillerie.catalog import METRIC
 from quincaillerie.cli import main
@@ -48,7 +48,7 @@ def test_simple_colliders_are_few_and_change_nothing_else(sets):
     assert thread.keys() == simple.keys()
     for name, row in simple.items():
         # a screw: core, head, bearing face, fillet; a bolt: and its plain shank
-        pieces = {"screw": {4}, "bolt": {5}, "nut": {12}, "washer": {8}}[row["kind"]]
+        pieces = {"screw": {4}, "bolt": {5}, "cap_screw": {9, 10}, "nut": {12}, "washer": {8}}[row["kind"]]
         if row["variation:defect"] == "bent":  # a bent shank follows the bend in slices
             assert int(row["measured:colliders"]) > 4
         else:
@@ -100,6 +100,64 @@ def test_a_bolt_collides_on_its_plain_shank_then_on_its_thread(tmp_path):
     face = stage.GetPrimAtPath(f"/{root.GetName()}/Collision/bearing_face")
     dw = root.GetAttribute("quincaillerie:bearingFaceDiameter").Get()
     assert face.GetAttribute("radius").Get() == pytest.approx(dw / 2)
+
+
+def test_a_hex_key_goes_into_a_cap_screws_socket(tmp_path):
+    """ISO 4762 (QUI-08): the head's colliders leave the socket free. A hex key at the socket's
+    across flats, a hundredth of a millimetre smaller, lies inside none of the head's convex pieces
+    down to the socket's depth, and the solid piece under it stops it there."""
+    from scipy.spatial import Delaunay
+
+    from quincaillerie.fasteners import write_cap_screw
+
+    info = write_cap_screw(str(tmp_path / "c.usdc"), "M8", 30, collider="simple", detail="low")
+    assert info["colliders"] == 9  # core, head, six socket walls, fillet
+    stage = Usd.Stage.Open(str(tmp_path / "c.usdc"))
+    root = stage.GetDefaultPrim()
+    s_af = root.GetAttribute("primvaria:variation:across_flats_dmm").Get() * MM + 6.0 * MM
+    depth = root.GetAttribute("quincaillerie:socketDepth").Get()
+    assert depth == pytest.approx(root.GetAttribute("primvaria:variation:socket_depth_mm").Get() * MM)
+    frame = stage.GetPrimAtPath(f"/{root.GetName()}/MateFrame_drive")
+    z_top = UsdGeom.Xformable(frame).ComputeLocalToWorldTransform(0).ExtractTranslation()[2]  # top of the head
+    key_r = (s_af - 0.01 * MM) / np.sqrt(3)
+    ang = np.arange(6) * np.pi / 3 + np.pi / 6
+    key = np.array(
+        [[key_r * np.cos(a), key_r * np.sin(a), z_top + z] for a in ang for z in np.linspace(0, depth * 0.999, 5)]
+    )
+    deeper = np.array([[0.0, 0.0, z_top + depth * 1.05]])
+    hit_deeper = False
+    for prim in stage.GetPrimAtPath(f"/{root.GetName()}/Collision").GetChildren():
+        if not prim.GetName().startswith(("head", "socket_wall")):
+            continue
+        pts = np.array(prim.GetAttribute("points").Get(), float)
+        xf = UsdGeom.Xformable(prim).ComputeLocalToWorldTransform(0)
+        pts = np.array([xf.Transform(Gf.Vec3d(*p)) for p in pts])
+        hull = Delaunay(pts)
+        assert not (hull.find_simplex(key, tol=-1e-9) >= 0).any(), prim.GetName()
+        hit_deeper |= bool((hull.find_simplex(deeper) >= 0).any())
+    assert hit_deeper  # the key bottoms out at the socket's depth
+
+
+def test_a_cap_screws_socket_has_its_corners_where_its_colliders_have_them():
+    """The visual socket and the collision walls are the same hexagon: corners at 30 + 60 k degrees
+    (as the hex heads'), flats in between, in the mesh as in the colliders."""
+    from quincaillerie.fasteners import _hex_radius, cap_head_colliders, cap_head_mesh
+
+    s_af = 6.0 * MM
+    corners = np.radians(30 + 60 * np.arange(6))
+    assert np.allclose(_hex_radius(corners, s_af), s_af / np.sqrt(3))
+    assert np.allclose(_hex_radius(corners + np.pi / 6, s_af), s_af / 2)
+    dk, k, t, v, dw = 13 * MM, 8 * MM, 4 * MM, 0.4 * MM, 12.5 * MM
+    V, _ = cap_head_mesh(dk, k, s_af, t, v, dw)
+    rim = V[np.isclose(V[:, 2], -k + t) & (np.hypot(V[:, 0], V[:, 1]) > 1e-9)]  # the socket's floor edge
+    far = rim[np.isclose(np.hypot(rim[:, 0], rim[:, 1]), s_af / np.sqrt(3))]
+    assert len(far) == 6
+    assert np.allclose(np.sort(np.degrees(np.arctan2(far[:, 1], far[:, 0])) % 360), 30 + 60 * np.arange(6))
+    _, walls = cap_head_colliders(dk, k, s_af, t, v, dw)
+    inner = np.concatenate([w[np.isclose(np.hypot(w[:, 0], w[:, 1]), s_af / np.sqrt(3))] for w in walls])
+    assert np.allclose(
+        np.unique(np.round(np.degrees(np.arctan2(inner[:, 1], inner[:, 0])) % 360, 6)), 30 + 60 * np.arange(6)
+    )
 
 
 def test_unknown_collider(tmp_path):

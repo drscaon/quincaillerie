@@ -75,6 +75,34 @@ Notes:
 | `variation:density` | physics | divided by the finish's density: normal, mean 1, sd 0.005 |
 | `variation:friction` | wear, physics | finish friction × (1 + 0.8 rust + 0.3 dirt − 0.4 oil), kept within 0.08 to 0.45, then × normal(1, 0.08); always within 0.06 to 0.5 |
 
+### cap_screw
+
+| Column | Aspect | Drawn as |
+|---|---|---|
+| `variation:clearance_mm` | tolerance | uniform over the tolerance band of the fit class (`fits.py`) |
+| `variation:thread_class` | tolerance | always `5g6g` |
+| `variation:across_flats_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:height_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:length_dmm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:head_d_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:socket_depth_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:top_chamfer_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:bearing_face_d_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:fillet_r_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:shank_d_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:plain_length_mm` | tolerance | uniform over the tolerance its standard or datasheet allows ([sources](sources.md)) |
+| `variation:defect` | defect | `none` 85 %; `crushed_thread` 5 %; `bent` 5 %; `burr` 5 % |
+| `variation:defect_z` | defect | uniform, 0.15 to 0.85 (instances with `crushed_thread` or `burr`): a crushed thread: where along the threaded part, and where around it starts; a burr: where around the tip it starts |
+| `variation:defect_angle_deg` | defect | uniform, 40 to 140 (instances with `crushed_thread` or `burr`): how far around the thread the crush or the burr extends |
+| `variation:defect_size` | defect | `crushed_thread`: uniform, 0.3 to 0.6; `bent`: uniform, 0.8 to 3; `burr`: uniform, 0.1 to 0.25 (instances with a defect): how deep the crush is, how far the shank bends, how high the burr stands |
+| `variation:scratches` | wear | 35 %: uniform, 0 to 0.15; 65 %: uniform, 0.2 to 0.8 |
+| `variation:rust` | wear | 85 %: always `0`; 15 %: uniform, 0.2 to 0.9 |
+| `variation:oil` | wear | 85 %: always `0`; 15 %: uniform, 0.4 to 1 |
+| `variation:dirt` | wear | 65 %: always `0`; 25 %: uniform, 0 to 0.3; 10 %: uniform, 0.2 to 0.8 |
+| `variation:seed` | wear | integer, 0 to 2³¹ − 1 |
+| `variation:density` | physics | divided by the finish's density: normal, mean 1, sd 0.005 |
+| `variation:friction` | wear, physics | finish friction × (1 + 0.8 rust + 0.3 dirt − 0.4 oil), kept within 0.08 to 0.45, then × normal(1, 0.08); always within 0.06 to 0.5 |
+
 ### nut
 
 | Column | Aspect | Drawn as |

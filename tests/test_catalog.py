@@ -30,6 +30,10 @@ def test_resolve_with_related():
     assert [p.name for p in parts] == ["ISO4017_M6x25", "ISO4032_M6", "ISO7089_M6"]
     assert [p.filename.split(".")[-1] for p in parts] == ["usdc", "usdc", "usda"]
     assert [p.name for p in resolve("holder", "9V", with_=["cell"])] == ["Holder_9V", "Cell_9V"]
+    caps = resolve("cap_screw", "M8", 60, ["nut"], "10.9")
+    assert [p.name for p in caps] == ["ISO4762_M8x60", "ISO4032_M8"]
+    assert [p.property_class for p in caps] == ["10.9", None]
+    assert resolve("nut", "M8", with_=["cap_screw"])[1].property_class == "12.9"  # the default class
 
 
 @pytest.mark.parametrize(
@@ -41,6 +45,9 @@ def test_resolve_with_related():
         ("bolt", "M8", 150),
         ("bolt", "M8", 20),
         ("rivet", "M8"),
+        ("cap_screw", "M8", 90),
+        ("cap_screw", "M8", None, [], "12.9x"),
+        ("screw", "M8", None, [], "12.9"),
         ("screw", "M8", 0.5),
     ],
 )

@@ -109,9 +109,11 @@ All three are rendered in Blender (Cycles) from the generated OpenUSD files:
 - **Fasteners**, metric coarse thread, M3 to M12: hex head screws (ISO 4017,
   fully threaded, any length), hex head bolts (ISO 4014, a plain shank under
   the head, the lengths of each size's table), hex nuts (ISO 4032), plain
-  washers (ISO 7089). Under the head, a bearing face and a fillet drawn within
-  the tables' limits; a bolt's plain shank (its diameter, and where the thread
-  starts) too.
+  washers (ISO 7089), and socket head cap screws (ISO 4762, classes 8.8,
+  10.9 and 12.9, the last threaded 5g6g), whose hex socket a hex key really
+  goes into. Under the head, a bearing face and a fillet drawn within the
+  tables' limits; a plain shank (its diameter, and where the thread starts)
+  too, on bolts and long cap screws.
   The visual mesh carries the ISO 68-1 thread profile; the collision is a
   core cylinder plus one convex piece per 10° of helix (≈ 800 per screw, 200
   per nut) with 0.05 mm of radial clearance, so a nut really screws on.
@@ -185,9 +187,10 @@ quincaillerie generate screw M8 --length 30 --with nut,washer --count 100
 quincaillerie generate cell 18650 --with holder --count 20 --defect-rate 0.3
 quincaillerie generate screw M8 --count 50 --no-vary wear   # clean parts, varied fits and defects
 quincaillerie generate bolt M10 --length 60 --with nut      # ISO 4014: plain shank, then the thread
+quincaillerie generate cap_screw M6 --property-class 10.9   # ISO 4762, hex socket, 6g thread
 quincaillerie generate nut M10 --nominal                    # the reference part
 quincaillerie generate holder 9V --with cell --no-physics   # visuals only
-quincaillerie generate all --nominal                        # the whole catalogue (48 assets)
+quincaillerie generate all --nominal                        # the whole catalogue (55 assets)
 quincaillerie sim-test output/ISO4017_M8x30 --defects       # MuJoCo checks (+ crushed threads jam)
 quincaillerie blender-test output/catalog                   # the same in Blender
 quincaillerie blender-addon                                 # quincaillerie_physics.zip
