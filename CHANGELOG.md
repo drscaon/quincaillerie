@@ -79,6 +79,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 - The nut-on-screw check (MuJoCo and Blender) puts the nut on a bolt (ISO 4014) a whole number of turns above where its thread starts, so that the two threads meet in phase; off phase they overlapped and the parts flew apart in Blender.
 - The release workflow installs the package it has just built before writing the Blender add-on (`quincaillerie blender-addon`); since the release runs the full CI first, the command was missing.
+- The drop check (MuJoCo) passes a part that keeps rolling when its vertical speed is under a fifth of its rolling speed: a cap screw on its side rolls on its round head and thread, whose crests lift it a little as they pass (an M6 cap screw failed at 1.3 mm/s while rolling at 11 mm/s).
 - The output of a library material's colour texture is a `float3`, as UsdPreviewSurface specifies for `UsdUVTexture`; it was written as `color3f`.
 
 ## [0.5.0b1] - 2026-11-24 (beta)
