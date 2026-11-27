@@ -6,6 +6,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0b2] - 2026-11-27 (beta)
+
+### Fixed
+
+- 0.6.0b1 gave its version as 0.5.0b1: `quincaillerie --version`, `quincaillerie.__version__`, and the version written in every file (`primvaria:version`, `assetInfo`) and in the pack (`manifest.json`, `instances.csv`). The version is now read from the installed package, as in the other generators, so it cannot fall behind again. Files written by 0.6.0b1 are otherwise those of this release: regenerate them to get the right version in them.
+
 ## [0.6.0b1] - 2026-11-27 (beta)
 
 ### Documentation
