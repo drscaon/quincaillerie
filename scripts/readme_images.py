@@ -92,8 +92,10 @@ def fasteners_scene(assets, path):
             FINISHES[(i + 2) % 6],
         )
         x += max(t["washer"][1], 12) * MM + 0.011
-    for j, (s, fin) in enumerate((("M10", "black_oxide"), ("M8", "brass"), ("M6", "stainless_a2"))):
-        L = [p for p in os.listdir(assets) if p.startswith(f"ISO4017_{s}x")][0]
+    # lying in front: a socket head cap screw (ISO 4762) and a bolt with its plain shank (ISO 4014)
+    loose_screws = (("M10", "black_oxide", "ISO4762"), ("M8", "brass", "ISO4014"), ("M6", "stainless_a2", "ISO4762"))
+    for j, (s, fin, std) in enumerate(loose_screws):
+        L = [p for p in os.listdir(assets) if p.startswith(f"{std}_{s}x")][0]
         q = qmul(quat_axis_angle((0, 0, 1), 0.25 - 0.35 * j), quat_axis_angle((0, 1, 0), np.pi / 2))
         add_ref(loose, f"lscrew_{s}", assets / L, (-0.06 + 0.06 * j, -0.065, 0.012), q, fin)
     save(loose)
@@ -199,11 +201,11 @@ def showcase_scene(assets, path):
 
 
 def variation_scene(tmp, path, seed=4):
-    """Ten drawn instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks."""
+    """Ten drawn instances of an M10 cap screw, nut and washer, eight AA cells and three 9V blocks."""
     from quincaillerie import resolve
 
     a = generate(
-        resolve("screw", "M10", 35, ["nut", "washer"]),
+        resolve("cap_screw", "M10", 35, ["nut", "washer"]),
         str(tmp),
         "var_m10",
         count=10,
@@ -218,7 +220,7 @@ def variation_scene(tmp, path, seed=4):
     for i in range(10):
         y = -0.09 + 0.02 * i
         q = qmul(quat_axis_angle((0, 0, 1), 0.08 * (i - 5)), quat_axis_angle((0, 1, 0), np.pi / 2))
-        lay(st, f"s{i}", A / f"ISO4017_M10x35_{i:03d}.usdc", (-0.075, y, 0.0085), q)
+        lay(st, f"s{i}", A / f"ISO4762_M10x35_{i:03d}.usdc", (-0.075, y, 0.0085), q)
         lay(st, f"n{i}", A / f"ISO4032_M10_{i:03d}.usdc", (-0.025, y, 0), quat_axis_angle((0, 0, 1), 0.4 * i))
         lay(st, f"w{i}", A / f"ISO7089_M10_{i:03d}.usda", (0.003, y, 0), (1, 0, 0, 0))
     for i in range(8):

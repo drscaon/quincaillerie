@@ -6,8 +6,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0b1] - 2026-11-27 (beta)
+
 ### Documentation
 
+- The README images show the new screws: socket head cap screws (ISO 4762) and a bolt with its plain shank (ISO 4014) among the fasteners, cap screws in the ten varied instances.
 - The README links to Primvaria's note on how standards are used; the pull request checklist gains a line for it.
 - The note on the tip chamfer's estimate (`docs/sources.md`) is reworded in our own words.
 
