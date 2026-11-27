@@ -20,6 +20,7 @@ import numpy as np
 from pxr import Gf, Sdf, UsdGeom, UsdPhysics, UsdShade
 
 from .catalog import CELLS, label_9v_size, wrapper_span
+from .contract import write_material_label
 
 # name: (base colour, metallic, roughness, extras)
 # extras: rough_tex (texture, scale, bias), normal_tex, color_tex, coat (weight, roughness), specular
@@ -319,6 +320,27 @@ def _tex(stage, path, file, uv, cs="raw", scale=None, bias=None):
     return t
 
 
+# what each library material is made of: its material label (semantics:labels:material)
+MATERIAL_LABELS = {
+    "stainless_a2": "stainless_steel",
+    "brass": "brass",
+    "nickel_bright": "nickel",
+    "abs_black": "abs",
+    "abs_grey": "abs",
+    "case_9V": "plastic",
+    "label_9V": "plastic",
+    "corrosion": "corrosion",
+}
+
+
+def material_label(name: str) -> str:
+    """The material label of a library material: steel unless listed (zinc and oxide finishes,
+    plain and spring steel, nickel-plated cans and coin faces), PET for the cell wrappers."""
+    if name.startswith("wrapper_"):
+        return "pet"
+    return MATERIAL_LABELS.get(name, "steel")
+
+
 def write_library(path):
     from .usd import create_stage
 
@@ -333,6 +355,7 @@ def write_library(path):
         P = f"/Materials/{name}"
         mat = UsdShade.Material.Define(stage, P)
         mat.GetPrim().SetDocumentation(m.get("desc", ""))
+        write_material_label(mat, material_label(name))
         # --- UsdPreviewSurface
         ps = UsdShade.Shader.Define(stage, f"{P}/PreviewSurface")
         ps.CreateIdAttr("UsdPreviewSurface")
@@ -346,8 +369,8 @@ def write_library(path):
             uv = _uv_reader(stage, f"{P}/uv")
         if "color_tex" in m:
             t = _tex(stage, f"{P}/base_color_tex", m["color_tex"], uv, "sRGB")
-            ps.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(t.ConnectableAPI(), "rgb")
-            t.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
+            rgb = t.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)  # UsdUVTexture's output is a float3
+            ps.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(rgb)
         else:
             ps.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*m["color"]))
         if "rough_tex" in m:
