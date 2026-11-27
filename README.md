@@ -47,7 +47,7 @@ CPU. Quincaillerie is part of [**Primvaria**](https://primvaria.com), with
 [Filaire](https://github.com/drscaon/filaire) (cables), and follows the same
 approach: distributions instead of one shape, measured outputs, honest limits.
 
-![Screws, washers and nuts M3 to M12 in six finishes, rendered in Blender](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/fasteners.jpg)
+![Screws, washers and nuts M3 to M12 in six finishes, with socket head cap screws and a bolt with its plain shank in front, rendered in Blender](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/fasteners.jpg)
 
 *ISO 4017 screws, ISO 7089 washers and ISO 4032 nuts, M3 to M12, in the six
 finishes of the material library. The nuts sit on the thread at the height
@@ -61,7 +61,7 @@ rendered with Cycles.*
 
 ## Every instance is different
 
-![Ten instances of an M10 screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/variation.jpg)
+![Ten instances of an M10 socket head cap screw, nut and washer, eight AA cells and three 9V blocks, each drawn with its own variation](https://raw.githubusercontent.com/drscaon/quincaillerie/main/docs/images/variation.jpg)
 
 *`quincaillerie generate screw M10 --with nut,washer --count 10` and the same
 for AA and 9 V cells: each part is a distinct file. Rust, grime, oil and
