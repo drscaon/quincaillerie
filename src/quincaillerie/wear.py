@@ -13,7 +13,8 @@ import os
 import numpy as np
 from pxr import Sdf, UsdShade
 
-from .materials import MATERIALS, _tileable_noise
+from .contract import write_material_label
+from .materials import MATERIALS, _tileable_noise, material_label
 
 SIZE = 256
 # iron oxides, linear: orange-brown (fresh), dark red-brown, near-black (old, wet)
@@ -143,6 +144,7 @@ def instance_material(stage, root_path, name, base_name, wear, seed, tex_dir, te
     P = f"{root_path}/Looks/{name}"
     mat = UsdShade.Material.Define(stage, P)
     mat.GetPrim().SetDocumentation(f"{base_name}, worn: " + ", ".join(f"{k} {v:.2f}" for k, v in wear.items() if v))
+    write_material_label(mat, material_label(base_name))
     ps = UsdShade.Shader.Define(stage, f"{P}/PreviewSurface")
     ps.CreateIdAttr("UsdPreviewSurface")
     uv = UsdShade.Shader.Define(stage, f"{P}/uv")

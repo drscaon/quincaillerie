@@ -12,7 +12,14 @@ import os
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade, Vt
 
-from .contract import labels, write_identity, write_labels, write_measured, write_variation
+from .contract import (
+    labels,
+    write_identity,
+    write_labels,
+    write_material_label,
+    write_measured,
+    write_variation,
+)
 
 NS = "quincaillerie"
 
@@ -100,11 +107,16 @@ def material(stage, root_path, name, color, metallic=0.0, roughness=0.5):
     sh.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(float(metallic))
     sh.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(float(roughness))
     mat.CreateSurfaceOutput().ConnectToSource(sh.ConnectableAPI(), "surface")
+    write_material_label(mat, "metal" if metallic >= 0.5 else "plastic")
     return mat
 
 
 def bind(prim, mat):
     UsdShade.MaterialBindingAPI.Apply(prim).Bind(mat)
+
+
+# material labels of the physics materials, by name: a cell's can is steel, a holder ABS
+PHYSICS_LABELS = {"cell": "steel", "holder": "abs"}
 
 
 def physics_material(stage, root_path, name, mu, restitution=0.0):
@@ -116,6 +128,7 @@ def physics_material(stage, root_path, name, mu, restitution=0.0):
     api.CreateStaticFrictionAttr(float(mu))
     api.CreateDynamicFrictionAttr(float(mu))
     api.CreateRestitutionAttr(float(restitution))
+    write_material_label(mat, PHYSICS_LABELS.get(name, name))
     return mat
 
 

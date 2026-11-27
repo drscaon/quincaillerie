@@ -159,3 +159,5 @@ Each part also says what it is with OpenUSD's own semantic labels
 segmentation masks: `semantics:labels:class` holds the kind of part (`screw`, `nut`, `washer`, `cell`, `holder`) and the catalogue entry (`ISO4017_M8x30`), and
 `semantics:labels:instance` the asset's name. In a scene, the instance label is the name of the prim that places the part. The classes are a
 column of `instances.csv` and are listed in `manifest.json`.
+
+Every material also says what it is made of, in the taxonomy `material`: `semantics:labels:material` holds the substance of the library material (`steel` for the zinc and oxide finishes, plain and spring steel and nickel-plated cans, `stainless_steel`, `brass`, `nickel`, `abs`, `pet` for cell wrappers), the same on an instance's worn look and on the physics materials (contract, section 5).

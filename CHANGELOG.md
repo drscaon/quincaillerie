@@ -13,6 +13,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Every material says what it is made of with a semantic label (`semantics:labels:material`, Primvaria contract section 5), as NVIDIA's SimReady profiles ask; the shared ground is labelled `ground` and rendered with its own grey material (`concrete`). Requires primvaria-contract 0.4.0b1. Each library material is labelled with its substance (`steel`, `stainless_steel`, `brass`, `nickel`, `abs`, `pet`).
 - Hexagon socket head cap screws, ISO 4762 (`quincaillerie generate cap_screw M8`, kind
   `cap_screw`, files `ISO4762_<size>x<length>`), plain head, property class 8.8, 10.9 or 12.9
   (`--property-class`, default 12.9). A cylindrical head with a hex socket ending in a 120° cone:
@@ -69,6 +70,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   preset, as before. `release.yml` runs that full level first and releases nothing
   unless it passes. Tests of 8 s or more are marked `slow` (`pytest -m "not slow"` runs
   the others).
+
+### Fixed
+
+- The output of a library material's colour texture is a `float3`, as UsdPreviewSurface specifies for `UsdUVTexture`; it was written as `color3f`.
 
 ## [0.5.0b1] - 2026-11-24 (beta)
 
