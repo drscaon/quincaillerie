@@ -127,14 +127,17 @@ def build_test_scenes(set_dir, pairs=2):
             t = METRIC[size]
             P, L = t["P"] * MM, sa["length"]
             turns = max(2, int(round(0.4 * L / P)))
-            # on a bolt (ISO 4014), on the thread: above the plain shank
-            turns = max(turns, int(np.ceil(plain_length(sa["file"]) / P - 1e-9)) + 1)
+            # on a bolt (ISO 4014) the thread starts above the plain shank, at Lp, which is not a
+            # whole number of pitches: the nut goes a whole number of turns above Lp, so that its
+            # thread meets the bolt's in phase (off phase, the threads overlap and the parts fly)
+            Lp = plain_length(sa["file"])
+            z = Lp + max(1, turns - int(np.ceil(Lp / P - 1e-9))) * P
             head = under_head(sa["file"])  # the screw stands on its head, 2 cm up
             tag = f"nut_on_screw_{size}" + (f"_{j}" if len(screws) > 1 else "")
             st = new(tag)
             add_ref(st, "screw", sa["file"], (0, 0, 0.02))
-            add_ref(st, "nut", na["file"], (0, 0, 0.02 + head + turns * P))
-            info = dict(size=size, z_nut=head + turns * P, pitch=P, screw=sn, nut=nn)  # in the screw's frame
+            add_ref(st, "nut", na["file"], (0, 0, 0.02 + head + z))
+            info = dict(size=size, z_nut=head + z, pitch=P, screw=sn, nut=nn)  # in the screw's frame
             out.append((tag, "nut_on_screw", save(st), info))
     for fmt in CELLS:
         holders = [(n, a) for n, a in inv.items() if a["kind"] == "holder" and a["key"] == fmt]
