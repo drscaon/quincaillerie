@@ -6,6 +6,8 @@ import argparse
 import sys
 import time
 
+from primvaria_contract import usdz
+
 from . import __version__
 from .catalog import (
     BOLT,
@@ -124,6 +126,9 @@ def cmd_generate(args):
         )
     if res.scene:
         print(f"scene: {res.scene}")
+    if args.usdz:
+        for package in usdz.package_pack(res.out_dir):
+            print(f"package {package}")
     return 0
 
 
@@ -220,6 +225,11 @@ def build_parser():
         default=ENGINES,
         metavar="LIST",
         help=f"engine layers written beside each file, comma-separated, or none (default: {','.join(ENGINES)})",
+    )
+    g.add_argument(
+        "--usdz",
+        action="store_true",
+        help="also write the pack's file as one .usdz package, with what it depends on and its engine layers",
     )
     g.set_defaults(func=cmd_generate)
     s = sub.add_parser("sim-test", help="MuJoCo checks of a generated set")

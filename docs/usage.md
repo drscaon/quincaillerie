@@ -22,6 +22,7 @@ Part of the [Quincaillerie](../README.md) documentation.
 | `--finish F` | `zinc_clear` | default finish of the fasteners (all six are in every file's variant set) |
 | `--no-physics` | | no rigid bodies, colliders, joints or physics scene |
 | `--engines LIST` | `physx,omniphysics,newton` | engine layers written beside each file with physics, comma-separated, or `none`; Quincaillerie writes the PhysX and Newton ones, see [Newton layer](openusd.md#newton-layer) |
+| `--usdz` / `primvaria_contract.usdz.package(file)` | off | also write the scene (or, with `--no-scene`, each asset) as one `.usdz` package: the file as root layer, the textures and files it references inside, its engine layers beside it in the package (`<name>.usdz[<name>_newton.usda]`); the pack's tables do not list packages |
 | `--no-scene` | | assets and materials only |
 | `--seed S`, `--out DIR` | 1, `output` | the same seed and options give the same parts |
 
