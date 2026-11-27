@@ -5,7 +5,8 @@ saved under ``<set>/sim_test/scenes/`` so the same scenes can be opened in Blend
 converts it to MuJoCo with ``mujoco_model.convert`` and simulates it on CPU.
 
 * drop: each part dropped, tilted, from 4-5 cm. Passes when it rests on the floor: lowest point
-  within 0.35 mm of it, vertical speed below 1 mm/s (round cells may keep rolling).
+  within 0.35 mm of it, vertical speed below 1 mm/s, or below a fifth of its speed when it keeps
+  rolling (round cells, cap screws, whose thread's crests lift them a little as they pass).
 * nut_on_screw: a nut threaded on its screw, both dropped. The nut must stay on its thread: axial
   shift below half a pitch (no thread skipped), off-axis below 0.3 mm.
 * holder: an empty holder placed on the floor settles (below 0.3 mm) and its spring plate or clip
@@ -245,7 +246,9 @@ def check_scene(name, kind, path, info):
         low = ((pts["part"] @ q2m(quat).T) + pos)[:, 2].min() / MM
         vz = abs(r["vel"]["part"][2]) / MM
         v = np.linalg.norm(r["vel"]["part"]) / MM
-        ok = abs(low) < 0.35 and vz < 1.0
+        # a part that rolls on round surfaces (a cell, a cap screw on its head and thread) keeps
+        # some vertical speed as its thread's crests pass under it: small against its rolling
+        ok = abs(low) < 0.35 and (vz < 1.0 or (v > 5 and vz < 0.2 * v))
         msg = f"lowest point {low:+.3f} mm, vertical speed {vz:.2f} mm/s" + (
             f", rolling at {v:.0f} mm/s" if v > 5 else ""
         )
